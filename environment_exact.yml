@@ -1,4 +1,4 @@
-name: gen
+name: realcause-exact
 channels:
   - r
   - conda-forge
@@ -105,7 +105,7 @@ dependencies:
   - pyparsing=2.4.6=py_0
   - pyrsistent=0.16.0=py37h1de35cc_0
   - pytest=5.4.1=py37_0
-  - python=3.7.7=hfe9666f_0_cpython
+  - python=3.8.5
   - python-dateutil=2.8.1=py_0
   - python_abi=3.7=1_cp37m
   - pytz=2019.3=py_0
@@ -334,5 +334,5 @@ dependencies:
     - whynot==0.12.0
     - whynot-estimators==0.11.0
     - wrapt==1.12.1
-prefix: /anaconda3/envs/gen
+prefix: /work/pi_jensen_umass_edu/pboddavarama_umass_edu/.conda/envs/realcause-exact
 
