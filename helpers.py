@@ -19,3 +19,10 @@ class Logging:
         if self.log_:
             with open(self.log_path, 'a+') as f_log:
                 f_log.write(f'{datetime.now()} / {s} \n')
+                
+    def debug(self, s, print_=True):
+        if print_:
+            print(f'{datetime.now()} DEBUG / {s}')
+        if self.log_:
+            with open(self.log_path, 'a+') as f_log:
+                f_log.write(f'{datetime.now()} DEBUG / {s} \n')

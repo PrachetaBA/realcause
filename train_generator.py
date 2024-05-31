@@ -8,6 +8,7 @@ from data.lalonde import load_lalonde
 from data.lbidd import load_lbidd
 from data.ihdp import load_ihdp
 from data.twins import load_twins
+from data.acic2019 import load_low_dim
 from models import TarNet, preprocess, TrainingParams, MLPParams, LinearModel, GPModel, TarGPModel, GPParams
 from models import distributions
 import helpers
@@ -51,6 +52,11 @@ def get_data(args):
     elif data_name == "twins":
         d = load_twins(dataroot=args.dataroot)
         w, t, y = d["w"], d["t"], d["y"]
+    elif data_name == 'acic2019':
+        d = load_low_dim(dataset_identifier='1_linear', data_format='numpy')
+        w, t, y = d["w"], d["t"], d["y"]
+        ites = d['ites'] if 'ites' in d else None
+        ate = d['ites'].mean() if 'ites' in d else None
     else:
         raise (Exception("dataset {} not implemented".format(args.data)))
 
@@ -128,7 +134,14 @@ def main(args, save_args=True, log_=True):
     # dataset
     logger.info(f"getting data: {args.data}")
     ites, ate, w, t, y = get_data(args)
-
+    
+    # Debugging
+    # logger.debug(ites)
+    # logger.debug(ate)
+    # logger.debug(w)
+    # logger.debug(t)
+    # logger.debug(y)
+        
     # comet logging
     if args.comet:
         exp = Experiment(project_name="causal-benchmark", auto_metric_logging=False)
@@ -203,6 +216,7 @@ def main(args, save_args=True, log_=True):
     if args.n_hidden_layers < 0:
         raise Exception(f'`n_hidden_layers` must be nonnegative, got {args.n_hidden_layers}')
 
+    logger.debug(f'Initialized the network to be {network_params}')
     model = Model(w, t, y,
                   training_params=training_params,
                   network_params=network_params,
@@ -222,6 +236,7 @@ def main(args, save_args=True, log_=True):
                   test_size=args.test_size,
                   additional_args=additional_args)
 
+    logger.debug(f'Loaded the model!')
     # TODO GPU support
     if args.train:
         model.train(print_=logger.info, comet_exp=exp)

@@ -215,4 +215,5 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 # Modified datasets
-modified_data/
+base_datasets/
+save/

@@ -3,8 +3,8 @@ from collections import OrderedDict
 
 HP = OrderedDict(
     # dataset
-    data=['lalonde'],
-    dataroot=['PATH_TO_YOUR_DATASETS'],  # TODO: MODIFY THIS PATH LOCALLY
+    data=['acic2019'],
+    dataroot=['base_datasets'],  # TODO: MODIFY THIS PATH LOCALLY
     # saveroot=['save'],
     # train=[True],
     # eval=[True],
