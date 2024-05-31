@@ -16,7 +16,6 @@ from collections import OrderedDict
 import json
 # from utils import get_duplicates
 
-
 def get_data(args):
     data_name = args.data.lower()
     ate = None
@@ -136,11 +135,10 @@ def main(args, save_args=True, log_=True):
     ites, ate, w, t, y = get_data(args)
     
     # Debugging
-    # logger.debug(ites)
-    # logger.debug(ate)
-    # logger.debug(w)
-    # logger.debug(t)
-    # logger.debug(y)
+    if args.verbose:
+        logger.debug(f'w: {w.shape}, t: {t.shape}, y: {y.shape}')
+        logger.debug(f'w: {w[:5]}, t: {t[:5]}, y: {y[:5]}')
+        logger.debug(f'ITEs: {ites.shape}, ATE: {ate}')
         
     # comet logging
     if args.comet:
@@ -216,7 +214,8 @@ def main(args, save_args=True, log_=True):
     if args.n_hidden_layers < 0:
         raise Exception(f'`n_hidden_layers` must be nonnegative, got {args.n_hidden_layers}')
 
-    logger.debug(f'Initialized the network to be {network_params}')
+    if args.verbose:
+        logger.debug(f'Initialized the network to be {network_params}')
     model = Model(w, t, y,
                   training_params=training_params,
                   network_params=network_params,
@@ -236,7 +235,6 @@ def main(args, save_args=True, log_=True):
                   test_size=args.test_size,
                   additional_args=additional_args)
 
-    logger.debug(f'Loaded the model!')
     # TODO GPU support
     if args.train:
         model.train(print_=logger.info, comet_exp=exp)
@@ -317,6 +315,9 @@ def get_args():
 
     # evaluation
     parser.add_argument("--num_univariate_tests", type=int, default=100)
+    
+    # logging level
+    parser.add_argument("--verbose", type=int, default=0)
 
     return parser
 
