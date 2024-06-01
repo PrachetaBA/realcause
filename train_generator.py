@@ -64,7 +64,7 @@ def get_data(args):
 
 def get_distribution(args):
     """
-    args.dist_args should be a list of keyward:value pairs.
+    args.dist_args should be a list of keyword:value pairs.
 
       examples:
       1) ['ndim:5']

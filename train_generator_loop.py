@@ -62,6 +62,8 @@ if __name__ == "__main__":
     hp_name = HP.keys()
     hp_grid = HP.values()
 
+    print("Experiment name: ", exp_name)
+
     tested_hp_names = list()
     for n, g in zip(hp_name, hp_grid):
         if len(g) > 1:

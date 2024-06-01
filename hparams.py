@@ -13,7 +13,7 @@ HP = OrderedDict(
     # distribution of outcome (y)
     dist=['SigmoidFlow'],
     dist_args=[['ndim=10', 'base_distribution=normal'], ['ndim=5', 'base_distribution=uniform']],
-    atoms=[[0.0], []],  # list of floats, or empty list
+    atoms=[], #[[0.0], []],  # list of floats, or empty list
 
     # architecture
     n_hidden_layers=[1],
