@@ -219,4 +219,6 @@ base_datasets/
 save/
 
 # Newly created datasets
-acic2019_test/
+acic_2019*/
+nfl_datasets/
+
