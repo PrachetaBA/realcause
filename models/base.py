@@ -277,7 +277,7 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
         if untransform:
             y0 = self.y_transform.untransform(y0)
             y1 = self.y_transform.untransform(y1)
-
+      
         if deg_hetero == 1.0 and causal_effect_scale == None:  # don't change heterogeneity or causal effect size
             pass
         else:   # change degree of heterogeneity and/or causal effect size
@@ -292,9 +292,9 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
                 # further from its mean) to when deg_hetero = 0
                 further_y1 = np.greater(np.abs(y1 - y1_mean), np.abs(y0 - y0_mean))
                 further_y0 = np.logical_not(further_y1)
-                alpha = np.random.rand(len(y1))  # how far to shrink y1 toward y1_mean or y0 toward y0_mean
-                y1_limit = further_y1 * ((1 - alpha) * y1 + alpha * y1_mean)
-                y0_limit = further_y0 * ((1 - alpha) * y0 + alpha * y0_mean)
+                alpha = np.random.rand(len(y1)).reshape(-1, 1)  # how far to shrink y1 toward y1_mean or y0 toward y0_mean     
+                y1_limit = further_y1 * ((1 - alpha) * y1 + alpha * y1_mean).reshape(-1, 1)
+                y0_limit = further_y0 * ((1 - alpha) * y0 + alpha * y0_mean).reshape(-1, 1)
 
                 # shrink y1 (or y0) and calculate corresponding y0 or (y1) based on
                 scaled_y1 = (1 - deg_hetero) * y1_limit + deg_hetero * y1 * further_y1
@@ -307,9 +307,9 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
             # size of causal effect
             if causal_effect_scale is not None:
                 ate = (y1 - y0).mean()
-                y1 = causal_effect_scale / ate * y1
+                y1 = causal_effect_scale / ate * y1 
                 y0 = causal_effect_scale / ate * y0
-
+                
         if ret_counterfactuals:
             return y0, y1
         else:
