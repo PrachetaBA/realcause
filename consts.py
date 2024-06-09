@@ -1,4 +1,4 @@
-REALCAUSE_DATASETS_FOLDER = '/work/pi_jensen_umass_edu/pboddavarama_umass_edu/nfl/realcause/realcause_datasets'
-N_SAMPLE_SEEDS = 100
-N_AGG_SEEDS = 100
-ROOT_DIR = '/work/pi_jensen_umass_edu/pboddavarama_umass_edu/nfl/realcause' 
+N_SAMPLE_SEEDS = 50
+N_AGG_SEEDS = 1
+ROOT_DIR = '/work/pi_jensen_umass_edu/pboddavarama_umass_edu/nfl/realcause'
+REALCAUSE_DATASETS_FOLDER = f'{ROOT_DIR}/nfl_datasets/' # For LaLonde PSID1 datasets
