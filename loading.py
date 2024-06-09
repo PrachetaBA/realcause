@@ -10,6 +10,21 @@ from addict import Dict
 from train_generator import get_args, main
 from consts import REALCAUSE_DATASETS_FOLDER, N_SAMPLE_SEEDS
 
+def load_nfl_realcause_dataset(dataset, sample=0):
+    """Function to load all the datasets generated for the NFL project."""
+    valid_datasets = {'lalonde_psid'}
+    dataset = dataset.lower()
+    if dataset not in valid_datasets:
+        raise ValueError('Invalid dataset "{}" ... Valid datasets: {}'
+                         .format(dataset, valid_datasets))
+    if not isinstance(sample, int):
+        raise ValueError('sample must be an integer')
+    if 0 < sample >= N_SAMPLE_SEEDS:
+        raise ValueError('sample must be between 0 and {}'
+                         .format(N_SAMPLE_SEEDS - 1))
+        
+    dataset_file = Path(REALCAUSE_DATASETS_FOLDER) / '{}_sample{}.csv'.format(dataset, sample)
+    return pd.read_csv(dataset_file)
 
 def load_realcause_dataset(dataset, sample=0):
     valid_datasets = {'lalonde_cps', 'lalonde_psid', 'twins'}

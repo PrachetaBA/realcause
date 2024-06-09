@@ -15,7 +15,7 @@ from data.lalonde import load_lalonde
 from data.twins import load_twins
 from consts import REALCAUSE_DATASETS_FOLDER, N_SAMPLE_SEEDS, N_AGG_SEEDS
 
-FOLDER = Path(REALCAUSE_DATASETS_FOLDER + '/lalonde_psid_setting1')
+FOLDER = Path(REALCAUSE_DATASETS_FOLDER)
 FOLDER.mkdir(parents=True, exist_ok=True)
 
 psid_gen_model, args = load_from_folder(dataset='lalonde_psid1')
