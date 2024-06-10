@@ -13,9 +13,9 @@ from loading import load_from_folder
 
 from data.lalonde import load_lalonde
 from data.twins import load_twins
-from consts import REALCAUSE_DATASETS_FOLDER, N_SAMPLE_SEEDS, N_AGG_SEEDS
+from consts import REALCAUSE_DATASETS_FOLDER, BASE_DATASETS_FOLDER, N_SAMPLE_SEEDS, N_AGG_SEEDS
 
-FOLDER = Path(REALCAUSE_DATASETS_FOLDER)
+FOLDER = Path(f'{REALCAUSE_DATASETS_FOLDER}/lalonde_psid_setting3') # Change the path dependending on the dataset
 FOLDER.mkdir(parents=True, exist_ok=True)
 
 psid_gen_model, args = load_from_folder(dataset='lalonde_psid1')
@@ -27,13 +27,21 @@ psid_w, psid_t, psid_y = load_lalonde(obs_version='psid', data_format='pandas')
 # d_twins = load_twins(data_format='pandas')
 # twins_w, twins_t, twins_y = d_twins['w'], d_twins['t'], d_twins['y']
 
-gen_models = [psid_gen_model] #, cps_gen_model, twins_gen_model]
-w_dfs = [psid_w] #, cps_w, twins_w]
-names = ['lalonde_psid'] #, 'lalonde_cps', 'twins']
+gen_models = [psid_gen_model] #, [psid_gen_model, cps_gen_model, twins_gen_model]
+w_dfs = [psid_w] #[psid_w, cps_w, twins_w]
+names = ['lalonde_psid'] #['lalonde_psid', 'lalonde_cps', 'twins']
 
 # Compute the naive ATE for PSID
 psid_naive_ate = (psid_y[psid_t == 1].mean() - psid_y[psid_t == 0].mean())
 print('ATE (Naive Biased Estimate) PSID:', psid_naive_ate)
+
+# Compute the naive ATE estimate for CPS
+# cps_naive_ate = (cps_y[cps_t == 1].mean() - cps_y[cps_t == 0].mean())
+# print('ATE (Naive Biased Estimate) CPS:', cps_naive_ate)
+
+# Compute the naive ATE estimate for Twins
+# twins_naive_ate = (twins_y[twins_t == 1].mean() - twins_y[twins_t == 0].mean())
+# print('ATE (Naive Biased Estimate) Twins:', twins_naive_ate)
 
 dfs = []
 print('N samples:', N_SAMPLE_SEEDS)
@@ -50,12 +58,21 @@ for gen_model, w_df, name in zip(gen_models, w_dfs, names):
         end_seed = start_seed + N_AGG_SEEDS
         ates = []
         for seed in range(start_seed, end_seed):
-            # print('Seed:', seed)
+            # Setting 1: causal_effect_scale=1.0, deg_hetero=0.0
+            # w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
+            #                                   causal_effect_scale=1.0,  # Set to a value of 1.0 (scaled)
+            #                                   deg_hetero=0.0,       # Set to a value of 0.0 (no heterogeneity)
+            #                                   untransform=False) # Set to False so that the y values are left as is
+            # Setting 2: causal_effect_scale=1.0, deg_hetero=0.1, untransform=True
+            # w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
+            #                                     causal_effect_scale=1.0,  # Set to a value of 1.0 (scaled)
+            #                                     deg_hetero=0.1,       # Set to a value of 0.1 (some heterogeneity)
+            #                                     untransform=False) # Set to False so that the y values are left as is
+            # Setting 3: causal_effect_scale=1.0, deg_hetero=0.5, untransform=True
             w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
-                                              causal_effect_scale=1.0,  # Set to a value of 1.0 (scaled)
-                                              deg_hetero=0.0,       # Set to a value of 0.0 (no heterogeneity)
-                                              untransform=False) # Set to False so that the y values are left as is
-            
+                                                causal_effect_scale=1.0,  # Set to a value of 1.0 (scaled)
+                                                deg_hetero=0.5,       # Set to a value of 0.5 (high heterogeneity)
+                                                untransform=False)
             y = y0 * (1 - t) + y1 * t
             # w_errors = np.abs(w_orig - w)
             # assert w_errors.max() < 1e-2
