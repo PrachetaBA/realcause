@@ -3,7 +3,6 @@ by the original authors Neal et al.
 """
 
 # Import libraries
-import pandas as pd
 import numpy as np
 from numpy.testing import assert_approx_equal
 from pathlib import Path
