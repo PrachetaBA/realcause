@@ -2,7 +2,7 @@
 by the original authors Neal et al. 
 """
 
-# Import libraries 
+# Import libraries
 import pandas as pd
 import numpy as np
 from numpy.testing import assert_approx_equal
@@ -15,7 +15,8 @@ from data.lalonde import load_lalonde
 from data.twins import load_twins
 from consts import REALCAUSE_DATASETS_FOLDER, BASE_DATASETS_FOLDER, N_SAMPLE_SEEDS, N_AGG_SEEDS
 
-FOLDER = Path(f'{REALCAUSE_DATASETS_FOLDER}/lalonde_psid_setting3') # Change the path dependending on the dataset
+SETTING = 10
+FOLDER = Path(f'{REALCAUSE_DATASETS_FOLDER}/lalonde_psid_setting{SETTING}')
 FOLDER.mkdir(parents=True, exist_ok=True)
 
 psid_gen_model, args = load_from_folder(dataset='lalonde_psid1')
@@ -58,21 +59,48 @@ for gen_model, w_df, name in zip(gen_models, w_dfs, names):
         end_seed = start_seed + N_AGG_SEEDS
         ates = []
         for seed in range(start_seed, end_seed):
-            # Setting 1: causal_effect_scale=1.0, deg_hetero=0.0
-            # w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
-            #                                   causal_effect_scale=1.0,  # Set to a value of 1.0 (scaled)
-            #                                   deg_hetero=0.0,       # Set to a value of 0.0 (no heterogeneity)
-            #                                   untransform=False) # Set to False so that the y values are left as is
-            # Setting 2: causal_effect_scale=1.0, deg_hetero=0.1, untransform=True
-            # w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
-            #                                     causal_effect_scale=1.0,  # Set to a value of 1.0 (scaled)
-            #                                     deg_hetero=0.1,       # Set to a value of 0.1 (some heterogeneity)
-            #                                     untransform=False) # Set to False so that the y values are left as is
-            # Setting 3: causal_effect_scale=1.0, deg_hetero=0.5, untransform=True
-            w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
+            if SETTING == 1:
+                # Setting 1: causal_effect_scale=1.0, deg_hetero=0.0
+                w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
                                                 causal_effect_scale=1.0,  # Set to a value of 1.0 (scaled)
-                                                deg_hetero=0.5,       # Set to a value of 0.5 (high heterogeneity)
-                                                untransform=False)
+                                                deg_hetero=0.0,       # Set to a value of 0.0 (no heterogeneity)
+                                                untransform=False) # Set to False so that the y values are left as is
+            elif SETTING == 2:
+                # Setting 2: causal_effect_scale=10.0
+                w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
+                                                    causal_effect_scale=10.0)  # Set to a value of 10.0 (scaled)
+            elif SETTING == 3:
+                # Setting 3: causal_effect_scale=-10.0
+                w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
+                                                    causal_effect_scale=-10.0)
+            elif SETTING == 4:
+                # Setting 4: causal_effect_scale=-10.0, untransform=False (Leave the y values as is)
+                w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
+                                                    causal_effect_scale=-10.0, untransform=False)
+            elif SETTING == 5:
+                # Setting 5: Now we will examine the effect of deg_hetero, without specifying any causal effect
+                w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
+                                                    deg_hetero=0.5)
+            elif SETTING == 6:
+                # Setting 6: Examine the effect of setting the degree of heterogeneity to 0.5, and having untransform=False
+                w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
+                                                    deg_hetero=0.5, untransform=False)
+            elif SETTING == 7:
+                # Setting 7: Examines the effect of the overlap parameter
+                w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
+                                                    overlap=0.1)            
+            elif SETTING == 8:
+                # Setting 8: Examines the effect of the overlap parameter with a more skewed distribution
+                w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
+                                                    overlap=0.9)
+            elif SETTING == 9:
+                # Setting 9: Set overlap to 0.0001
+                w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
+                                                    overlap=0.0001) 
+            elif SETTING == 10:
+                # Setting 10: Set the causal effect to -10.0 and the deg_hetero to 0, transform the y values back to the original scale
+                w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
+                                                    causal_effect_scale=-10.0, deg_hetero=0.0, untransform=True)                       
             y = y0 * (1 - t) + y1 * t
             # w_errors = np.abs(w_orig - w)
             # assert w_errors.max() < 1e-2
