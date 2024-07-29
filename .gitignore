@@ -223,3 +223,6 @@ nfl_datasets/
 
 # Training models on new datasets
 results/
+
+# SLURM logs
+cluster/logs/

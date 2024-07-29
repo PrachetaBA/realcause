@@ -11,19 +11,18 @@ HP = OrderedDict(
     # overwrite_reload=[''],
 
     # distribution of outcome (y)
-    dist=['FactorialGaussian'],     # ['SigmoidFlow'],
-    dist_args=[[]],
-    # dist_args=[['ndim=10', 'base_distribution=normal']], # ['ndim=5', 'base_distribution=uniform']], # These arguments are when the model is SigmoidFlow
+    dist=['SigmoidFlow'],     # ['SigmoidFlow, FactorialGaussian'], see README for more options
+    dist_args=[['ndim=10', 'base_distribution=normal']], # ['ndim=5', 'base_distribution=uniform']], # These arguments are when the model is SigmoidFlow
     atoms=[[]],
     # atoms=[[0.0], [0.0]],  # list of floats, or empty list
 
     # architecture
     n_hidden_layers=[1],
-    dim_h=[16, 32, 64, 128],
+    dim_h=[16, 32, 64],
     activation=['ReLU'],
 
     # training params
-    lr=[0.01, 0.03, 0.05],
+    lr=[0.01, 0.05],
     batch_size=[32],
     num_epochs=[300],
     early_stop=[False],
