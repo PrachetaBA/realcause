@@ -9,6 +9,7 @@ from data.lbidd import load_lbidd
 from data.ihdp import load_ihdp
 from data.twins import load_twins
 from data.acic2019 import load_low_dim
+from data.apo import get_apo_data
 from models import TarNet, preprocess, TrainingParams, MLPParams, LinearModel, GPModel, TarGPModel, GPParams
 from models import distributions
 import helpers
@@ -56,8 +57,13 @@ def get_data(args):
         w, t, y = d["w"], d["t"], d["y"]
         ites = d['ites'] if 'ites' in d else None
         ate = d['ites'].mean() if 'ites' in d else None
+    elif data_name == 'acic':
+        d = get_apo_data(identifier='acic', data_format='numpy')
+        w, t, y = d['w'], d['t'], d['y']
+        ites = d['ites'] if 'ites' in d else None
+        ate = d['ites'].mean() if 'ites' in d else None
     else:
-        raise (Exception("dataset {} not implemented".format(args.data)))
+        raise ValueError(f"Dataset {data_name} not implemented")
 
     return ites, ate, w, t, y
 
