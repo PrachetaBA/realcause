@@ -329,4 +329,5 @@ def get_args():
 
 
 if __name__ == "__main__":
+    print(f'Starting to run {__file__} now.')
     main(get_args().parse_args())

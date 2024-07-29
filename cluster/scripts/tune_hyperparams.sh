@@ -12,4 +12,4 @@ module load miniconda/22.11.1-1
 conda activate /work/pi_jensen_umass_edu/pboddavarama_umass_edu/.conda/envs/realcause-exact
 
 cd /work/pi_jensen_umass_edu/pboddavarama_umass_edu/nfl/realcause/
-python -u -m train_generator.py $1
+python -u train_generator.py $@
