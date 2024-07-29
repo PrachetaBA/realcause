@@ -14,7 +14,7 @@ from data.lalonde import load_lalonde
 from data.twins import load_twins
 from consts import REALCAUSE_DATASETS_FOLDER, BASE_DATASETS_FOLDER, N_SAMPLE_SEEDS, N_AGG_SEEDS
 
-SETTING = 10
+SETTING = 12
 FOLDER = Path(f'{REALCAUSE_DATASETS_FOLDER}/lalonde_psid_setting{SETTING}')
 FOLDER.mkdir(parents=True, exist_ok=True)
 
@@ -99,7 +99,15 @@ for gen_model, w_df, name in zip(gen_models, w_dfs, names):
             elif SETTING == 10:
                 # Setting 10: Set the causal effect to -10.0 and the deg_hetero to 0, transform the y values back to the original scale
                 w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
-                                                    causal_effect_scale=-10.0, deg_hetero=0.0, untransform=True)                       
+                                                    causal_effect_scale=-10.0, deg_hetero=0.0, untransform=True)
+            elif SETTING == 11:
+                # Do the same as setting 10, but set the untransform to False
+                w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed,
+                                                      causal_effect_scale=-10.0, deg_hetero=0.0, untransform=False)
+            elif SETTING == 12: 
+                # Default settings for everything
+                w, t, (y0, y1) = gen_model.sample(w_orig, ret_counterfactuals=True, seed=seed)
+                                       
             y = y0 * (1 - t) + y1 * t
             # w_errors = np.abs(w_orig - w)
             # assert w_errors.max() < 1e-2
