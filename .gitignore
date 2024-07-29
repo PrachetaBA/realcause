@@ -219,6 +219,7 @@ base_datasets/
 save/
 
 # Newly created datasets
-acic_2019*/
 nfl_datasets/
 
+# Training models on new datasets
+results/

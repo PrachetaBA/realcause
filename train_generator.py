@@ -263,10 +263,10 @@ def get_args():
     parser = argparse.ArgumentParser(description="causal-gen")
 
     # dataset
-    parser.add_argument("--data", type=str, default="lalonde")  # TODO: fix choices
+    parser.add_argument("--data", type=str, default="lalonde")  
     parser.add_argument(
         "--dataroot", type=str, default="datasets"
-    )  # TODO: do we need it?
+    )
     parser.add_argument("--saveroot", type=str, default="save")
     parser.add_argument("--train", type=eval, default=True, choices=[True, False])
     parser.add_argument("--eval", type=eval, default=True, choices=[True, False])

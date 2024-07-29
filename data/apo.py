@@ -8,7 +8,7 @@ import numpy as np
 from consts import BASE_DATASETS_FOLDER
 from utilities import biasing_function
 
-def get_apo_data(identifier, data_format='numpy', **kwargs):
+def get_apo_data(identifier, data_format='numpy', return_ites=True, **kwargs):
     """Function to get an APO dataset that was used in the CausalEval paper.
     For now we only implement one specific ACIC dataset. 
     """
@@ -90,18 +90,22 @@ def get_apo_data(identifier, data_format='numpy', **kwargs):
             'counterfactual_outcome_1', 'counterfactual_outcome_0',
         ], inplace=True)
 
-        if data_format == 'numpy': 
+        if data_format == 'numpy':
             d = {
                 'w': osapo_df.drop(['treatment', 'outcome', 'ites'], axis='columns').to_numpy(),
                 't': osapo_df['treatment'].to_numpy(),
                 'y': osapo_df['outcome'].to_numpy()
             }
-        elif data_format == 'pandas': 
+            if return_ites: 
+                d['ites'] = osapo_df['ites'].to_numpy()
+        elif data_format == 'pandas':
             d = {
                 'w': osapo_df.drop(['treatment', 'outcome', 'ites'], axis='columns'),
                 't': osapo_df['treatment'],
                 'y': osapo_df['outcome']
             }
+            if return_ites: 
+                d['ites'] = osapo_df['ites']
         else:
             raise ValueError(f"Data format {data_format} not supported.")
         return d
