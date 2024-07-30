@@ -235,3 +235,11 @@ univariate evaluation metrics (i.e. p values & nll; by default there will be `--
 
 To re-run the causal estimator benchmarking in our paper, run [experiments/uai_experiments.py](https://github.com/bradyneal/causal-benchmark/blob/master/experiments/uai_experiments.py). To re-run our correlation analysis between causal and predictive metrics, run [experiments/uai_analysis.py](https://github.com/bradyneal/causal-benchmark/blob/master/experiments/uai_analysis.py).
  
+# GenCEval Paper related experiments
+To run experiments that relate to the generative causal evaluation paper, we do the following
+1. Add the corresponding source dataset to the `base_datasets` folder. 
+2. Add a `load` function with a corresponding file in the `data` folder. 
+3. Create a list of hyperparameters to tune the models in the `hyperparameters` folder. 
+4. Find the best model by running `train_generator_loop.py` with the corresponding hyperparameters. 
+```python train_generator_loop --exp_name results.<name> --hp_file hyperparameters.<name_of_hp_file>```
+5. Run `src.generate_datasets` to generate the datasets that correspond to the best model found in the previous step. 

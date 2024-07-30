@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=realcause-tune
-#SBATCH --mem=24000  # Requested Memory
-#SBATCH --partition=gypsum-m40      # Partition
+#SBATCH --mem=11000  # Requested Memory
+#SBATCH --partition=gypsum-1080ti # gypsum-m40      # Partition
 #SBATCH -t 12:00:00  # Job time limit
-#SBATCH --gres=gpu:m40:1
+#SBATCH --gres=gpu:1080ti:1
 #SBATCH -o cluster/logs/realcause_tune/job-%j.out
 #SBATCH -e cluster/logs/realcause_tune/job-%j.err
 
