@@ -226,3 +226,7 @@ results/
 
 # SLURM logs
 cluster/logs/
+
+# Hyperparameters
+hyperparameters/
+src/generate_datasets.py
