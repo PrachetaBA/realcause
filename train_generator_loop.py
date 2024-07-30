@@ -47,6 +47,11 @@ def run_exp(hp, local=False):
         " ".join(f"--{name} {param}" for name, param in zip(valid_hp_name, hp))
         + f" --saveroot={saveroot}"
     )
+    # Additionally, if we are using the ACIC dataset, we need to pass in the weight
+    # and intercept arguments that will be passed to train_generator. 
+    if hp_dict['data'] == ['acic']:
+        args += f" --weight {hp_dict['weight']} --intercept {hp_dict['intercept']}"
+    
     if local:
         # If running locally, use the following command
         cmd = f"python train_generator.py {args}"
@@ -56,7 +61,7 @@ def run_exp(hp, local=False):
     else:
         # Call the slurm script
         cmd = f"sbatch cluster/scripts/tune_hyperparams.sh {args}"
-        print(f'Running command: {cmd}')
+        print(f'Full command that is used to call train_generator: {cmd}')
         os.system(cmd)
 
 if __name__ == "__main__":
@@ -66,7 +71,7 @@ if __name__ == "__main__":
     parser.add_argument("--hp_file", type=str, default='hparams')
     
     arguments = parser.parse_args()
-    exp_name = arguments.exp_name
+    exp_name = f'results/{arguments.exp_name}'
     hp_file = arguments.hp_file
     
     HP = importlib.import_module(f'{hp_file}').HP

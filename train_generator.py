@@ -58,7 +58,9 @@ def get_data(args):
         ites = d['ites'] if 'ites' in d else None
         ate = d['ites'].mean() if 'ites' in d else None
     elif data_name == 'acic':
-        d = get_apo_data(identifier='acic', data_format='numpy')
+        weight = args.weight
+        intercept = args.intercept
+        d = get_apo_data(identifier='acic', data_format='numpy', weight=weight, intercept=intercept)
         w, t, y = d['w'], d['t'], d['y']
         ites = d['ites'] if 'ites' in d else None
         ate = d['ites'].mean() if 'ites' in d else None
@@ -324,6 +326,10 @@ def get_args():
     
     # logging level
     parser.add_argument("--verbose", type=int, default=0)
+    
+    # Args specific to the ACIC OSAPO dataset (to change the degree of overlap)
+    parser.add_argument('--weight', type=float, default=1)
+    parser.add_argument('--intercept', type=float, default=0)
 
     return parser
 

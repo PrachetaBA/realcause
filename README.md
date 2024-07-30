@@ -241,5 +241,5 @@ To run experiments that relate to the generative causal evaluation paper, we do 
 2. Add a `load` function with a corresponding file in the `data` folder. 
 3. Create a list of hyperparameters to tune the models in the `hyperparameters` folder. 
 4. Find the best model by running `train_generator_loop.py` with the corresponding hyperparameters. 
-```python train_generator_loop --exp_name results.<name> --hp_file hyperparameters.<name_of_hp_file>```
+```python train_generator_loop --exp_name <name> --hp_file hyperparameters.<name_of_hp_file>```
 5. Run `src.generate_datasets` to generate the datasets that correspond to the best model found in the previous step. 
