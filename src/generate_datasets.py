@@ -68,8 +68,10 @@ if __name__ == '__main__':
     parser.add_argument('--gen_datasets_folder', type=str,
                         help='Folder to save the generated datasets.')
     parser.add_argument('--best_model_path', type=str, help='Path to the best model.')
+    parser.add_argument('--weight', type=float, help='Weight for the covariates.', default=1)
+    parser.add_argument('--intercept', type=float, help='Intercept for the covariates.', default=0)
     args = parser.parse_args()
 
     gen_datasets_folder = f'{REALCAUSE_DATASETS_FOLDER}/{args.gen_datasets_folder}'
     best_model_path = f'results/{args.best_model_path}'
-    generate_datasets(gen_datasets_folder, best_model_path)
+    generate_datasets(gen_datasets_folder, best_model_path, weight=args.weight, intercept=args.intercept)

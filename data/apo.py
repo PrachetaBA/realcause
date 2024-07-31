@@ -8,7 +8,7 @@ import numpy as np
 from consts import BASE_DATASETS_FOLDER
 from utilities import biasing_function
 
-def get_apo_data(identifier, data_format='numpy', return_ites=True, **kwargs):
+def get_apo_data(identifier, data_format='numpy', return_ites=True, ret_counterfactual_outcomes=False, **kwargs):
     """Function to get an APO dataset that was used in the CausalEval paper.
     For now we only implement one specific ACIC dataset. 
     """
@@ -86,6 +86,8 @@ def get_apo_data(identifier, data_format='numpy', return_ites=True, **kwargs):
         }
         print(f'Information: {df_info}')
         # Drop the following columns from the dataframe
+        if ret_counterfactual_outcomes: 
+            return osapo_df
         osapo_df.drop(columns=[
             'counterfactual_outcome_1', 'counterfactual_outcome_0',
         ], inplace=True)
