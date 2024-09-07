@@ -43,7 +43,13 @@ def generate_datasets(gen_datasets_folder, best_model_path, **kwargs):
         end_seed = start_seed + N_AGG_SEEDS
         ates = []
         for seed in range(start_seed, end_seed):
-            _, t, (y0, y1) = model.sample(w_orig, ret_counterfactuals=True, seed=seed)
+            if 'te' in kwargs and kwargs['te'] is not None:
+                _, t, (y0, y1) = model.sample(w_orig, ret_counterfactuals=True,
+                                              causal_effect_scale=kwargs['te'],
+                                              untransform=False,
+                                              seed=seed)
+            else:
+                _, t, (y0, y1) = model.sample(w_orig, ret_counterfactuals=True, seed=seed)
             y = t * y1 + (1 - t) * y0
             df = df_w
             df['t'] = t
@@ -68,10 +74,14 @@ if __name__ == '__main__':
     parser.add_argument('--gen_datasets_folder', type=str,
                         help='Folder to save the generated datasets.')
     parser.add_argument('--best_model_path', type=str, help='Path to the best model.')
-    parser.add_argument('--weight', type=float, help='Weight for the covariates.', default=1)
-    parser.add_argument('--intercept', type=float, help='Intercept for the covariates.', default=0)
+    parser.add_argument('--dataset_id', type=str, help='Choice of dataset (ACIC, or ACIC19)', default=None)
+    parser.add_argument('--outcome_type', type=str, help='Outcome type for the ACIC19 dataset', default=None, required=False)
+    parser.add_argument('--weight', type=float, help='Weight for the covariates.', default=1, required=False)
+    parser.add_argument('--intercept', type=float, help='Intercept for the covariates.', default=0, required=False)
+    parser.add_argument('--te', type=float, help='Fixed Treatment effect.', default=None, required=False)
     args = parser.parse_args()
 
     gen_datasets_folder = f'{REALCAUSE_DATASETS_FOLDER}/{args.gen_datasets_folder}'
     best_model_path = f'results/{args.best_model_path}'
-    generate_datasets(gen_datasets_folder, best_model_path, weight=args.weight, intercept=args.intercept)
+    if args.
+    generate_datasets(gen_datasets_folder, best_model_path, weight=args.weight, intercept=args.intercept, te=args.te)
