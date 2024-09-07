@@ -8,7 +8,7 @@ import consts
 
 def load_low_dim(dataset_identifier, data_format='numpy', return_ites=True):
     """Loads the low dimensional datasets, specified by the dataset_identifier."""
-    df = pd.read_csv(f'{consts.ROOT_DIR}/base_datasets/low_dim_{dataset_identifier}.csv')
+    df = pd.read_csv(f'{consts.ROOT_DIR}/base_datasets/acic19_low_dim_{dataset_identifier}.csv')
     if data_format == 'numpy':
         d = {
             'w': df.drop(['A', 'Y', 'Y_cf'], axis='columns').to_numpy(),

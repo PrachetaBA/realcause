@@ -99,11 +99,18 @@ def researcher_specified_function_for_confounding(
     elif confound_func_params["para_form"] == "nonlinear":
         if len(confounding_vars) == 3:
             p_TC = expit(
-                confound_func_params["C1"] * data["C1"]
-                + confound_func_params["C2"] * data["C2"]
-                + confound_func_params["C3"] * data["C3"]
-                + confound_func_params["C1"] * data["C1"] * data["C2"]
+                confound_func_params["C1"] * data[confounding_vars[0]]
+                + confound_func_params["C2"] * data[confounding_vars[1]]
+                + confound_func_params["C3"] * data[confounding_vars[2]]
+                + confound_func_params["C1"] * data[confounding_vars[0]] * data[confounding_vars[1]]
             )
+            # Original version by authors had hardcoded names for the biasing covariates
+            # p_TC = expit(
+            #     confound_func_params["C1"] * data["C1"]
+            #     + confound_func_params["C2"] * data["C2"]
+            #     + confound_func_params["C3"] * data["C3"]
+            #     + confound_func_params["C1"] * data["C1"] * data["C2"]
+            # )
         elif len(confounding_vars) == 5:
             p_TC = expit(
                 confound_func_params["C1"] * data["C1"]
