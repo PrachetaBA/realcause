@@ -249,6 +249,8 @@ class MLP(BaseGenModel):
                     if comet_exp is not None:
                         comet_exp.log_metric('y p_value', uni_metrics_train["y_ks_pval"])
                         comet_exp.log_metric('y p_value val', uni_metrics_val["y_ks_pval"])
+                        comet_exp.log_metric('t p_value', uni_metrics_train["t_ks_pval"])
+                        comet_exp.log_metric('t p_value val', uni_metrics_val["t_ks_pval"])
                 
             if early_stop and self.patience is not None and c - self.best_val_idx > self.patience:
                 print_('early stopping criterion reached. Ending experiment.')
