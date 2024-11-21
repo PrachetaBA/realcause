@@ -10,6 +10,7 @@ from data.ihdp import load_ihdp
 from data.twins import load_twins
 from data.acic2019 import load_low_dim
 from data.apo import get_apo_data
+from data.synthetic_dgp import get_kunzel_data
 from models import TarNet, preprocess, TrainingParams, MLPParams, LinearModel, GPModel, TarGPModel, GPParams
 from models import distributions
 import helpers
@@ -18,6 +19,7 @@ import json
 # from utils import get_duplicates
 
 def get_data(args):
+    """Function to extract the specific data in the format required for Realcause."""
     data_name = args.data.lower()
     ate = None
     ites = None
@@ -40,7 +42,8 @@ def get_data(args):
         ate = d["ate"]
         ites = d['ites']
         if observe_counterfactuals:
-            w, t, y = d["obs_counterfactual_w"], d["obs_counterfactual_t"], d["obs_counterfactual_y"]
+            w, t, y = (d["obs_counterfactual_w"], d["obs_counterfactual_t"], 
+                       d["obs_counterfactual_y"])
         else:
             w, t, y = d["w"], d["t"], d["y"]
     elif data_name == "ihdp":
@@ -64,6 +67,16 @@ def get_data(args):
             d = get_apo_data(identifier='acic', data_format='numpy', weight=weight, intercept=intercept)
         elif args.biasing == 'nonlinear':
             d = get_apo_data(identifier='acic', data_format='numpy', num_of_biasing_covariates=3)
+        w, t, y = d['w'], d['t'], d['y']
+        ites = d['ites'] if 'ites' in d else None
+        ate = d['ites'].mean() if 'ites' in d else None
+    elif data_name == 'kunzel':
+        d = get_kunzel_data(dataset_id = int(args.dataset_identifier), # Should be 1-6 
+                            sample_size = int(args.sample_size), # Should be 500 or 2000
+                            data_format='numpy',
+                            return_ites=True,
+                            return_counterfactual_outcomes=False)
+        print(d['ites'])
         w, t, y = d['w'], d['t'], d['y']
         ites = d['ites'] if 'ites' in d else None
         ate = d['ites'].mean() if 'ites' in d else None
@@ -206,7 +219,7 @@ def main(args, save_args=True, log_=True):
         elif args.model_type == 'targp':
             Model = TarGPModel
         else:
-            raise Exception(f'model type {args.model_type} not implemented')
+            raise ValueError(f'model type {args.model_type} not implemented')
         logger.info('model type: linear model')
 
         kernel_t = gpytorch.kernels.__dict__[args.kernel_t]()
@@ -220,10 +233,10 @@ def main(args, save_args=True, log_=True):
                     f'gp_y_tw: {repr(network_params["gp_y_tw"])}')
         additional_args['num_tasks'] = args.num_tasks
     else:
-        raise Exception(f'model type {args.model_type} not implemented')
+        raise ValueError(f'model type {args.model_type} not implemented')
 
     if args.n_hidden_layers < 0:
-        raise Exception(f'`n_hidden_layers` must be nonnegative, got {args.n_hidden_layers}')
+        raise ValueError(f'`n_hidden_layers` must be nonnegative, got {args.n_hidden_layers}')
 
     if args.verbose:
         logger.debug(f'Initialized the network to be {network_params}')
@@ -246,7 +259,7 @@ def main(args, save_args=True, log_=True):
                   test_size=args.test_size,
                   additional_args=additional_args)
 
-    # TODO GPU support
+    # TODO: Add GPU support with Comet later
     if args.train:
         model.train(print_=logger.info, comet_exp=exp)
 
@@ -268,7 +281,7 @@ def get_args():
     parser = argparse.ArgumentParser(description="causal-gen")
 
     # dataset
-    parser.add_argument("--data", type=str, default="lalonde")  
+    parser.add_argument("--data", type=str, default="lalonde")
     parser.add_argument(
         "--dataroot", type=str, default="datasets"
     )
@@ -330,8 +343,11 @@ def get_args():
     # logging level
     parser.add_argument("--verbose", type=int, default=0)
     
+    # Arguments that are specific to certain dataset types (to allow an additional identifier)
+    parser.add_argument('--dataset_identifier', type=str, default=None, required=False)     # ACIC OSAPO to pick overlap, Kunzel to pick dataset ID
+    parser.add_argument('--sample_size', type=int, default=500, required=False)            # Kunzel to pick sample size 
+    
     # Args specific to the ACIC OSAPO dataset (to change the degree of overlap)
-    parser.add_argument('--dataset_identifier', type=str, default=None, required=False)
     parser.add_argument('--biasing', type=str, default='linear', choices=['linear', 'nonlinear'])
     parser.add_argument('--weight', type=float, default=1, required=False)
     parser.add_argument('--intercept', type=float, default=0, required=False)

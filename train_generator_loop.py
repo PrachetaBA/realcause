@@ -57,6 +57,8 @@ def run_exp(hp, local=False):
             args += " --biasing nonlinear"
     elif hp_dict['data'] == ['acic2019']:
         args += f" --dataset_identifier {hp_dict['dataset_identifier']}"
+    if hp_dict['data'] == ['kunzel']: 
+        args += f" --dataset_identifier {hp_dict['dataset_identifier']}"
     
     if local:
         # If running locally, use the following command
@@ -96,7 +98,7 @@ if __name__ == "__main__":
     # pool = Pool(arguments.num_workers)  # Create a multiprocessing Pool
     # pool.map(run_exp, all_hps)  # process data_inputs iterable with pool
 
-    # Run experiments sequentially
+    # Run experiments sequentially as separate jobs in the cluster
     for hp in all_hps:
         print(f'Running experiment with hyperparameters: {hp}')
         run_exp(hp)

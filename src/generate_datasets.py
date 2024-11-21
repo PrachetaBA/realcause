@@ -50,7 +50,7 @@ def generate_datasets(gen_datasets_folder, best_model_path, dataset_id,
     print(f'Shape of the original covariates is {w_orig.shape}')
     print(f'Original ITES: {ites}')
     print(f'Original ATE: {ate}')
-    return 
+
     dfs = []
     print(
         f'Generating {N_SAMPLE_SEEDS} datasets with {N_AGG_SEEDS} seeds for each samples'
