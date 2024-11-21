@@ -7,16 +7,27 @@ import random
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy.stats import wasserstein_distance
+from KDEpy import FFTKDE, NaiveKDE
+from scipy.spatial.distance import jensenshannon
 import seaborn as sns
 
 # Import other modules
 from data.acic2019 import load_low_dim
 from data.apo import get_apo_data
 
+# Find the hellinger_distance between two numpy arrays
+def hellinger_distance(p, q):
+    return np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q))**2)) / np.sqrt(2)
+
 # Define the constants that specify which dataset to visualize
 WEIGHT = 2.5
 INTERCEPT = -8.5
-# DATASET_NAME = f'osapo_acic_4_weight_{WEIGHT}_intercept_{INTERCEPT}'      # pylint: disable=f-string-without-interpolation
+# DATASET_NAME = f'osapo_acic_4_weight_{WEIGHT}_intercept_{INTERCEPT}'  # pylint: disable=f-string-without-interpolation
+# DATASETS_FOLDER = f'nfl_datasets/{DATASET_NAME}/'
+# PLOTS_FOLDER = f'plots/{DATASET_NAME}'
+# DATASET_NAME = 'osapo_acic_4_nonlinear_3cov'
+
 OUTCOME_TYPE = '1_polynomial'
 DATASET_NAME = f'acic_2019_{OUTCOME_TYPE}'
 
@@ -25,17 +36,15 @@ HYPERPARAM_PATH = 'dist_argsndim=10+base_distribution=uniform-dim_h64-lr0.001-ba
 DATASETS_FOLDER = f'nfl_datasets/{DATASET_NAME}/{HYPERPARAM_PATH}/'
 PLOTS_FOLDER = f'plots/{DATASET_NAME}/{HYPERPARAM_PATH}'
 
-
 # Load the source dataset
 if 'osapo_acic_4' in DATASET_NAME:
     if 'weight' in DATASET_NAME:
-        source_df = get_apo_data(
-            identifier='acic',
-            data_format='pandas',
-            num_of_biasing_covariates=1,
-            ret_counterfactual_outcomes=False,
-            weight=WEIGHT,
-            intercept=INTERCEPT)
+        source_df = get_apo_data(identifier='acic',
+                                 data_format='pandas',
+                                 num_of_biasing_covariates=1,
+                                 ret_counterfactual_outcomes=False,
+                                 weight=WEIGHT,
+                                 intercept=INTERCEPT)
     elif 'nonlinear' in DATASET_NAME:
         source_df = get_apo_data(identifier='acic',
                                  data_format='pandas',
@@ -60,8 +69,7 @@ plt.ylabel('Outcome')
 plt.title(
     'Distribution of the outcome variable for the two treatment groups in the source dataset'
 )
-plt.savefig(f'{PLOTS_FOLDER}/source_outcome_distribution.png',
-            dpi=150)
+plt.savefig(f'{PLOTS_FOLDER}/source_outcome_distribution.png', dpi=150)
 
 # Source plot 2: KDE plot of the outcome variable for the two treatment groups
 plt.figure()
@@ -145,7 +153,8 @@ if DATASET_NAME == 'acic_2019_1_polynomial':
     # Scale the gen_df columns to ensure they have the same min and max values as the source_df
     min_val = source_data['outcome'].min()
     max_val = source_data['outcome'].max()
-    gen_df['y'] = (gen_df['y'] - gen_df['y'].min()) / (gen_df['y'].max() - gen_df['y'].min()) * (max_val - min_val) + min_val
+    gen_df['y'] = (gen_df['y'] - gen_df['y'].min()) / (
+        gen_df['y'].max() - gen_df['y'].min()) * (max_val - min_val) + min_val
 sns.kdeplot(source_data[source_data['treatment'] == 0]['outcome'],
             label='Control (Source)',
             linestyle='--')
@@ -160,8 +169,7 @@ plt.legend()
 plt.title(
     'KDE plot of outcome variable for the two \n treatment groups for Realcause vs. source dataset'
 )
-plt.savefig(f'{PLOTS_FOLDER}/observed_outcome_kde.png',
-            dpi=150)
+plt.savefig(f'{PLOTS_FOLDER}/observed_outcome_kde.png', dpi=150)
 
 # Plot 5: Plot of the treatment variable for the source data vs. one of the generated datasets
 plt.figure()
@@ -175,26 +183,51 @@ plt.title(
 )
 plt.savefig(f'{PLOTS_FOLDER}/treatment_kde.png', dpi=150)
 
+# # Find the Hellinger distance between the observed outcome distributions for both the control and treatment groups
+# # for all 50 of the generated datasets, then find the mean JSD
+# hd_observed_outcome_control = []
+# hd_observed_outcome_treatment = []
+# hd_treatment = []
+# for df_num in range(50):
+#     gen_df = pd.read_csv(DATASETS_FOLDER + 'dataset_' + str(df_num) + '.csv',
+#                          index_col=0)
+#     # Compute the KDE distribution for the outcome variable for the control and treatment groups
+#     x, y = NaiveKDE(bw='ISJ').fit(source_data[source_data['treatment'] == 0]['outcome']).evaluate()
+#     x_gen, y_gen = NaiveKDE(bw='ISJ').fit(gen_df[gen_df['t'] == 0]['y']).evaluate()
+#     hd_observed_outcome_control.append(hellinger_distance(y, y_gen))
+
+#     x, y = NaiveKDE(bw=0.5, kernel='epa').fit(source_data[source_data['treatment'] == 1]['outcome']).evaluate()
+#     x_gen, y_gen = NaiveKDE(bw=0.5, kernel='epa').fit(gen_df[gen_df['t'] == 1]['y']).evaluate()
+#     hd_observed_outcome_treatment.append(hellinger_distance(y, y_gen))
+
+#     # Compute the Hellinger distance between the treatment variable for the source and generated datasets
+#     hd_treatment.append(hellinger_distance(source_data['treatment'],
+#                                              gen_df['t']))
+# print('HD observed outcomes: ', hd_observed_outcome)
+# print(f'Mean Hellinger between observed outcomes: {np.mean(hd_observed_outcome)}')
+# print(f'Mean Hellinger between treatment variable: {np.mean(hd_treatment)}')
+
 if COUNTERFACTUAL_OUTCOMES:
     if 'osapo_acic_4' in DATASET_NAME:
         if 'weight' in DATASET_NAME:
             # Changes the source dataframe
             source_df = get_apo_data(identifier='acic',
-                                    data_format='pandas',
-                                    num_of_biasing_covariates=1,
-                                    ret_counterfactual_outcomes=True,
-                                    weight=WEIGHT,
-                                    intercept=INTERCEPT)
-        else: 
+                                     data_format='pandas',
+                                     num_of_biasing_covariates=1,
+                                     ret_counterfactual_outcomes=True,
+                                     weight=WEIGHT,
+                                     intercept=INTERCEPT)
+        else:
             source_df = get_apo_data(identifier='acic',
-                                    data_format='pandas',
-                                    num_of_biasing_covariates=3,
-                                    ret_counterfactual_outcomes=True)
+                                     data_format='pandas',
+                                     num_of_biasing_covariates=3,
+                                     ret_counterfactual_outcomes=True)
         # Plot 6: Plot the counterfactual outcomes for the source data for any generated dataset
         df_num = random.randint(0, 49)
         print(f'Randomly picked dataset number: {df_num}')
-        gen_df = pd.read_csv(DATASETS_FOLDER + 'dataset_' + str(df_num) + '.csv',
-                            index_col=0)
+        gen_df = pd.read_csv(DATASETS_FOLDER + 'dataset_' + str(df_num) +
+                             '.csv',
+                             index_col=0)
         plt.figure()
         sns.kdeplot(
             source_df[source_df['treatment'] == 0]['counterfactual_outcome_1'],
@@ -211,39 +244,42 @@ if COUNTERFACTUAL_OUTCOMES:
         plt.xlabel('Counterfactual Outcome')
         plt.ylabel('Density')
         plt.legend()
-        plt.title('KDE plot of counterfactual outcomes for the generated datasets')
-        plt.savefig(f'{PLOTS_FOLDER}/counterfactual_outcome_kde.png',
-                    dpi=150)
+        plt.title(
+            'KDE plot of counterfactual outcomes for the generated datasets')
+        plt.savefig(f'{PLOTS_FOLDER}/counterfactual_outcome_kde.png', dpi=150)
 
     elif 'acic_2019' in DATASET_NAME:
         # Change this function to include a way to return counterfactual outcomes
         df = load_low_dim(dataset_identifier=OUTCOME_TYPE,
-                                data_format='pandas',
-                                return_counterfactual_outcomes=True)
-        # Convert dict to dataframe 
+                          data_format='pandas',
+                          return_counterfactual_outcomes=True)
+        # Convert dict to dataframe
         source_df = df['w']
         # Add treatment and outcome columns
         source_df['treatment'] = df['t']
         source_df['outcome'] = df['y']
         source_df['counterfactual_outcome_0'] = df['counterfactual_outcomes_0']
         source_df['counterfactual_outcome_1'] = df['counterfactual_outcomes_1']
-        
+
         df_num = random.randint(0, 49)
         print(f'Randomly picked dataset number: {df_num}')
-        gen_df = pd.read_csv(DATASETS_FOLDER + 'dataset_' + str(df_num) + '.csv',
-                            index_col=0)
-        
+        gen_df = pd.read_csv(DATASETS_FOLDER + 'dataset_' + str(df_num) +
+                             '.csv',
+                             index_col=0)
+
         # Scale the following columns to ensure they have the same min and max values
         min_val = source_df['counterfactual_outcome_0'].min()
         max_val = source_df['counterfactual_outcome_0'].max()
-        gen_df['y0'] = (gen_df['y0'] - gen_df['y0'].min()) / (gen_df['y0'].max() - gen_df['y0'].min()) * (max_val - min_val) + min_val
-        
+        gen_df['y0'] = (gen_df['y0'] - gen_df['y0'].min()) / (gen_df['y0'].max(
+        ) - gen_df['y0'].min()) * (max_val - min_val) + min_val
+
         min_val_1 = source_df['counterfactual_outcome_1'].min()
         max_val_1 = source_df['counterfactual_outcome_1'].max()
-        gen_df['y1'] = (gen_df['y1'] - gen_df['y1'].min()) / (gen_df['y1'].max() - gen_df['y1'].min()) * (max_val_1 - min_val_1) + min_val_1
-        
+        gen_df['y1'] = (gen_df['y1'] - gen_df['y1'].min()) / (gen_df['y1'].max(
+        ) - gen_df['y1'].min()) * (max_val_1 - min_val_1) + min_val_1
+
         # Plot 6: Plot the counterfactual outcomes for the source data for any generated dataset
-        plt.figure()    
+        plt.figure()
         sns.kdeplot(
             source_df[source_df['treatment'] == 0]['counterfactual_outcome_1'],
             label='Control (Source Counterfactual)',
@@ -259,7 +295,26 @@ if COUNTERFACTUAL_OUTCOMES:
         plt.xlabel('Counterfactual Outcome')
         plt.ylabel('Density')
         plt.legend()
-        plt.title('KDE plot of counterfactual outcomes for the generated datasets')
-        plt.savefig(f'{PLOTS_FOLDER}/counterfactual_outcome_kde.png',
-                    dpi=150)
-            
+        plt.title(
+            'KDE plot of counterfactual outcomes for the generated datasets')
+        plt.savefig(f'{PLOTS_FOLDER}/counterfactual_outcome_kde.png', dpi=150)
+
+# For all the generated datasets, find the JSD between the counterfactual outcomes
+# for the control and treatment groups
+# hd_counterfactual_outcome = []
+# for df_num in range(1):
+#     gen_df = pd.read_csv(DATASETS_FOLDER + 'dataset_' + str(df_num) + '.csv',
+#                          index_col=0)
+#     # Combine all the counterfactual outcomes for the control and treatment groups
+#     source_cf_outcomes = np.concatenate(
+#         (source_df[source_df['treatment'] == 0]['counterfactual_outcome_1'],
+#          source_df[source_df['treatment'] == 1]['counterfactual_outcome_0']))
+#     gen_cf_outcomes = np.concatenate(
+#         (gen_df[gen_df['t'] == 0]['y1'], gen_df[gen_df['t'] == 1]['y0']))
+#     print(f'Source cf outcomes: {source_cf_outcomes}')
+#     print(f'Gen cf outcomes: {gen_cf_outcomes}')
+#     hd_counterfactual_outcome.append(
+#         hellinger_distance(source_cf_outcomes, gen_cf_outcomes))
+# print(
+#     f'Mean Hellinger distance between counterfactual outcomes: {np.mean(hd_counterfactual_outcome)}'
+# )

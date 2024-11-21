@@ -10,6 +10,14 @@ from addict import Dict
 from train_generator import get_args, main
 from consts import REALCAUSE_DATASETS_FOLDER, N_SAMPLE_SEEDS
 
+def load_generated_dataset(dataset_identifier, hyperparameter_str, sample=0):
+    """Function to load the datasets generated using the ACIC as the base dataset."""
+    if hyperparameter_str:
+        dataset_file = Path(REALCAUSE_DATASETS_FOLDER) / dataset_identifier / hyperparameter_str / f'dataset_{sample}.csv'
+    else:
+        dataset_file = Path(REALCAUSE_DATASETS_FOLDER) / dataset_identifier / f'dataset_{sample}.csv'
+    return pd.read_csv(dataset_file)
+
 def load_nfl_realcause_dataset(dataset, dataset_identifier, sample=0):
     """Function to load all the datasets generated for the NFL project."""
     valid_datasets = {'lalonde_psid', 'lalonde_cps', 'twins'}
