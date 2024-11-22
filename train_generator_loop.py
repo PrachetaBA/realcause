@@ -1,12 +1,16 @@
+"""Run hyperparameter tuning as separate jobs for each cluster. 
+
+This code is manual, does not use comet ML."""
 import os
 import argparse
 import subprocess
 from itertools import product
-from multiprocessing import Pool
+# from multiprocessing import Pool
 import importlib
 
 
 def run_exp(hp, local=False):
+    """Run the experiment with the specific hyperparameters."""
     print(f'Running experiment with hyperparameters: {hp}')
     # naming the experiment folder
     hp_dict = {name: p for name, p in zip(hp_name, hp)}
@@ -57,9 +61,9 @@ def run_exp(hp, local=False):
             args += " --biasing nonlinear"
     elif hp_dict['data'] == ['acic2019']:
         args += f" --dataset_identifier {hp_dict['dataset_identifier']}"
-    if hp_dict['data'] == ['kunzel']: 
+    if hp_dict['data'] == ['kunzel']:
         args += f" --dataset_identifier {hp_dict['dataset_identifier']}"
-    
+
     if local:
         # If running locally, use the following command
         cmd = f"python train_generator.py {args}"
@@ -68,7 +72,8 @@ def run_exp(hp, local=False):
         print(cmd)
     else:
         # Call the slurm script
-        # cmd = f"sbatch cluster/scripts/tune_hyperparams.sh {args}"      # If using GPU, code has to be modified for this.
+        # If using GPU, code has to be modified for this.
+        # cmd = f"sbatch cluster/scripts/tune_hyperparams.sh {args}"
         cmd = f"sbatch cluster/scripts/tune_hyperparams_cpu.sh {args}"  # Uses CPU by default
         print(f'Full command that is used to call train_generator: {cmd}')
         os.system(cmd)
