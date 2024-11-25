@@ -242,4 +242,14 @@ To run experiments that relate to the generative causal evaluation paper, we do 
 3. Create a list of hyperparameters to tune the models in the `hyperparameters` folder. 
 4. Find the best model by running `train_generator_loop.py` with the corresponding hyperparameters. 
 ```python train_generator_loop --exp_name <name> --hp_file hyperparameters.<name_of_hp_file>```
-5. Run `python -m src.generate_datasets` with the necessary arguments to generate the datasets that correspond to the best model found in the previous step. For the best model path, give the path '<dataset_id>/<best_hyp>'.  
+5. Run `python -m src.generate_datasets` with the necessary arguments to generate the datasets that correspond to the best model found in the previous step. For the best model path, give the path '<dataset_id>/<best_hyp>'. For example, ```python -m src.generate_datasets --gen_datasets_folder kunzel_2_ss_500 --best_model_path kunzel_2_ss_500/default --data kunzel --dataset_identifier 2 --sample_size 500```
+
+### Automated hyperparameter optimization using Comet ML 
+1. Define the space of hyperparameters in `train_generator_comet.py`. Ensure that you check the following variables - `hps, spec, optimizer_config, model_parameters` and corresponding variables which are then referenced later in the script. If moving any hyperparameters from `hps` to `model_parameters`, their corresponding references have to be changed later. 
+2. Call the script `tune_hyperparameters_comet.sh` in the following manner -
+```sbatch cluster/scripts/tune_hyperparameters_comet.sh --data <data_name> --dataset_identifier <id> --sample_size <ss> --saveroot <results/exp_name>``` and include any other corresponding arguments. 
+3. Once the correct set of hyperparameters have been manually examined and decided, create a HP file in hyperparameters called `exp_name.py` in the folder `hyperparameters`. This file can then be used to learn a model - using the `train_generator.py` script. An example call is given below. 
+```python train_generator.py --data <data_name> <all other args>```. In this script, the `eval` function is set to True, which results in a model and summary being saved in the corresponding `results` folder. 
+4. The final set of hyperparameters/model can then be used to generate data using the data generation script. 
+
+Academic users have access to a free comet ML account. The API key must be changed according to the user to use Comet ML. 

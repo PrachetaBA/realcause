@@ -158,6 +158,8 @@ def main(args, save_args=True, log_=True):
     logger = helpers.Logging(args.saveroot, "log.txt", log_)
     logger.info(args)
 
+    comet_exp_name = f"{args.saveroot.split('/')[-1]}"
+
     # save args
     if save_args:
         with open(os.path.join(args.saveroot, "args.txt"), "w") as file:
@@ -177,7 +179,7 @@ def main(args, save_args=True, log_=True):
     logger.info(f"ate: {ate}")
 
     # comet login - initialize the project
-    comet_ml.login(project_name="kunzel_2_ss_500",
+    comet_ml.login(project_name=f"realcause-{comet_exp_name}",
                    api_key="FZHDy6k24i2GOKtzc85PjAPNY")
     
     # Read the hyperparameter file and create the optimizer, if we have only one set of
@@ -187,7 +189,6 @@ def main(args, save_args=True, log_=True):
     hps = {
         "atoms": [],
         "model_type": "tarnet",
-        "n_hidden_layers": 1,
         "activation": "ReLU",
         "num_epochs": 100,
         "patience": None,
@@ -197,9 +198,9 @@ def main(args, save_args=True, log_=True):
         "grad_norm": "inf",
         "w_transform": "Standardize",
         "y_transform": "Normalize",
-        "train_prop": 0.5,
+        "train_prop": 0.7,
         "val_prop": 0.1,
-        "test_prop": 0.4,
+        "test_prop": 0.2,
         "seed": 123,
         "num_univariate_tests": 30,
         "kernel_t": "RBFKernel",
@@ -215,8 +216,12 @@ def main(args, save_args=True, log_=True):
         },
         "dist_args": {
             "type": "categorical", 
-            "values": ["['ndim=10', 'base_distribution=normal']", 
+            "values": ["['ndim=10', 'base_distribution=normal']",
                        "['ndim=10', 'base_distribution=uniform']"]
+        },
+        "n_hidden_layers": {
+            "type": "discrete",
+            "values": [1,2,3],
         },
         "dim_h": {
             "type": "discrete",
@@ -226,7 +231,7 @@ def main(args, save_args=True, log_=True):
             "type": "float",
             "scaling_type": "loguniform",
             "min": 1e-5,
-            "max": 0.1
+            "max": 0.01
         },
         "batch_size": {
             "type": "discrete",
@@ -234,9 +239,9 @@ def main(args, save_args=True, log_=True):
         }
     }
     spec = {
-        "maxCombo": 10,
-        "objective": "minimize",
-        "metric": "loss_val",
+        "maxCombo": 30,
+        "objective": "maximize",    # "minimize, maximize"
+        "metric": "y p_value val",       # "loss_val, y p_value val, t p_value val"
         "minSampleSize": 500,
         "retryLimit": 10,
         "retryAssignLimit": 0,
@@ -246,9 +251,19 @@ def main(args, save_args=True, log_=True):
         "algorithm": "bayes",
         "spec": spec,
         "parameters": model_parameters,
-        "name": "Kunzel 2 (500) BayesOpt",
-        "trials": 3,
+        "name": f"BayesOpt_{comet_exp_name}",
+        "trials": 1,
     }
+    
+    # For the record, let us print the full set of hyperparameters and fixed parameters that 
+    # are used for training Realcause generator. 
+    logger.info('#' * 80)
+    logger.info('Recording the set of fixed and variable hyperparameters used for training the model.')
+    logger.info(f'Fixed hyperparameters: {hps}')
+    logger.info(f'Variable hyperparameters: {model_parameters}')
+    logger.info(f'Optimizer specification: {spec}')
+    logger.info(f'Optimizer configuration: {optimizer_config}')
+    logger.info('#' * 80)
     
     # Initialize the optimizer 
     opt = comet_ml.Optimizer(config=optimizer_config)
@@ -284,7 +299,8 @@ def main(args, save_args=True, log_=True):
 
             logger.info('model type: tarnet')
             mlp_params = MLPParams(
-                n_hidden_layers=hps['n_hidden_layers'],
+                # n_hidden_layers=hps['n_hidden_layers'],   # Fixed
+                n_hidden_layers=experiment.get_parameter("n_hidden_layers"),    # Variable
                 dim_h=experiment.get_parameter("dim_h"),
                 activation=getattr(torch.nn, hps['activation'])(),
             )
@@ -321,9 +337,6 @@ def main(args, save_args=True, log_=True):
             additional_args['num_tasks'] = hps['num_tasks']
         else:
             raise ValueError(f'model type {hps["model_type"]} not implemented')
-
-        if hps['n_hidden_layers'] < 0:
-            raise ValueError(f'`n_hidden_layers` must be nonnegative, got {hps["n_hidden_layers"]}')
 
         if args.verbose:
             logger.debug(f'Initialized the network to be {network_params}')
@@ -374,7 +387,7 @@ def get_args():
     )
     parser.add_argument("--saveroot", type=str, default="save")
     parser.add_argument("--train", type=eval, default=True, choices=[True, False])
-    parser.add_argument("--eval", type=eval, default=True, choices=[True, False])
+    parser.add_argument("--eval", type=eval, default=False, choices=[True, False])
     parser.add_argument('--overwrite_reload', type=str, default='',
                         help='secondary folder name of an experiment')  # TODO: for model loading
     # logging level
