@@ -1,0 +1,20 @@
+// Configuration file to provide arguments to the visualization script. 
+{
+    "dataset_name": "kunzel",
+    "dataset_folder": "nfl_datasets",
+    "plots_folder": "plots",
+    "hyperparameter_path": "default",
+    "plot_counterfactuals": true, 
+    // dataset specific configurations 
+    "dataset_specific_config": {
+        // Kunzel 
+        "dataset_identifier": 2,
+        "sample_size": 500, 
+        // ACIC linear 
+        "biasing": "linear",    // linear or nonlinear
+        "weight": 2.5, 
+        "intercept": -8.5,
+        // ACIC (outcome type)
+        "outcome_type": "1_polynomial"
+    }
+}
