@@ -75,6 +75,13 @@ def load_lalonde(rct_version=DEHEJIA_WAHBA, obs_version=PSID, rct=False, data_fo
         df = combined_df
     if data_format.lower() == PANDAS_SINGLE:
         return df
+    elif data_format == 'pandas': 
+        d = {
+            'w': df.drop(['data_id', 'treat', 're78'], axis='columns'),
+            't': df['treat'],
+            'y': df['re78']
+        }
+        return d
     else:
         w = df.drop(['data_id', 'treat', 're78'], axis='columns')
         t = df['treat']

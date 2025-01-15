@@ -29,12 +29,18 @@ def get_data(args):
     data_name = args.data.lower()
     ate = None
     ites = None
-    if data_name == "lalonde" or data_name == "lalonde_psid" or data_name == "lalonde_psid1":
+    if data_name == "lalonde" or data_name == "lalonde_psid":
         w, t, y = load_lalonde(obs_version="psid", dataroot=args.dataroot)
+    elif data_name == "lalonde_psid1":
+        w, t, y = load_lalonde(obs_version="psid1", dataroot=args.dataroot)
     elif data_name == "lalonde_rct":
         w, t, y = load_lalonde(rct=True, dataroot=args.dataroot)
-    elif data_name == "lalonde_cps" or data_name == "lalonde_cps1":
+    elif data_name == "lalonde_dw": 
+        w, t, y = load_lalonde(rct_version='dw', rct=True, dataroot=args.dataroot)
+    elif data_name == "lalonde_cps": 
         w, t, y = load_lalonde(obs_version="cps", dataroot=args.dataroot)
+    elif data_name == "lalonde_cps1":
+        w, t, y = load_lalonde(obs_version="cps1", dataroot=args.dataroot)
     elif data_name.startswith("lbidd"):
         # Valid string formats: lbidd_<link>_<n> and lbidd_<link>_<n>_counterfactual
         # Valid <link> options: linear, quadratic, cubic, exp, and log
@@ -78,7 +84,7 @@ def get_data(args):
         ate = d['ites'].mean() if 'ites' in d else None
     elif data_name == 'kunzel':
         d = get_kunzel_data(dataset_id = int(args.dataset_identifier), # Should be 1-6 
-                            sample_size = int(args.sample_size), # Should be 500 or 2000
+                            sample_size = int(args.sample_size), 
                             data_format='numpy',
                             return_ites=True,
                             return_counterfactual_outcomes=False)
@@ -191,16 +197,16 @@ def main(args, save_args=True, log_=True):
         "model_type": "tarnet",
         "activation": "ReLU",
         "num_epochs": 100,
-        "patience": None,
-        "early_stop": True,
+        "patience": 10,
+        "early_stop": False,
         "ignore_w": False,
         "test_size": None,
         "grad_norm": "inf",
         "w_transform": "Standardize",
         "y_transform": "Normalize",
-        "train_prop": 0.7,
+        "train_prop": 0.6,
         "val_prop": 0.1,
-        "test_prop": 0.2,
+        "test_prop": 0.3,
         "seed": 123,
         "num_univariate_tests": 30,
         "kernel_t": "RBFKernel",
@@ -216,33 +222,33 @@ def main(args, save_args=True, log_=True):
         },
         "dist_args": {
             "type": "categorical", 
-            "values": ["['ndim=10', 'base_distribution=normal']",
-                       "['ndim=10', 'base_distribution=uniform']"]
+            "values": ["['ndim=5', 'base_distribution=normal']",
+                       "['ndim=5', 'base_distribution=uniform']"]
         },
         "n_hidden_layers": {
             "type": "discrete",
-            "values": [1,2,3],
+            "values": [1, 3, 5],
         },
         "dim_h": {
             "type": "discrete",
-            "values": [64, 256, 512],
+            "values": [8, 16, 32, 64],
         },
         "lr": {
             "type": "float",
             "scaling_type": "loguniform",
             "min": 1e-5,
-            "max": 0.01
+            "max": 1e-1,
         },
         "batch_size": {
             "type": "discrete",
-            "values": [16, 32],
+            "values": [8, 16],
         }
     }
     spec = {
-        "maxCombo": 30,
+        "maxCombo": 20,
         "objective": "maximize",    # "minimize, maximize"
         "metric": "y p_value val",       # "loss_val, y p_value val, t p_value val"
-        "minSampleSize": 500,
+        "minSampleSize": 50,
         "retryLimit": 10,
         "retryAssignLimit": 0,
     }

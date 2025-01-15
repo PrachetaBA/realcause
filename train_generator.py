@@ -23,12 +23,18 @@ def get_data(args):
     data_name = args.data.lower()
     ate = None
     ites = None
-    if data_name == "lalonde" or data_name == "lalonde_psid" or data_name == "lalonde_psid1":
+    if data_name == "lalonde" or data_name == "lalonde_psid":
         w, t, y = load_lalonde(obs_version="psid", dataroot=args.dataroot)
+    elif data_name == "lalonde_psid1":
+        w, t, y = load_lalonde(obs_version="psid1", dataroot=args.dataroot)
     elif data_name == "lalonde_rct":
         w, t, y = load_lalonde(rct=True, dataroot=args.dataroot)
-    elif data_name == "lalonde_cps" or data_name == "lalonde_cps1":
+    elif data_name == "lalonde_dw": 
+        w, t, y = load_lalonde(rct_version='dw', rct=True, dataroot=args.dataroot)
+    elif data_name == "lalonde_cps": 
         w, t, y = load_lalonde(obs_version="cps", dataroot=args.dataroot)
+    elif data_name == "lalonde_cps1":
+        w, t, y = load_lalonde(obs_version="cps1", dataroot=args.dataroot)
     elif data_name.startswith("lbidd"):
         # Valid string formats: lbidd_<link>_<n> and lbidd_<link>_<n>_counterfactual
         # Valid <link> options: linear, quadratic, cubic, exp, and log

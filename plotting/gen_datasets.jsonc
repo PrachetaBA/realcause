@@ -8,8 +8,8 @@
     // dataset specific configurations 
     "dataset_specific_config": {
         // Kunzel 
-        "dataset_identifier": 2,
-        "sample_size": 500, 
+        "dataset_identifier": 6,
+        "sample_size": 2000, 
         // ACIC linear 
         "biasing": "linear",    // linear or nonlinear
         "weight": 2.5, 

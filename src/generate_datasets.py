@@ -6,6 +6,7 @@ ACIC 19 as well as all the newer datasets (Kunzel, Curth, Kennedy)."""
 
 # Import libraries
 from pathlib import Path
+import pandas as pd
 import argparse
 import numpy as np
 from consts import REALCAUSE_DATASETS_FOLDER, N_AGG_SEEDS, N_SAMPLE_SEEDS
@@ -13,6 +14,7 @@ from loading import load_gen
 from data.apo import get_apo_data
 from data.acic2019 import load_low_dim
 from data.synthetic_dgp import get_kunzel_data
+from data.lalonde import load_lalonde
 
 def generate_datasets(gen_datasets_folder, best_model_path, data,
                       **kwargs):
@@ -51,7 +53,11 @@ def generate_datasets(gen_datasets_folder, best_model_path, data,
                             data_format='pandas',
                             return_ites=True,
                             return_counterfactual_outcomes=True)
-
+    elif data == 'lalonde_dw':
+        d = load_lalonde(rct_version='dw', rct=True, dataroot='datasets', data_format='pandas')
+    elif data == 'lalonde_psid':
+        d = load_lalonde(obs_version="psid", dataroot='datasets', data_format='pandas')
+                  
     df_w, _, _ = d['w'], d['t'], d['y']
     ites = d['ites'] if 'ites' in d else None
     ate = d['ites'].mean() if 'ites' in d else None
@@ -59,7 +65,7 @@ def generate_datasets(gen_datasets_folder, best_model_path, data,
     print(f'Shape of the original covariates is {w_orig.shape}')
     print(f'Original ITES: {ites}')
     print(f'Original ATE: {ate}')
-
+    
     dfs = []
     print(
         f'Generating {N_SAMPLE_SEEDS} datasets with {N_AGG_SEEDS} seeds for each samples'
@@ -113,15 +119,16 @@ if __name__ == '__main__':
                         help='Path to the best model.')
     parser.add_argument('--data',
                         type=str,
-                        choices=['osapo_acic_4', 'acic2019', 'kunzel'],
-                        help='Choice of dataset (osapo_acic_4, acic2019, kunzel)',
+                        choices=['osapo_acic_4', 'acic2019', 'kunzel', 'lalonde_dw', 'lalonde_psid'],
+                        help='Choice of dataset (osapo_acic_4, acic2019, kunzel, lalonde_dw, lalonde_psid)',
                         default=None)
 
     # Specific to the kunzel dataset
     parser.add_argument('--dataset_identifier',
                         type=str,
                         help='Additional identifier for the dataset',
-                        default=None)
+                        default=None,
+                        required=False)
     parser.add_argument('--sample_size',
                         type=int,
                         help='Sample size for the kunzel dataset',
@@ -179,5 +186,9 @@ if __name__ == '__main__':
                           data = args.data,
                           dataset_identifier=args.dataset_identifier,
                           sample_size=args.sample_size)
+    elif args.data == 'lalonde_dw' or args.data == 'lalonde_psid':
+        generate_datasets(gen_datasets_folder,
+                          best_model_path,
+                          data=args.data)
 
     print('Done!')
