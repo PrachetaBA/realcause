@@ -50,6 +50,7 @@ def generate_plots(config):
     COUNTERFACTUAL_OUTCOMES = config.get('plot_counterfactuals')
 
     # Load the source dataset
+    source_df = None
     if 'osapo_acic_4' in DATASET_NAME:
         if 'weight' in DATASET_NAME:
             source_df = get_apo_data(identifier='acic',
@@ -70,6 +71,8 @@ def generate_plots(config):
                                     sample_size=SAMPLE_SIZE,
                                     data_format='pandas',
                                     return_ites=True)
+    else: 
+        raise ValueError('Invalid dataset name')
 
     # Create the source dataset
     source_data = source_df['w']
@@ -355,6 +358,7 @@ def generate_plots(config):
             source_df['outcome'] = df['y']
             source_df['counterfactual_outcome_0'] = df['counterfactual_outcomes_0']
             source_df['counterfactual_outcome_1'] = df['counterfactual_outcomes_1']
+            source_df['counterfactual_outcome'] = df['t'] * df['counterfactual_outcomes_0'] + (1 - df['t']) * df['counterfactual_outcomes_1']
 
             df_num = random.randint(0, 49)
             print(f'Randomly picked dataset number: {df_num}')
@@ -372,6 +376,7 @@ def generate_plots(config):
             max_val_1 = source_df['counterfactual_outcome_1'].max()
             gen_df['y1'] = (gen_df['y1'] - gen_df['y1'].min()) / (gen_df['y1'].max(
             ) - gen_df['y1'].min()) * (max_val_1 - min_val_1) + min_val_1
+            
 
             # Plot 6: Plot the counterfactual outcomes for the source data for any generated dataset
             plt.figure()
@@ -397,7 +402,7 @@ def generate_plots(config):
 
             # Create a plot of the density of counterfactual_outcome_1 and counterfactual_outcome_0 for ~10 different generated datasets as well as the source dataset. Do this side by side
             fig, ax = plt.subplots(1, 2, figsize=(12, 6), sharey=True)
-            for i in range(0, 50, 10): 
+            for i in range(0, 50, 10):
                 gen_df = pd.read_csv(DATASETS_FOLDER + 'dataset_' + str(i) + '.csv',
                                     index_col=0)
                 sns.kdeplot(
@@ -427,6 +432,21 @@ def generate_plots(config):
             ax[1].set_title('Counterfactual Outcome for Treatment')
             plt.tight_layout()
             plt.savefig(f'{PLOTS_FOLDER}/gen_cf_outcome_distribution_multiple.png', dpi=150)
+            
+            plt.figure(figsize = (6,6))
+            for i in range(0, 50, 10): 
+                gen_df = pd.read_csv(DATASETS_FOLDER + 'dataset_' + str(i) + '.csv',
+                                    index_col=0)
+                gen_df['y_cf'] = gen_df['t'] * gen_df['y0'] + (1 - gen_df['t']) * gen_df['y1']
+
+                sns.kdeplot(gen_df['y_cf'], label=f'Y_cf (RC) {i}')
+            sns.kdeplot(source_df['counterfactual_outcome'], label='Y_cf (Source)', linestyle='--')
+            plt.xlabel('Counterfactual Outcome')
+            plt.ylabel('Density')
+            plt.legend()
+            plt.title('Counterfactual Outcome for Realcause vs. Source')
+            plt.tight_layout()
+            plt.savefig(f'{PLOTS_FOLDER}/gen_cf_outcome_distribution_multiple_combined.png', dpi=150)
 
     # For all the generated datasets, find the JSD between the counterfactual outcomes
     # for the control and treatment groups
@@ -454,11 +474,11 @@ if __name__ == '__main__':
     parser.add_argument('--config_file',
                         '-c',
                         type=str,
-                        default='gen_datasets.jsonc',
+                        default='plotting/gen_datasets.jsonc',
                         help='Path to the configuration file')
     args = parser.parse_args()
     
     with open(args.config_file, 'r') as f:
-        config = json.load(f)
+        config = json.load(f)       # pylint: disable=no-member
         
     generate_plots(config)

@@ -2,7 +2,7 @@
 #SBATCH --job-name=realcause-tune  # Job name
 #SBATCH --mem=16000  # Requested Memory
 #SBATCH --partition=cpu # Partition
-#SBATCH -t 12:00:00  # Job time limit
+#SBATCH -t 2-00:00:00  # Job time limit
 #SBATCH -o cluster/logs/realcause_tune/job-%j.out
 #SBATCH -e cluster/logs/realcause_tune/job-%j.err
 

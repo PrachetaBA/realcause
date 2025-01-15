@@ -249,7 +249,8 @@ To run experiments that relate to the generative causal evaluation paper, we do 
 2. Call the script `tune_hyperparameters_comet.sh` in the following manner -
 ```sbatch cluster/scripts/tune_hyperparameters_comet.sh --data <data_name> --dataset_identifier <id> --sample_size <ss> --saveroot <results/exp_name>``` and include any other corresponding arguments. 
 3. Once the correct set of hyperparameters have been manually examined and decided, create a HP file in hyperparameters called `exp_name.py` in the folder `hyperparameters`. This file can then be used to learn a model - using the `train_generator.py` script. An example call is given below. 
-```python train_generator.py --data <data_name> <all other args>```. In this script, the `eval` function is set to True, which results in a model and summary being saved in the corresponding `results` folder. 
-4. The final set of hyperparameters/model can then be used to generate data using the data generation script. 
+```python train_generator.py --data <data_name> <all other args>```. In this script, the `eval` function is set to True, which results in a model and summary being saved in the corresponding `results` folder. Alternatively, the final set of hyperparameters can be stored in the `hyperparameters.<exp_name>` file and then we can call `train_generator_loop.py` to read the hyperparameters. Example call is given by
+```python train_generator_loop.py --exp_name kunzel_2_ss_500 --hp_file hyperparameters.kunzel_2_ss_2000```. 
+4. The final set of hyperparameters/model can then be used to generate data using the data generation script.
 
 Academic users have access to a free comet ML account. The API key must be changed according to the user to use Comet ML. 
