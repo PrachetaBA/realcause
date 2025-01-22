@@ -51,7 +51,7 @@ LALONDE = 'lalonde'
 PSID = 'psid1'
 
 
-def load_lalonde(rct_version=DEHEJIA_WAHBA, obs_version=PSID, rct=False, data_format=NUMPY, dataroot=None):
+def load_lalonde(rct_version=DEHEJIA_WAHBA, obs_version=PSID, rct=False, data_format=NUMPY, dataroot=None, standardize=False):
     """
     Load LaLonde dataset: RCT or combined RCT with observational control group
     Options for 2 x 6 = 12 different observational datasets and 2 RCT datasets
@@ -73,9 +73,17 @@ def load_lalonde(rct_version=DEHEJIA_WAHBA, obs_version=PSID, rct=False, data_fo
         # Replace RCT control group with observational data
         combined_df = rct_df[rct_df.treat == 1].append(obs_df)
         df = combined_df
+    # Standardize output
+    if standardize:
+        continuous_cols = [col for col in df.columns if col not in ['treat', 'black', 'hispanic', 'married', 'nodegree', 'data_id']]
+        # Standardize the continuous columns
+        std_vars = df[continuous_cols].std(axis=0)
+        mean_vars = df[continuous_cols].mean(axis=0)
+        for var in continuous_cols:
+            df[var] = (df[var] - mean_vars[var]) / std_vars[var]
     if data_format.lower() == PANDAS_SINGLE:
         return df
-    elif data_format == 'pandas': 
+    elif data_format == 'pandas':
         d = {
             'w': df.drop(['data_id', 'treat', 're78'], axis='columns'),
             't': df['treat'],

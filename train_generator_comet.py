@@ -30,13 +30,13 @@ def get_data(args):
     ate = None
     ites = None
     if data_name == "lalonde" or data_name == "lalonde_psid":
-        w, t, y = load_lalonde(obs_version="psid", dataroot=args.dataroot)
+        w, t, y = load_lalonde(obs_version="psid", dataroot=args.dataroot, standardize=True)
     elif data_name == "lalonde_psid1":
         w, t, y = load_lalonde(obs_version="psid1", dataroot=args.dataroot)
     elif data_name == "lalonde_rct":
         w, t, y = load_lalonde(rct=True, dataroot=args.dataroot)
     elif data_name == "lalonde_dw": 
-        w, t, y = load_lalonde(rct_version='dw', rct=True, dataroot=args.dataroot)
+        w, t, y = load_lalonde(rct_version='dw', rct=True, dataroot=args.dataroot, standardize=True)
     elif data_name == "lalonde_cps": 
         w, t, y = load_lalonde(obs_version="cps", dataroot=args.dataroot)
     elif data_name == "lalonde_cps1":
@@ -185,7 +185,7 @@ def main(args, save_args=True, log_=True):
     logger.info(f"ate: {ate}")
 
     # comet login - initialize the project
-    comet_ml.login(project_name=f"realcause-{comet_exp_name}",
+    comet_ml.login(project_name=f"realcause-{comet_exp_name}-std-v2",
                    api_key="FZHDy6k24i2GOKtzc85PjAPNY")
     
     # Read the hyperparameter file and create the optimizer, if we have only one set of
@@ -193,20 +193,20 @@ def main(args, save_args=True, log_=True):
     # else, it will be tuned in the optimizer
     
     hps = {
-        "atoms": [],
+        "atoms": [0.0],
         "model_type": "tarnet",
         "activation": "ReLU",
-        "num_epochs": 100,
-        "patience": 10,
+        "num_epochs": 500,
+        "patience": None,
         "early_stop": False,
         "ignore_w": False,
         "test_size": None,
         "grad_norm": "inf",
-        "w_transform": "Standardize",
-        "y_transform": "Normalize",
-        "train_prop": 0.6,
+        "w_transform": "PlaceHolderTransform",
+        "y_transform": "PlaceHolderTransform",
+        "train_prop": 0.5,
         "val_prop": 0.1,
-        "test_prop": 0.3,
+        "test_prop": 0.4,
         "seed": 123,
         "num_univariate_tests": 30,
         "kernel_t": "RBFKernel",
@@ -222,16 +222,20 @@ def main(args, save_args=True, log_=True):
         },
         "dist_args": {
             "type": "categorical", 
-            "values": ["['ndim=5', 'base_distribution=normal']",
+            "values": ["['ndim=2', 'base_distribution=normal']",
+                       "['ndim=2', 'base_distribution=uniform']",
+                       "['ndim=3', 'base_distribution=normal']",
+                       "['ndim=3', 'base_distribution=uniform']",
+                       "['ndim=5', 'base_distribution=normal']",
                        "['ndim=5', 'base_distribution=uniform']"]
         },
         "n_hidden_layers": {
             "type": "discrete",
-            "values": [1, 3, 5],
+            "values": [1, 2],
         },
         "dim_h": {
             "type": "discrete",
-            "values": [8, 16, 32, 64],
+            "values": [2, 4, 8, 16, 32],
         },
         "lr": {
             "type": "float",
@@ -241,11 +245,11 @@ def main(args, save_args=True, log_=True):
         },
         "batch_size": {
             "type": "discrete",
-            "values": [8, 16],
+            "values": [8, 16, 32, 64, 128],
         }
     }
     spec = {
-        "maxCombo": 20,
+        "maxCombo": 30,
         "objective": "maximize",    # "minimize, maximize"
         "metric": "y p_value val",       # "loss_val, y p_value val, t p_value val"
         "minSampleSize": 50,

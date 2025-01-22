@@ -547,6 +547,14 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
         # jitter for numerical stability
         t_true = t_true.copy() + np.random.rand(*t_true.shape) * 1e-6
         t_model = t_model.copy() + np.random.rand(*t_model.shape) * 1e-6
+        
+        # PBA: Drop the NaNs from the following arrays: t_true, t_model, y_true, y_model
+        print(f'Original: t_true: {t_true.shape}, t_model: {t_model.shape}, y_true: {y_true.shape}, y_model: {y_model.shape}')
+        t_true = t_true[~np.isnan(t_true)]
+        t_model = t_model[~np.isnan(t_model)]
+        y_true = y_true[~np.isnan(y_true)]
+        y_model = y_model[~np.isnan(y_model)]
+        print(f'Dropped NaNs: t_true: {t_true.shape}, t_model: {t_model.shape}, y_true: {y_true.shape}, y_model: {y_model.shape}')
 
         ks_label = "_ks_pval"
         es_label = "_es_pval"

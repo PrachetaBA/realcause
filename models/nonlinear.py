@@ -112,7 +112,7 @@ class MLP(BaseGenModel):
         self.outcome_distribution = outcome_distribution
         # todo: extract atoms before preprocessing? (i.e. using the non atomic training data's stats)
         if isinstance(outcome_distribution, distributions.MixedDistribution):
-            self.outcome_distribution.atoms = self.y_transform.transform(self.outcome_distribution.atoms).tolist()
+            self.outcome_distribution.atoms = self.y_transform.transform(self.outcome_distribution.atoms)#.tolist()
         self.outcome_min = outcome_min
         self.outcome_max = outcome_max
         self.early_stop = early_stop

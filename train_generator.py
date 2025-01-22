@@ -24,13 +24,13 @@ def get_data(args):
     ate = None
     ites = None
     if data_name == "lalonde" or data_name == "lalonde_psid":
-        w, t, y = load_lalonde(obs_version="psid", dataroot=args.dataroot)
+        w, t, y = load_lalonde(obs_version="psid", dataroot=args.dataroot, standardize=True)
     elif data_name == "lalonde_psid1":
         w, t, y = load_lalonde(obs_version="psid1", dataroot=args.dataroot)
     elif data_name == "lalonde_rct":
         w, t, y = load_lalonde(rct=True, dataroot=args.dataroot)
     elif data_name == "lalonde_dw": 
-        w, t, y = load_lalonde(rct_version='dw', rct=True, dataroot=args.dataroot)
+        w, t, y = load_lalonde(rct_version='dw', rct=True, dataroot=args.dataroot, standardize=True)
     elif data_name == "lalonde_cps": 
         w, t, y = load_lalonde(obs_version="cps", dataroot=args.dataroot)
     elif data_name == "lalonde_cps1":
