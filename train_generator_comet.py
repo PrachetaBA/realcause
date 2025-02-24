@@ -258,7 +258,7 @@ def main(args, save_args=True, log_=True):
         }
     }
     spec = {
-        "maxCombo": 1,
+        "maxCombo": 30,
         "objective": "minimize",    # "minimize, maximize"
         "metric": "loss_val",       # "loss_val, y p_value val, t p_value val"
         "minSampleSize": 50,
