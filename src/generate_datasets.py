@@ -13,7 +13,7 @@ from consts import REALCAUSE_DATASETS_FOLDER, N_AGG_SEEDS, N_SAMPLE_SEEDS
 from loading import load_gen
 from data.apo import get_apo_data
 from data.acic2019 import load_low_dim
-from data.synthetic_dgp import get_kunzel_data
+from data.kunzel import get_kunzel_data
 from data.lalonde import load_lalonde
 
 def generate_datasets(gen_datasets_folder, best_model_path, data,

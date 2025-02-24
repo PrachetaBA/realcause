@@ -17,7 +17,7 @@ import seaborn as sns
 # Import other modules
 from data.acic2019 import load_low_dim
 from data.apo import get_apo_data
-from data.synthetic_dgp import get_kunzel_data
+from data.kunzel import get_kunzel_data
 
 # Find the hellinger_distance between two numpy arrays
 def hellinger_distance(p, q):

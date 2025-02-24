@@ -4,3 +4,4 @@ ROOT_DIR = '/work/pi_jensen_umass_edu/pboddavarama_umass_edu/nfl/realcause'
 BASE_DATASETS_FOLDER = f'{ROOT_DIR}/base_datasets' # For the base datasets that are being used
 REALCAUSE_DATASETS_FOLDER = f'{ROOT_DIR}/nfl_datasets' # For LaLonde PSID1 datasets
 NFL_BASE_DATASETS_FOLDER = '/work/pi_jensen_umass_edu/pboddavarama_umass_edu/nfl/r-data-gen/datasets'
+NFL_CE_BASE_DATASETS_FOLDER = '/work/pi_jensen_umass_edu/pboddavarama_umass_edu/nfl/nfl-causal-estimation/base_datasets'

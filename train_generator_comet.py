@@ -5,6 +5,7 @@ import ast
 import os
 from collections import OrderedDict
 import json
+import sys
 
 import numpy as np
 import comet_ml
@@ -17,7 +18,8 @@ from data.ihdp import load_ihdp
 from data.twins import load_twins
 from data.acic2019 import load_low_dim
 from data.apo import get_apo_data
-from data.synthetic_dgp import get_kunzel_data
+from data.kunzel import get_kunzel_data
+from data.synthetic_linear import get_synthetic_linear_data
 from models import TarNet, preprocess, TrainingParams, MLPParams, LinearModel, GPModel, TarGPModel, GPParams
 from models import distributions
 import helpers
@@ -88,7 +90,14 @@ def get_data(args):
                             data_format='numpy',
                             return_ites=True,
                             return_counterfactual_outcomes=False)
-        print(d['ites'])
+        w, t, y = d['w'], d['t'], d['y']
+        ites = d['ites'] if 'ites' in d else None
+        ate = d['ites'].mean() if 'ites' in d else None
+    elif data_name == 'synthetic':
+        d = get_synthetic_linear_data(dataset_id = args.dataset_identifier, # Should be dgp1 or dgp2
+                                      data_format='numpy',
+                                      return_ites=True,
+                                      return_counterfactual_outcomes=False)
         w, t, y = d['w'], d['t'], d['y']
         ites = d['ites'] if 'ites' in d else None
         ate = d['ites'].mean() if 'ites' in d else None
@@ -185,7 +194,7 @@ def main(args, save_args=True, log_=True):
     logger.info(f"ate: {ate}")
 
     # comet login - initialize the project
-    comet_ml.login(project_name=f"realcause-{comet_exp_name}-std-v2",
+    comet_ml.login(project_name=f"realcause-{comet_exp_name}",
                    api_key="FZHDy6k24i2GOKtzc85PjAPNY")
     
     # Read the hyperparameter file and create the optimizer, if we have only one set of
@@ -249,9 +258,9 @@ def main(args, save_args=True, log_=True):
         }
     }
     spec = {
-        "maxCombo": 30,
-        "objective": "maximize",    # "minimize, maximize"
-        "metric": "y p_value val",       # "loss_val, y p_value val, t p_value val"
+        "maxCombo": 1,
+        "objective": "minimize",    # "minimize, maximize"
+        "metric": "loss_val",       # "loss_val, y p_value val, t p_value val"
         "minSampleSize": 50,
         "retryLimit": 10,
         "retryAssignLimit": 0,

@@ -10,7 +10,8 @@ from data.ihdp import load_ihdp
 from data.twins import load_twins
 from data.acic2019 import load_low_dim
 from data.apo import get_apo_data
-from data.synthetic_dgp import get_kunzel_data
+from data.kunzel import get_kunzel_data
+from data.synthetic_linear import get_synthetic_linear_data
 from models import TarNet, preprocess, TrainingParams, MLPParams, LinearModel, GPModel, TarGPModel, GPParams
 from models import distributions
 import helpers
@@ -83,6 +84,14 @@ def get_data(args):
                             return_ites=True,
                             return_counterfactual_outcomes=False)
         print(d['ites'])
+        w, t, y = d['w'], d['t'], d['y']
+        ites = d['ites'] if 'ites' in d else None
+        ate = d['ites'].mean() if 'ites' in d else None
+    elif data_name == 'synthetic':
+        d = get_synthetic_linear_data(dataset_id = args.dataset_identifier, # Should be dgp1 or dgp2
+                                      data_format='numpy',
+                                      return_ites=True,
+                                      return_counterfactual_outcomes=False)
         w, t, y = d['w'], d['t'], d['y']
         ites = d['ites'] if 'ites' in d else None
         ate = d['ites'].mean() if 'ites' in d else None
