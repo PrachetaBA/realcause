@@ -15,6 +15,7 @@ from data.apo import get_apo_data
 from data.acic2019 import load_low_dim
 from data.kunzel import get_kunzel_data
 from data.lalonde import load_lalonde
+from data.synthetic_linear import get_synthetic_linear_data
 
 def generate_datasets(gen_datasets_folder, best_model_path, data,
                       **kwargs):
@@ -57,6 +58,9 @@ def generate_datasets(gen_datasets_folder, best_model_path, data,
         d = load_lalonde(rct_version='dw', rct=True, dataroot='datasets', data_format='pandas')
     elif data == 'lalonde_psid':
         d = load_lalonde(obs_version="psid", dataroot='datasets', data_format='pandas')
+    elif data == 'synthetic':
+        d = get_synthetic_linear_data(dataset_id = kwargs.get('dataset_identifier'), 
+                                      data_format='pandas')
                   
     df_w, _, _ = d['w'], d['t'], d['y']
     ites = d['ites'] if 'ites' in d else None
@@ -119,8 +123,8 @@ if __name__ == '__main__':
                         help='Path to the best model.')
     parser.add_argument('--data',
                         type=str,
-                        choices=['osapo_acic_4', 'acic2019', 'kunzel', 'lalonde_dw', 'lalonde_psid'],
-                        help='Choice of dataset (osapo_acic_4, acic2019, kunzel, lalonde_dw, lalonde_psid)',
+                        choices=['osapo_acic_4', 'acic2019', 'kunzel', 'lalonde_dw', 'lalonde_psid', 'synthetic'],
+                        help='Choice of dataset (osapo_acic_4, acic2019, kunzel, lalonde_dw, lalonde_psid, synthetic)',
                         default=None)
 
     # Specific to the kunzel dataset
@@ -190,5 +194,18 @@ if __name__ == '__main__':
         generate_datasets(gen_datasets_folder,
                           best_model_path,
                           data=args.data)
+    elif args.data == 'synthetic':
+        if args.te: 
+            gen_datasets_folder = f'{REALCAUSE_DATASETS_FOLDER}/{args.gen_datasets_folder}_te_{args.te}'
+            generate_datasets(gen_datasets_folder,
+                              best_model_path,
+                              data=args.data,
+                              dataset_identifier=args.dataset_identifier,
+                              te=args.te)
+        else:
+            generate_datasets(gen_datasets_folder,
+                          best_model_path,
+                          data=args.data,
+                          dataset_identifier=args.dataset_identifier)
 
     print('Done!')
