@@ -1,20 +1,23 @@
 // Configuration file to provide arguments to the visualization script. 
 {
-    "dataset_name": "kunzel",
+    "dataset_name": "synthetic",
     "dataset_folder": "nfl_datasets",
     "plots_folder": "plots",
     "hyperparameter_path": "default",
     "plot_counterfactuals": true, 
     // dataset specific configurations 
     "dataset_specific_config": {
-        // Kunzel 
-        "dataset_identifier": 6,
+        // Kunzel and synthetic (linear dgp1 or dgp2)
+        "dataset_identifier": "dgp2",       // 6 or 2 for Kunzel
+        // Kunzel only
         "sample_size": 2000, 
         // ACIC linear 
         "biasing": "linear",    // linear or nonlinear
         "weight": 2.5, 
         "intercept": -8.5,
         // ACIC (outcome type)
-        "outcome_type": "1_polynomial"
+        "outcome_type": "1_polynomial",
+        // synthetic_linear datasets, if there are any additional parameters
+        "treatment_effect": 10.0
     }
 }

@@ -8,7 +8,7 @@
 #SBATCH -e cluster/logs/realcause_tune/job-%j.err
 
 # Load the necessary modules
-module load miniconda/22.11.1-1
+module load conda/latest
 conda activate /work/pi_jensen_umass_edu/pboddavarama_umass_edu/.conda/envs/realcause-exact
 
 cd /work/pi_jensen_umass_edu/pboddavarama_umass_edu/nfl/realcause/
