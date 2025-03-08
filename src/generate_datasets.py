@@ -191,9 +191,16 @@ if __name__ == '__main__':
                           dataset_identifier=args.dataset_identifier,
                           sample_size=args.sample_size)
     elif args.data == 'lalonde_dw' or args.data == 'lalonde_psid':
-        generate_datasets(gen_datasets_folder,
-                          best_model_path,
-                          data=args.data)
+        if args.te: 
+            gen_datasets_folder = f'{REALCAUSE_DATASETS_FOLDER}/{args.gen_datasets_folder}_te_{args.te}'
+            generate_datasets(gen_datasets_folder,
+                              best_model_path,
+                              data=args.data,
+                              te=args.te)
+        else:
+            generate_datasets(gen_datasets_folder,
+                            best_model_path,
+                            data=args.data)
     elif args.data == 'synthetic':
         if args.te: 
             gen_datasets_folder = f'{REALCAUSE_DATASETS_FOLDER}/{args.gen_datasets_folder}_te_{args.te}'
