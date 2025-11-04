@@ -31,7 +31,8 @@ class PlaceHolderTransform(Preprocess):
 
 class Shifting(Preprocess):
     def __init__(self, b):
-        self.b = np.cast['float32'](b)
+        # self.b = np.cast['float32'](b)
+        self.b = np.asarray(b, dtype=np.float32)
 
     def transform(self, x):
         return x + self.b
@@ -48,13 +49,15 @@ class Centering(Shifting):
             if mean is not None:
                 assert np.isclose(m, mean), 'mean of data is not close to the provided value'
         else:
-            m = np.cast['float32'](mean)
+            # m = np.cast['float32'](mean)
+            m = np.asarray(mean, dtype=np.float32)
         super(Centering, self).__init__(-m)
 
 
 class Scaling(Preprocess):
     def __init__(self, s):
-        self.s = np.cast['float32'](s)
+        # self.s = np.cast['float32'](s)
+        self.s = np.asarray(s, dtype=np.float32)
 
     def transform(self, x):
         return x * self.s
@@ -71,7 +74,8 @@ class VarianceRescaling(Scaling):
             if stdv is not None:
                 assert np.isclose(s, stdv), 'stdv of data is not close to the provided value'
         else:
-            s = np.cast['float32'](stdv)
+            # s = np.cast['float32'](stdv)
+            s = np.asarray(stdv, dtype=np.float32)
         super(VarianceRescaling, self).__init__(gain / (s+1e-7))
 
 

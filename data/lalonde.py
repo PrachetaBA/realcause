@@ -71,7 +71,9 @@ def load_lalonde(rct_version=DEHEJIA_WAHBA, obs_version=PSID, rct=False, data_fo
             # original lalonde dataset doesn't have 1974 earnings
             obs_df.drop('re74', axis='columns', inplace=True)
         # Replace RCT control group with observational data
-        combined_df = rct_df[rct_df.treat == 1].append(obs_df)
+        combined_df = pd.concat([rct_df[rct_df.treat == 1], obs_df])  # NEW (pandas 2.0.3)
+        # print(f"combined_df: {combined_df}")
+        # combined_df = rct_df[rct_df.treat == 1].append(obs_df) # OLD (pandas 1.0.3)
         df = combined_df
     # Standardize output
     if standardize:

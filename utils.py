@@ -104,7 +104,7 @@ def to_np_arrays(*args):
         else:
             return np.array(args[0], dtype=np.float)
         return np.array(args[0], dtype=np.float)
-    return tuple(np.array(arg, dtype=np.float) for arg in args)
+    return tuple(np.array(arg, dtype=float) for arg in args)
 
 
 def to_np_vector(x, by_column=False, thin_interval=None, column_vector=False):
