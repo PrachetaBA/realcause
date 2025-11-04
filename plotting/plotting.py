@@ -55,17 +55,17 @@ def compare_joints(x1, y1, x2, y2, xlabel1=None, ylabel1=None, xlabel2=None, yla
 
 def compare_marginal_hists(x1, x2, label1=None, label2=None, ax=None):
     if is_binary(x1, x2):
-        sns.distplot(x1, kde=False, ax=ax, label=label1)
-        sns.distplot(x2, kde=False, ax=ax, label=label2)
+        sns.histplot(x1, kde=False, ax=ax, label=label1, discrete=True)
+        sns.histplot(x2, kde=False, ax=ax, label=label2, discrete=True)
     else:
         try:
-            sns.distplot(x1, ax=ax, label=label1)
+            sns.histplot(x1, ax=ax, label=label1, kde=True)
         except RuntimeError:
-            sns.distplot(x1, ax=ax, label=label1, kde_kws={'bw': 0.5})
+            sns.histplot(x1, ax=ax, label=label1, kde=True, kde_kws={'bw': 0.5})
         try:
-            sns.distplot(x2, ax=ax, label=label2)
+            sns.histplot(x2, ax=ax, label=label2, kde=True)
         except RuntimeError:
-            sns.distplot(x1, ax=ax, label=label1, kde_kws={'bw': 0.5})
+            sns.histplot(x2, ax=ax, label=label2, kde=True, kde_kws={'bw': 0.5})
 
 
 def is_binary(x1, x2=None):
