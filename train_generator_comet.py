@@ -10,6 +10,7 @@ import numpy as np
 import comet_ml
 import torch
 import gpytorch
+import yaml
 
 from data_loaders.apo import get_apo_data
 from models import TarNet, preprocess, TrainingParams, MLPParams, LinearModel, GPModel, TarGPModel, GPParams
@@ -130,72 +131,17 @@ def main(args, save_args=True, log_=True):
     # Read the hyperparameter file and create the optimizer, if we have only one set of
     # values in the hyperparameter file, then we will treat it as a fixed parameter
     # else, it will be tuned in the optimizer
-    
-    hps = {
-        "atoms": [0.0],
-        "model_type": "tarnet",
-        "activation": "ReLU",
-        "num_epochs": 1000,
-        "patience": 50,
-        "early_stop": True,
-        "ignore_w": False,
-        "test_size": None,
-        "grad_norm": "inf",
-        "w_transform": "PlaceHolderTransform",
-        "y_transform": "PlaceHolderTransform",
-        "train_prop": 0.5,
-        "val_prop": 0.1,
-        "test_prop": 0.4,
-        "seed": 123,
-        "num_univariate_tests": 30,
-        "kernel_t": "RBFKernel",
-        "kernel_y": "RBFKernel",
-        "var_dist": "MeanFieldVariationalDistribution",
-        "num_tasks": 32,
-    }
-    
-    model_parameters = {
-        "dist": {
-            "type": "categorical",
-            "values": ["SigmoidFlow"]
-        },
-        "dist_args": {
-            "type": "categorical", 
-            "values": ["['ndim=2', 'base_distribution=normal']",
-                       "['ndim=2', 'base_distribution=uniform']",
-                       "['ndim=3', 'base_distribution=normal']",
-                       "['ndim=3', 'base_distribution=uniform']",
-                       "['ndim=5', 'base_distribution=normal']",
-                       "['ndim=5', 'base_distribution=uniform']"]
-        },
-        "n_hidden_layers": {
-            "type": "discrete",
-            "values": [2, 8, 16, 32],
-        },
-        "dim_h": {
-            "type": "discrete",
-            "values": [2, 4, 8, 16, 32, 64],
-        },
-        "lr": {
-            "type": "float",
-            "scaling_type": "loguniform",
-            "min": 1e-5,
-            "max": 1e-2,
-        },
-        "batch_size": {
-            "type": "discrete",
-            "values": [8, 16, 32, 64, 128, 256],
-        }
-    }
-    spec = {
-        "maxCombo": 30,
-        "objective": "minimize",    # "minimize, maximize"
-        "metric": "loss_val",       # "loss_val, y p_value val, t p_value val"
-        "minSampleSize": 50,
-        "retryLimit": 10,
-        "retryAssignLimit": 0,
-    }
-    
+    with open(f'hyperparameter_tuning/{args.hyperparameter_file}.yaml', 'r', encoding='utf-8') as file:
+        tuning_config = yaml.safe_load(file)
+
+    hps = tuning_config['hps']
+    model_parameters = tuning_config['model_parameters']
+    spec = tuning_config['spec']
+    logger.info(f'Hyperparameter file: {args.hyperparameter_file}')
+    logger.info(f'Hyperparameters: {hps}')
+    logger.info(f'Model parameters: {model_parameters}')
+    logger.info(f'Spec: {spec}')
+     
     optimizer_config = {
         "algorithm": "bayes",
         "spec": spec,
@@ -337,6 +283,7 @@ def get_args():
     parser.add_argument("--data", type=str, default=None)
     parser.add_argument("--data_identifier", type=str, default=None, required=False)
     parser.add_argument("--saveroot", type=str, default="tuned_models")
+    parser.add_argument("--hyperparameter_file", type=str, default=None) # Name of the hyperparameter file to use for tuning
     parser.add_argument("--train", type=eval, default=True, choices=[True, False])
     parser.add_argument("--eval", type=eval, default=False, choices=[True, False])
     parser.add_argument('--overwrite_reload', type=str, default='',

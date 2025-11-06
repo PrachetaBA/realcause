@@ -21,4 +21,5 @@ python -u train_generator_comet.py \
     --data "$1" \
     --data_identifier "${2:-}" \
     --sample_size "${3:all}" \
-    --saveroot "$SAVEROOT" 
+    --saveroot "$SAVEROOT" \
+    --hyperparameter_file "${1}_${2}_${3:all}"
