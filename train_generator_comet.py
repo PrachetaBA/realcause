@@ -135,7 +135,7 @@ def main(args, save_args=True, log_=True):
         "atoms": [0.0],
         "model_type": "tarnet",
         "activation": "ReLU",
-        "num_epochs": 500,
+        "num_epochs": 1000,
         "patience": 50,
         "early_stop": True,
         "ignore_w": False,
@@ -289,6 +289,10 @@ def main(args, save_args=True, log_=True):
 
         if args.verbose:
             logger.debug(f'Initialized the network to be {network_params}')
+        
+        # Create unique savepath for each experiment to avoid loading checkpoints with mismatched hyperparameters
+        experiment_savepath = os.path.join(args.saveroot, f'model_{experiment.id}.pt')
+        
         model = Model(w, t, y,
                     training_params=training_params,
                     network_params=network_params,
@@ -304,7 +308,7 @@ def main(args, save_args=True, log_=True):
                     ignore_w=hps['ignore_w'],
                     grad_norm=hps['grad_norm'],
                     w_transform=w_transform, y_transform=y_transform,  # TODO set more args
-                    savepath=os.path.join(args.saveroot, 'model.pt'),
+                    savepath=experiment_savepath,
                     test_size=hps['test_size'],
                     additional_args=additional_args)
 

@@ -195,6 +195,7 @@ class MLP(BaseGenModel):
             early_stop = self.early_stop
 
         c = 0
+        eval_step = 0
         self.best_val_loss = float("inf")
         self.best_val_idx = 0
         nan_detected = False
@@ -225,6 +226,7 @@ class MLP(BaseGenModel):
                         comet_exp.log_metric("loss_y", loss_y.item())
 
                 if c % self.training_params.eval_every == 0 and len(self.val_idxs) > 0:
+                    eval_step += 1
                     with eval_ctx(self):
                         loss_val = self.evaluate(self.data_loader_val).item()
                     
@@ -238,15 +240,26 @@ class MLP(BaseGenModel):
                     if comet_exp is not None:
                         comet_exp.log_metric('loss_val', loss_val)
 
-                    print_("Iteration {} valid loss {}".format(c, loss_val), print_=False)
+                    print_("Iteration {} (eval step {}) valid loss {}".format(c, eval_step, loss_val), print_=False)
                     if loss_val < self.best_val_loss:
                         self.best_val_loss = loss_val
-                        self.best_val_idx = c
+                        self.best_val_idx = eval_step
                         print_("saving best-val-loss model", print_=False)
                         torch.save([net.state_dict() for net in self.networks], self.savepath)
                         # todo: this is not ideal since we cannot run multiple experiments at the same time
                         #       without overwriting the saved model
+                        
+                if c % self.training_params.p_every == 0:
+                    with eval_ctx(self):
+                        uni_metrics_train = self.get_univariate_quant_metrics(dataset="train", verbose=False)
+                        uni_metrics_val = self.get_univariate_quant_metrics(dataset="val", verbose=False)
 
+                    if comet_exp is not None:
+                        comet_exp.log_metric('y p_value', uni_metrics_train["y_ks_pval"])
+                        comet_exp.log_metric('y p_value val', uni_metrics_val["y_ks_pval"])
+                        comet_exp.log_metric('t p_value', uni_metrics_train["t_ks_pval"])
+                        comet_exp.log_metric('t p_value val', uni_metrics_val["t_ks_pval"])
+                
                 if c % self.training_params.plot_every == 0:
                     try:
                         with eval_ctx(self):
@@ -262,29 +275,23 @@ class MLP(BaseGenModel):
                     except (ValueError, RuntimeError) as e:
                         print_(f"Skipping plots due to error: {e}", print_=False)
                         
-                if c % self.training_params.p_every == 0:
-                    with eval_ctx(self):
-                        uni_metrics_train = self.get_univariate_quant_metrics(dataset="train", verbose=False)
-                        uni_metrics_val = self.get_univariate_quant_metrics(dataset="val", verbose=False)
-
-                    if comet_exp is not None:
-                        comet_exp.log_metric('y p_value', uni_metrics_train["y_ks_pval"])
-                        comet_exp.log_metric('y p_value val', uni_metrics_val["y_ks_pval"])
-                        comet_exp.log_metric('t p_value', uni_metrics_train["t_ks_pval"])
-                        comet_exp.log_metric('t p_value val', uni_metrics_val["t_ks_pval"])
-                
             # Break outer loop if NaN was detected
             if nan_detected:
                 break
                 
-            if early_stop and self.patience is not None and c - self.best_val_idx > self.patience:
+            if early_stop and self.patience is not None and eval_step - self.best_val_idx > self.patience:
                 print_('early stopping criterion reached. Ending experiment.')
+                print_(f'Best validation loss at eval step {self.best_val_idx}, current eval step {eval_step}')
                 break
 
         if early_stop and len(self.val_idxs) > 0 and os.path.exists(self.savepath):
             print("loading best-val-loss model (early stopping checkpoint)")
-            for net, params in zip(self.networks, torch.load(self.savepath)):
-                net.load_state_dict(params)
+            try:
+                for net, params in zip(self.networks, torch.load(self.savepath, weights_only=False)):
+                    net.load_state_dict(params)
+            except RuntimeError as e:
+                print(f"Warning: Could not load checkpoint from {self.savepath}: {e}")
+                print("Continuing with final model weights instead of best checkpoint.")
 
     def evaluate(self, data_loader):
         loss = 0
