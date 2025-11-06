@@ -10,6 +10,7 @@ from itertools import chain
 from plotting.plotting import fig2img
 from tqdm import tqdm
 from contextlib import contextmanager
+import os
 
 
 @contextmanager
@@ -196,11 +197,20 @@ class MLP(BaseGenModel):
         c = 0
         self.best_val_loss = float("inf")
         self.best_val_idx = 0
+        nan_detected = False
         for _ in tqdm(range(self.training_params.num_epochs)):
             for w, t, y in self.data_loader:
 
                 self.optim.zero_grad()
                 loss, loss_t, loss_y = self._get_loss(w, t, y)
+                
+                # Check for NaN or inf in training losses
+                if not torch.isfinite(loss).all():
+                    print_("NaN or inf detected in training loss at iteration {}. Terminating training.".format(c), print_=True)
+                    print_("loss_t: {}, loss_y: {}, loss: {}".format(loss_t, loss_y, loss), print_=True)
+                    nan_detected = True
+                    break
+                
                 # TODO: learning rate can be separately adjusted by weighting the losses here
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(chain(*[net.parameters() for net in self.networks]), self.grad_norm)
@@ -217,6 +227,14 @@ class MLP(BaseGenModel):
                 if c % self.training_params.eval_every == 0 and len(self.val_idxs) > 0:
                     with eval_ctx(self):
                         loss_val = self.evaluate(self.data_loader_val).item()
+                    
+                    # Check for NaN or inf in validation loss
+                    if not np.isfinite(loss_val):
+                        print_("NaN or inf detected in validation loss at iteration {}. Terminating training.".format(c), print_=True)
+                        print_("loss_val: {}".format(loss_val), print_=True)
+                        nan_detected = True
+                        break
+                    
                     if comet_exp is not None:
                         comet_exp.log_metric('loss_val', loss_val)
 
@@ -230,16 +248,19 @@ class MLP(BaseGenModel):
                         #       without overwriting the saved model
 
                 if c % self.training_params.plot_every == 0:
-                    with eval_ctx(self):
-                        plots = self.plot_ty_dists(verbose=False)
-                    for plot in plots:
-                        try:
-                            title = plot._suptitle.get_text()
-                        except AttributeError:
-                            title = plot.axes[0].get_title()
-                        img = fig2img(plot)
-                        if comet_exp is not None:
-                            comet_exp.log_image(img, name=title)
+                    try:
+                        with eval_ctx(self):
+                            plots = self.plot_ty_dists(verbose=False)
+                        for plot in plots:
+                            try:
+                                title = plot._suptitle.get_text()
+                            except AttributeError:
+                                title = plot.axes[0].get_title()
+                            img = fig2img(plot)
+                            if comet_exp is not None:
+                                comet_exp.log_image(img, name=title)
+                    except (ValueError, RuntimeError) as e:
+                        print_(f"Skipping plots due to error: {e}", print_=False)
                         
                 if c % self.training_params.p_every == 0:
                     with eval_ctx(self):
@@ -252,11 +273,15 @@ class MLP(BaseGenModel):
                         comet_exp.log_metric('t p_value', uni_metrics_train["t_ks_pval"])
                         comet_exp.log_metric('t p_value val', uni_metrics_val["t_ks_pval"])
                 
+            # Break outer loop if NaN was detected
+            if nan_detected:
+                break
+                
             if early_stop and self.patience is not None and c - self.best_val_idx > self.patience:
                 print_('early stopping criterion reached. Ending experiment.')
                 break
 
-        if early_stop and len(self.val_idxs) > 0:
+        if early_stop and len(self.val_idxs) > 0 and os.path.exists(self.savepath):
             print("loading best-val-loss model (early stopping checkpoint)")
             for net, params in zip(self.networks, torch.load(self.savepath)):
                 net.load_state_dict(params)

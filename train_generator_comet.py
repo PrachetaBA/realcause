@@ -137,7 +137,7 @@ def main(args, save_args=True, log_=True):
         "activation": "ReLU",
         "num_epochs": 500,
         "patience": 50,
-        "early_stop": False,
+        "early_stop": True,
         "ignore_w": False,
         "test_size": None,
         "grad_norm": "inf",
@@ -170,21 +170,21 @@ def main(args, save_args=True, log_=True):
         },
         "n_hidden_layers": {
             "type": "discrete",
-            "values": [1, 2],
+            "values": [2, 8, 16, 32],
         },
         "dim_h": {
             "type": "discrete",
-            "values": [2, 4, 8, 16, 32],
+            "values": [2, 4, 8, 16, 32, 64],
         },
         "lr": {
             "type": "float",
             "scaling_type": "loguniform",
             "min": 1e-5,
-            "max": 1e-1,
+            "max": 1e-2,
         },
         "batch_size": {
             "type": "discrete",
-            "values": [8, 16, 32, 64, 128],
+            "values": [8, 16, 32, 64, 128, 256],
         }
     }
     spec = {

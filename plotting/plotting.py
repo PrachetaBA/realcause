@@ -54,18 +54,26 @@ def compare_joints(x1, y1, x2, y2, xlabel1=None, ylabel1=None, xlabel2=None, yla
 
 
 def compare_marginal_hists(x1, x2, label1=None, label2=None, ax=None):
+    # Filter out invalid values (NaN, inf) that can cause plotting errors
+    x1 = x1[np.isfinite(x1)]
+    x2 = x2[np.isfinite(x2)]
+    
+    if len(x1) == 0 or len(x2) == 0:
+        warnings.warn("Data contains only invalid values (NaN/inf), skipping plot")
+        return
+    
     if is_binary(x1, x2):
         sns.histplot(x1, kde=False, ax=ax, label=label1, discrete=True)
         sns.histplot(x2, kde=False, ax=ax, label=label2, discrete=True)
     else:
         try:
             sns.histplot(x1, ax=ax, label=label1, kde=True)
-        except RuntimeError:
-            sns.histplot(x1, ax=ax, label=label1, kde=True, kde_kws={'bw': 0.5})
+        except (RuntimeError, ValueError):
+            sns.histplot(x1, ax=ax, label=label1, kde=False)
         try:
             sns.histplot(x2, ax=ax, label=label2, kde=True)
-        except RuntimeError:
-            sns.histplot(x2, ax=ax, label=label2, kde=True, kde_kws={'bw': 0.5})
+        except (RuntimeError, ValueError):
+            sns.histplot(x2, ax=ax, label=label2, kde=False)
 
 
 def is_binary(x1, x2=None):
