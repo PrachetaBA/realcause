@@ -25,7 +25,10 @@ def get_data(args):
     ate = None
     ite = None
     if data_name in ['n_acic_4', 'jdk', 'postgres']:
-        d = get_apo_data(identifier=data_name, confound_func=data_id, data_format='numpy', return_ites=True, ret_counterfactual_outcomes=False)
+        d = get_apo_data(identifier=data_name, confound_func=data_id, 
+                         data_format='numpy', return_ites=True, 
+                         ret_counterfactual_outcomes=False,
+                         sample_size=args.sample_size)
         w, t, y = d['w'], d['t'], d['y']
         ite = d['ite'] if 'ite' in d else None
         ate = d['ite'].mean() if 'ite' in d else None 
