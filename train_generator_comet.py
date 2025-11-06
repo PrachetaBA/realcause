@@ -136,7 +136,7 @@ def main(args, save_args=True, log_=True):
         "model_type": "tarnet",
         "activation": "ReLU",
         "num_epochs": 500,
-        "patience": None,
+        "patience": 50,
         "early_stop": False,
         "ignore_w": False,
         "test_size": None,
@@ -339,7 +339,7 @@ def get_args():
                         help='secondary folder name of an experiment')  # TODO: for model loading
     # logging level
     parser.add_argument("--verbose", type=int, default=0)
-    parser.add_argument('--sample_size', type=int, default=500, required=False) # To pick sample size of dataset
+    parser.add_argument('--sample_size', type=str, default=None, required=False) # To pick sample size of dataset
     return parser
 
 
