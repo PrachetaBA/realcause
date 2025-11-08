@@ -354,21 +354,18 @@ def get_apo_data(identifier,
 if __name__ == '__main__':
     # Test JDK dataset
     d = get_apo_data(identifier='jdk', data_format='pandas', return_ites=True, ret_counterfactual_outcomes=True)
+    # Combine all columns into a single dataframe
+    df = pd.concat([d['w'], d['t'], d['y'], d['ite'], d['y0'], d['y1']], axis=1)
+    print(df.head())
     # Print d as a pandas dataframe
-    print(d['w'].head())
-    print(d['t'].head())
-    print(d['y'].head())
-    print(d['ite'].head())
-    print(d['y0'].head())
-    print(d['y1'].head())
     print('--------------------------------')
     
     # Test Postgres dataset
-    d = get_apo_data(identifier='postgres', data_format='pandas', return_ites=True, ret_counterfactual_outcomes=True)
-    print(d['w'].head())
-    print(d['t'].head())
-    print(d['y'].head())
-    print(d['ite'].head())
-    print(d['y0'].head())
-    print(d['y1'].head())
-    print('--------------------------------')
+    # d = get_apo_data(identifier='postgres', data_format='pandas', return_ites=True, ret_counterfactual_outcomes=True)
+    # print(d['w'].head())
+    # print(d['t'].head())
+    # print(d['y'].head())
+    # print(d['ite'].head())
+    # print(d['y0'].head())
+    # print(d['y1'].head())
+    # print('--------------------------------')
