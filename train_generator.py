@@ -4,101 +4,31 @@ import os
 import numpy as np
 import torch
 import gpytorch
-from data.lalonde import load_lalonde
-from data.lbidd import load_lbidd
-from data.ihdp import load_ihdp
-from data.twins import load_twins
-from data.acic2019 import load_low_dim
-from data.apo import get_apo_data
-from data.kunzel import get_kunzel_data
-from data.synthetic_linear import get_synthetic_linear_data
+
+from data_loaders import apo
 from models import TarNet, preprocess, TrainingParams, MLPParams, LinearModel, GPModel, TarGPModel, GPParams
 from models import distributions
 import helpers
 from collections import OrderedDict
 import json
-# from utils import get_duplicates
 
 def get_data(args):
     """Function to extract the specific data in the format required for Realcause."""
     data_name = args.data.lower()
+    data_id = args.data_identifier
     ate = None
-    ites = None
-    if data_name == "lalonde" or data_name == "lalonde_psid":
-        w, t, y = load_lalonde(obs_version="psid", dataroot=args.dataroot, standardize=True)
-    elif data_name == "lalonde_psid1":
-        w, t, y = load_lalonde(obs_version="psid1", dataroot=args.dataroot)
-    elif data_name == "lalonde_rct":
-        w, t, y = load_lalonde(rct=True, dataroot=args.dataroot)
-    elif data_name == "lalonde_dw": 
-        w, t, y = load_lalonde(rct_version='dw', rct=True, dataroot=args.dataroot, standardize=True)
-    elif data_name == "lalonde_cps": 
-        w, t, y = load_lalonde(obs_version="cps", dataroot=args.dataroot)
-    elif data_name == "lalonde_cps1":
-        w, t, y = load_lalonde(obs_version="cps1", dataroot=args.dataroot)
-    elif data_name.startswith("lbidd"):
-        # Valid string formats: lbidd_<link>_<n> and lbidd_<link>_<n>_counterfactual
-        # Valid <link> options: linear, quadratic, cubic, exp, and log
-        # Valid <n> options: 1k, 2.5k, 5k, 10k, 25k, and 50k
-        options = data_name.split("_")
-        link = options[1]
-        n = options[2]
-        observe_counterfactuals = (len(options) == 4) and (options[3] == "counterfactual")
-        d = load_lbidd(n=n, observe_counterfactuals=observe_counterfactuals, link=link,
-                       dataroot=args.dataroot, return_ate=True, return_ites=True)
-        ate = d["ate"]
-        ites = d['ites']
-        if observe_counterfactuals:
-            w, t, y = (d["obs_counterfactual_w"], d["obs_counterfactual_t"], 
-                       d["obs_counterfactual_y"])
-        else:
-            w, t, y = d["w"], d["t"], d["y"]
-    elif data_name == "ihdp":
-        d = load_ihdp(return_ate=True, return_ites=True)
-        w, t, y, ate, ites = d["w"], d["t"], d["y"], d['ate'], d['ites']
-    elif data_name == "ihdp_counterfactual":
-        d = load_ihdp(observe_counterfactuals=True)
-        w, t, y = d["w"], d["t"], d["y"]
-    elif data_name == "twins":
-        d = load_twins(dataroot=args.dataroot)
-        w, t, y = d["w"], d["t"], d["y"]
-    elif data_name == 'acic2019':
-        d = load_low_dim(dataset_identifier='1_linear', data_format='numpy')
-        w, t, y = d["w"], d["t"], d["y"]
-        ites = d['ites'] if 'ites' in d else None
-        ate = d['ites'].mean() if 'ites' in d else None
-    elif data_name == 'acic':
-        if args.biasing == 'linear':
-            weight = args.weight
-            intercept = args.intercept
-            d = get_apo_data(identifier='acic', data_format='numpy', weight=weight, intercept=intercept)
-        elif args.biasing == 'nonlinear':
-            d = get_apo_data(identifier='acic', data_format='numpy', num_of_biasing_covariates=3)
+    ite = None
+    if data_name in ['n_acic_4', 'jdk', 'postgres']:
+        d = apo.get_apo_data(identifier=data_name, confound_func=data_id, 
+                         data_format='numpy', return_ites=True, 
+                         ret_counterfactual_outcomes=False,
+                         sample_size=args.sample_size)
         w, t, y = d['w'], d['t'], d['y']
-        ites = d['ites'] if 'ites' in d else None
-        ate = d['ites'].mean() if 'ites' in d else None
-    elif data_name == 'kunzel':
-        d = get_kunzel_data(dataset_id = int(args.dataset_identifier), # Should be 1-6 
-                            sample_size = int(args.sample_size), # Should be 500 or 2000
-                            data_format='numpy',
-                            return_ites=True,
-                            return_counterfactual_outcomes=False)
-        print(d['ites'])
-        w, t, y = d['w'], d['t'], d['y']
-        ites = d['ites'] if 'ites' in d else None
-        ate = d['ites'].mean() if 'ites' in d else None
-    elif data_name == 'synthetic':
-        d = get_synthetic_linear_data(dataset_id = args.dataset_identifier, # Should be dgp1 or dgp2
-                                      data_format='numpy',
-                                      return_ites=True,
-                                      return_counterfactual_outcomes=False)
-        w, t, y = d['w'], d['t'], d['y']
-        ites = d['ites'] if 'ites' in d else None
-        ate = d['ites'].mean() if 'ites' in d else None
+        ite = d['ite'] if 'ite' in d else None
+        ate = d['ite'].mean() if 'ite' in d else None 
     else:
         raise ValueError(f"Dataset {data_name} not implemented")
-
-    return ites, ate, w, t, y
+    return w, t, y, ite, ate
 
 
 def get_distribution(args):
@@ -171,13 +101,13 @@ def main(args, save_args=True, log_=True):
 
     # dataset
     logger.info(f"getting data: {args.data}")
-    ites, ate, w, t, y = get_data(args)
+    w, t, y, ite, ate = get_data(args)
     
     # Debugging
     if args.verbose:
         logger.debug(f'w: {w.shape}, t: {t.shape}, y: {y.shape}')
         logger.debug(f'w: {w[:5]}, t: {t[:5]}, y: {y[:5]}')
-        logger.debug(f'ITEs: {ites.shape}, ATE: {ate}')
+        logger.debug(f'ITEs: {ite.shape}, ATE: {ate}')
         
     # comet logging
     if args.comet:
@@ -296,11 +226,9 @@ def get_args():
     parser = argparse.ArgumentParser(description="causal-gen")
 
     # dataset
-    parser.add_argument("--data", type=str, default="lalonde")
-    parser.add_argument(
-        "--dataroot", type=str, default="datasets"
-    )
-    parser.add_argument("--saveroot", type=str, default="save")
+    parser.add_argument("--data", type=str, default=None)
+    parser.add_argument("--data_identifier", type=str, default=None, required=False)
+    parser.add_argument("--saveroot", type=str, default="tuned_models")
     parser.add_argument("--train", type=eval, default=True, choices=[True, False])
     parser.add_argument("--eval", type=eval, default=True, choices=[True, False])
     parser.add_argument('--overwrite_reload', type=str, default='',
@@ -357,16 +285,7 @@ def get_args():
     
     # logging level
     parser.add_argument("--verbose", type=int, default=0)
-    
-    # Arguments that are specific to certain dataset types (to allow an additional identifier)
-    parser.add_argument('--dataset_identifier', type=str, default=None, required=False)     # ACIC OSAPO to pick overlap, Kunzel to pick dataset ID
-    parser.add_argument('--sample_size', type=int, default=500, required=False)            # Kunzel to pick sample size 
-    
-    # Args specific to the ACIC OSAPO dataset (to change the degree of overlap)
-    parser.add_argument('--biasing', type=str, default='linear', choices=['linear', 'nonlinear'])
-    parser.add_argument('--weight', type=float, default=1, required=False)
-    parser.add_argument('--intercept', type=float, default=0, required=False)
-
+    parser.add_argument('--sample_size', type=str, default=None, required=False) # To pick sample size of dataset
     return parser
 
 

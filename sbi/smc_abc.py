@@ -12,7 +12,7 @@ import pandas as pd
 import pyabc
 import yaml
 
-from data_loaders import apo
+from data_loaders import apo, lalonde
 from sbi import simulator 
 
 
@@ -75,7 +75,7 @@ def main(abc_config,
     # Build a dictionary of prior distributions for each parameter
     prior_dict = {}
     for param in prior_vars:
-        prior_dict[param] = pyabc.RV(prior_distribution_name[abc_config['prior_distribution']],
+        prior_dict[param] = pyabc.RV(prior_distribution_name[abc_config['prior'][param]['distribution']],
                                      abc_config['prior'][param]['loc'],
                                      abc_config['prior'][param]['scale'])
     # Create joint prior distribution from all parameters

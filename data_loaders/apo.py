@@ -88,6 +88,8 @@ def get_apo_data(identifier,
         - ites: The ITEs
         - df_info: A dictionary containing the information about the dataset
     """
+    # Initialize the random number generator
+    rng = np.random.default_rng(kwargs['random_seed'] if 'random_seed' in kwargs.keys() else 29)
     if 'acic' in identifier:
         df = pd.read_csv(f'{BASE_DATASETS_FOLDER}/causaleval/apo_{identifier}_data.csv')
         # Read in the config
@@ -111,7 +113,7 @@ def get_apo_data(identifier,
             # Extract the unique values of the column named 'index' in the df
             apo_indices = df['index'].unique()
             # Sample the indices such that the sample size is maintained
-            sampled_indices = np.random.choice(apo_indices, size=sample_size, replace=False)
+            sampled_indices = rng.choice(apo_indices, size=sample_size, replace=False)
             # Subset the dataframe based on the sampled indices
             df = df[df['index'].isin(sampled_indices)]    
         # Drop the index column
@@ -261,7 +263,7 @@ def get_apo_data(identifier,
                 # Extract the unique values of the column named 'index' in the df
                 apo_indices = df.index.unique()
                 # Sample the indices such that the sample size is maintained
-                sampled_indices = np.random.choice(apo_indices, size=sample_size, replace=False)
+                sampled_indices = rng.choice(apo_indices, size=sample_size, replace=False)
                 # Subset the dataframe based on the sampled indices
                 df = df.loc[sampled_indices] 
             
@@ -352,20 +354,9 @@ def get_apo_data(identifier,
         return d
     
 if __name__ == '__main__':
-    # Test JDK dataset
-    d = get_apo_data(identifier='jdk', data_format='pandas', return_ites=True, ret_counterfactual_outcomes=True)
+    # Test Postgres dataset
+    d = get_apo_data(identifier='postgres', data_format='pandas', return_ites=True, ret_counterfactual_outcomes=True, sample_size=3000)
     # Combine all columns into a single dataframe
     df = pd.concat([d['w'], d['t'], d['y'], d['ite'], d['y0'], d['y1']], axis=1)
-    print(df.head())
-    # Print d as a pandas dataframe
-    print('--------------------------------')
-    
-    # Test Postgres dataset
-    # d = get_apo_data(identifier='postgres', data_format='pandas', return_ites=True, ret_counterfactual_outcomes=True)
-    # print(d['w'].head())
-    # print(d['t'].head())
-    # print(d['y'].head())
-    # print(d['ite'].head())
-    # print(d['y0'].head())
-    # print(d['y1'].head())
-    # print('--------------------------------')
+    # Compute the ITE mean
+    print(f'ATE: {df["ite"].mean()}')

@@ -1,0 +1,16 @@
+experiment_1:
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
+  random_seed: 3845
+  parameters:
+    - te
+  prior:
+    te:
+      distribution: normal
+      loc: 0.0
+      scale: 1.0
+  distance: sliced_wass
+  min_epsilon: 0.01
+  max_iterations: 100
+  realcause_model_path: results

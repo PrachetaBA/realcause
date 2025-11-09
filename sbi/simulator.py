@@ -59,8 +59,9 @@ if __name__ == '__main__':
         'overlap': 0.1,
         'deg_hetero': 0.1
     }
-    dataset_name = 'n_acic_4'
+    dataset_name = 'postgres'
     dataset_identifier = 'linear'
-    sample_size = 500
-    realcause_model_path = 'osapo_acic_4'
-    simulate_datasets(parameters, dataset_name, dataset_identifier, sample_size, realcause_model_path)
+    sample_size = 3000
+    realcause_model_path = 'tuned_models/postgres_linear_3000_run3/model_8762e4cad8eb4793b9c3572480c4ea7e.pt'
+    d = simulate_datasets(parameters, dataset_name, dataset_identifier, sample_size, realcause_model_path)
+    print(d['data'])

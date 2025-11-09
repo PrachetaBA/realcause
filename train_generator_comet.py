@@ -12,7 +12,7 @@ import torch
 import gpytorch
 import yaml
 
-from data_loaders.apo import get_apo_data
+from data_loaders import apo
 from models import TarNet, preprocess, TrainingParams, MLPParams, LinearModel, GPModel, TarGPModel, GPParams
 from models import distributions
 import helpers
@@ -26,7 +26,7 @@ def get_data(args):
     ate = None
     ite = None
     if data_name in ['n_acic_4', 'jdk', 'postgres']:
-        d = get_apo_data(identifier=data_name, confound_func=data_id, 
+        d = apo.get_apo_data(identifier=data_name, confound_func=data_id, 
                          data_format='numpy', return_ites=True, 
                          ret_counterfactual_outcomes=False,
                          sample_size=args.sample_size)
