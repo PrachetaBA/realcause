@@ -228,7 +228,7 @@ def get_args():
     # dataset
     parser.add_argument("--data", type=str, default=None)
     parser.add_argument("--data_identifier", type=str, default=None, required=False)
-    parser.add_argument("--saveroot", type=str, default="tuned_models")
+    parser.add_argument("--saveroot", type=str, default="results")
     parser.add_argument("--train", type=eval, default=True, choices=[True, False])
     parser.add_argument("--eval", type=eval, default=True, choices=[True, False])
     parser.add_argument('--overwrite_reload', type=str, default='',

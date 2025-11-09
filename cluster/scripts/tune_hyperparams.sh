@@ -9,7 +9,7 @@
 
 # Load the necessary modules
 module load conda/latest
-conda activate /work/pi_jensen_umass_edu/pboddavarama_umass_edu/.conda/envs/realcause-exact
+conda activate realcause-sbi
 
-cd /work/pi_jensen_umass_edu/pboddavarama_umass_edu/nfl/realcause/
+cd /scratch3/workspace/pboddavarama_umass_edu-sbice/realcause/
 python -u train_generator.py $@
