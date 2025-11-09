@@ -8,53 +8,13 @@ import torch
 from addict import Dict
 
 from train_generator import get_args, main
-from consts import REALCAUSE_DATASETS_FOLDER, N_SAMPLE_SEEDS
-
-def load_generated_dataset(dataset_identifier, hyperparameter_str, sample=0):
-    """Function to load the datasets generated using the ACIC as the base dataset."""
-    if hyperparameter_str:
-        dataset_file = Path(REALCAUSE_DATASETS_FOLDER) / dataset_identifier / hyperparameter_str / f'dataset_{sample}.csv'
-    else:
-        dataset_file = Path(REALCAUSE_DATASETS_FOLDER) / dataset_identifier / f'dataset_{sample}.csv'
-    return pd.read_csv(dataset_file)
-
-def load_nfl_realcause_dataset(dataset, dataset_identifier, sample=0):
-    """Function to load all the datasets generated for the NFL project."""
-    valid_datasets = {'lalonde_psid', 'lalonde_cps', 'twins'}
-    dataset = dataset.lower()
-    if dataset not in valid_datasets:
-        raise ValueError('Invalid dataset "{}" ... Valid datasets: {}'
-                         .format(dataset, valid_datasets))
-    if not isinstance(sample, int):
-        raise ValueError('sample must be an integer')
-    if 0 < sample >= N_SAMPLE_SEEDS:
-        raise ValueError('sample must be between 0 and {}'
-                         .format(N_SAMPLE_SEEDS - 1))
-        
-    dataset_file = Path(REALCAUSE_DATASETS_FOLDER) / dataset_identifier / '{}_sample{}.csv'.format(dataset, sample)
-    return pd.read_csv(dataset_file)
-
-def load_realcause_dataset(dataset, sample=0):
-    valid_datasets = {'lalonde_cps', 'lalonde_psid', 'twins'}
-    dataset = dataset.lower()
-    if dataset not in valid_datasets:
-        raise ValueError('Invalid dataset "{}" ... Valid datasets: {}'
-                         .format(dataset, valid_datasets))
-    if not isinstance(sample, int):
-        raise ValueError('sample must be an integer')
-    if 0 < sample >= N_SAMPLE_SEEDS:
-        raise ValueError('sample must be between 0 and {}'
-                         .format(N_SAMPLE_SEEDS - 1))
-
-    dataset_file = Path(REALCAUSE_DATASETS_FOLDER) / '{}_sample{}.csv'.format(dataset, sample)
-    return pd.read_csv(dataset_file)
-
+import warnings 
+warnings.filterwarnings('ignore', category=FutureWarning)
 
 def load_gen(saveroot='save', dataroot=None):
     args = get_args().parse_args([])
     args_path = os.path.join(saveroot, 'args.txt')
     args.__dict__.update(json.load(open(args_path, 'r')))
-    print(args)
 
     # overwriting args
     args.train = False
@@ -66,7 +26,7 @@ def load_gen(saveroot='save', dataroot=None):
         args.dataroot = dataroot
 
     # initializing model
-    model = main(args, False, False)
+    model = main(args, save_args=False, log_=False)
 
     # loading model params
     state_dicts = torch.load(model.savepath)

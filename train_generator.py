@@ -92,7 +92,8 @@ def main(args, save_args=True, log_=True):
     # create logger
     helpers.create(*args.saveroot.split("/"))
     logger = helpers.Logging(args.saveroot, "log.txt", log_)
-    logger.info(args)
+    if args.verbose:
+        logger.debug(args)
 
     # save args
     if save_args:
@@ -100,7 +101,8 @@ def main(args, save_args=True, log_=True):
             file.write(json.dumps(args.__dict__, indent=4))
 
     # dataset
-    logger.info(f"getting data: {args.data}")
+    if args.verbose:
+        logger.debug(f"getting data: {args.data}")
     w, t, y, ite, ate = get_data(args)
     
     # Debugging
@@ -113,21 +115,24 @@ def main(args, save_args=True, log_=True):
     if args.comet:
         exp = Experiment(project_name="causal-benchmark", auto_metric_logging=False)
         exp.add_tag(args.data)
-        logger.info(f"comet url: {exp.url}")
+        logger.debug(f"comet url: {exp.url}")
     else:
         exp = None
 
-    logger.info(f"ate: {ate}")
+    if args.verbose:
+        logger.debug(f"ate: {ate}")
 
     # distribution of outcome (y)
     distribution = get_distribution(args)
-    logger.info(distribution)
+    if args.verbose:
+        logger.debug(distribution)
 
     # training params
     training_params = TrainingParams(
         lr=args.lr, batch_size=args.batch_size, num_epochs=args.num_epochs
     )
-    logger.info(training_params.__dict__)
+    if args.verbose:
+        logger.debug(training_params.__dict__)
 
     # initializing model
     w_transform = preprocess.Preprocess.preps[args.w_transform]
@@ -140,13 +145,15 @@ def main(args, save_args=True, log_=True):
     if args.model_type == 'tarnet':
         Model = TarNet
 
-        logger.info('model type: tarnet')
+        if args.verbose:
+            logger.debug('model type: tarnet')
         mlp_params = MLPParams(
             n_hidden_layers=args.n_hidden_layers,
             dim_h=args.dim_h,
             activation=getattr(torch.nn, args.activation)(),
         )
-        logger.info(mlp_params.__dict__)
+        if args.verbose:
+            logger.debug(mlp_params.__dict__)
         network_params = dict(
             mlp_params_w=mlp_params,
             mlp_params_t_w=mlp_params,
@@ -155,8 +162,8 @@ def main(args, save_args=True, log_=True):
         )
     elif args.model_type == 'linear':
         Model = LinearModel
-
-        logger.info('model type: linear model')
+        if args.verbose:    
+            logger.debug('model type: linear model')
         network_params = dict()
     elif 'gp' in args.model_type:
         if args.model_type == 'gp':
@@ -165,7 +172,8 @@ def main(args, save_args=True, log_=True):
             Model = TarGPModel
         else:
             raise ValueError(f'model type {args.model_type} not implemented')
-        logger.info('model type: linear model')
+        if args.verbose:
+            logger.debug('model type: linear model')
 
         kernel_t = gpytorch.kernels.__dict__[args.kernel_t]()
         kernel_y = gpytorch.kernels.__dict__[args.kernel_y]()
@@ -174,7 +182,8 @@ def main(args, save_args=True, log_=True):
             gp_t_w=GPParams(kernel=kernel_t, var_dist=var_dist),
             gp_y_tw=GPParams(kernel=kernel_y, var_dist=None),
         )
-        logger.info(f'gp_t_w: {repr(network_params["gp_t_w"])}'
+        if args.verbose:
+            logger.debug(f'gp_t_w: {repr(network_params["gp_t_w"])}'
                     f'gp_y_tw: {repr(network_params["gp_y_tw"])}')
         additional_args['num_tasks'] = args.num_tasks
     else:
@@ -211,7 +220,7 @@ def main(args, save_args=True, log_=True):
     # evaluation
     if args.eval:
         summary, all_runs = evaluate(args, model)
-        logger.info(summary)
+        logger.debug(summary)
         with open(os.path.join(args.saveroot, "summary.txt"), "w") as file:
             file.write(json.dumps(summary, indent=4))
         with open(os.path.join(args.saveroot, "all_runs.txt"), "w") as file:

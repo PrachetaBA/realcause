@@ -12,7 +12,7 @@ import pandas as pd
 import pyabc
 import yaml
 
-from data_loaders import apo, lalonde
+from data_loaders import apo
 from sbi import simulator 
 
 
@@ -30,9 +30,6 @@ class IdSumStat(pyabc.Sumstat):
 
 def main(abc_config,
          experiment_number,
-         dataset_name,
-         dataset_identifier,
-         sample_size,
          sampler='redis',
          redis_server=None,
          redis_port=6379):
@@ -43,19 +40,19 @@ def main(abc_config,
         abc_config (dict): Dictionary containing the configuration parameters
                 for the SMC-ABC algorithm.
         experiment_number (int): Identifier for the experiment to be run.
-        dataset_name (str): Name of the dataset to be used for the simulation.
-        dataset_identifier (str): Identifier of the dataset to be used for the simulation.
-        sample_size (int): Size of the sample to be used for the simulation.
         sampler (str): Type of sampler to be used for the ABC algorithm, either 'singlecore' or 'redis'.
         redis_server (str): Hostname of the Redis server to be used for the ABC algorithm.
         redis_port (int): Port number for the Redis server.
     """
+    dataset_name = abc_config['dataset_name']
+    dataset_identifier = abc_config['dataset_identifier']
+    sample_size = abc_config['sample_size']
     logger.info(f'Starting SMC-ABC algorithm for dataset: {dataset_name} with identifier: {dataset_identifier} and sample size: {sample_size}')
     
     # Load the observed dataset to be used as the reference dataset
     if dataset_name in ['n_acic_4', 'jdk', 'postgres']:
         d = apo.get_apo_data(identifier=dataset_name, confound_func=dataset_identifier, 
-                             data_format='numpy', return_ites=False, 
+                             data_format='pandas', return_ites=False, 
                              ret_counterfactual_outcomes=False,
                              sample_size=sample_size)
     else:
@@ -309,12 +306,10 @@ if __name__ == '__main__':
     if args.sampler == 'singlecore':
         main(configuration,
              experiment_number=args.expt_num,
-             dataset_identifier=configuration['name'],
              sampler=args.sampler)
     else:
         main(configuration,
              experiment_number=args.expt_num,
-             dataset_identifier=configuration['name'],
              sampler=args.sampler,
              redis_server=args.redis_server,
              redis_port=args.redis_port)

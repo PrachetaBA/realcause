@@ -13,4 +13,4 @@ experiment_1:
   distance: sliced_wass
   min_epsilon: 0.01
   max_iterations: 100
-  realcause_model_path: results
+  realcause_model_path: results/postgres_linear_3000/default

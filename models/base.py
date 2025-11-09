@@ -119,8 +119,8 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
             n_val = regular_round(n * val_prop / total)
             n_test = test_size
 
-        if verbose:
-            print("n_train: {}\tn_val: {}\tn_test: {}".format(n_train, n_val, n_test))
+        # if verbose == True:
+        #     print("n_train: {}\tn_val: {}\tn_test: {}".format(n_train, n_val, n_test))
 
         if shuffle:
             np.random.shuffle(idxs)
@@ -128,7 +128,8 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
         val_idxs = idxs[n_train:n_train + n_val]
         test_idxs = idxs[n_train + n_val:]
 
-        print("test_idxs: ", test_idxs.shape)
+        # if verbose == True:
+        #     print("test_idxs: ", test_idxs.shape)
 
         self.train_idxs = train_idxs
         self.val_idxs = val_idxs

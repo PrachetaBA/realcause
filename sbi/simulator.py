@@ -4,6 +4,7 @@ In the case of Realcause, this loads the pre-trained model
 and generates the samples from it."""
 
 # Import libraries
+import numpy as np
 from loading import load_gen
 from data_loaders import apo
 
@@ -29,27 +30,30 @@ def simulate_datasets(parameters,
         raise ValueError(f"Dataset {dataset_name} not implemented")
     
     df_w, _, _ = d['w'], d['t'], d['y']
-    w_orig = df_w.to_numpy()
     
+    te = None
+    overlap = 1.0
+    deg_hetero = 1.0
     if 'te' in parameters and parameters['te'] is not None:
         causal_effect = parameters['te'] 
-    elif 'overlap' in parameters and parameters['overlap'] is not None:
+    if 'overlap' in parameters and parameters['overlap'] is not None:
         overlap = parameters['overlap']
-    elif 'deg_hetero' in parameters and parameters['deg_hetero'] is not None:
+    if 'deg_hetero' in parameters and parameters['deg_hetero'] is not None:
         deg_hetero = parameters['deg_hetero']
-    else:
-        raise ValueError(f"Invalid parameters: {parameters}")
-    _, t, y = rc_model.sample(w_orig,
-                            overlap=overlap,
+    _, t, y = rc_model.sample(df_w,overlap=overlap,
                             causal_effect_scale=causal_effect,
                             deg_hetero=deg_hetero,
                             ret_counterfactuals=False)
-    generated_df = df_w
-    generated_df['t'] = t
-    generated_df['y'] = y
+    
+    # Ensure t and y are column vectors
+    t = t.reshape(-1, 1) if t.ndim == 1 else t
+    y = y.reshape(-1, 1) if y.ndim == 1 else y
+    
+    # Concatenate arrays horizontally
+    generated_data = np.column_stack([df_w, t, y])
     
     return {
-        'data': generated_df.values
+        'data': generated_data
     }
     
 if __name__ == '__main__':
@@ -62,6 +66,6 @@ if __name__ == '__main__':
     dataset_name = 'postgres'
     dataset_identifier = 'linear'
     sample_size = 3000
-    realcause_model_path = 'tuned_models/postgres_linear_3000_run3/model_8762e4cad8eb4793b9c3572480c4ea7e.pt'
+    realcause_model_path = f'results/{dataset_name}_{dataset_identifier}_{sample_size}/default'
     d = simulate_datasets(parameters, dataset_name, dataset_identifier, sample_size, realcause_model_path)
-    print(d['data'])
+    print(d['data'].shape)

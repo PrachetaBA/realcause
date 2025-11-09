@@ -232,3 +232,4 @@ hyperparameters/
 src/generate_datasets.py
 tuned_models/
 hyperparameter_tuning/
+database/
