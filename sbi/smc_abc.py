@@ -62,7 +62,15 @@ def main(abc_config,
             d = lalonde.load_lalonde(obs_version='psid', data_format='pandas_single')
         elif dataset_identifier == 'cps1':
             d = lalonde.load_lalonde(obs_version='cps', data_format='pandas_single')
+        outcome_col = 're78'
+        treatment_col = 'treat'
+        covariates_col = d.columns.tolist()
+        covariates_col.remove(outcome_col)
+        covariates_col.remove(treatment_col)
+        # Reorder the columns to put all the covariates first, then treatment, then outcome
+        d = d[covariates_col + [treatment_col, outcome_col]]
         # Get a pandas dataframe from the combination of the original columns
+        d.drop(columns=['data_id'], inplace=True)
         observed_data = d
     else:
         raise ValueError(f"Dataset {dataset_name} not implemented")
@@ -73,14 +81,6 @@ def main(abc_config,
     }
     # Sample_size observed
     observed_sample_size = observed_data.shape[0]
-    
-    ##### return ####
-    print(observed['data'])
-    print(observed['data'].shape)
-    print(observed_data.head())
-    print(observed_data.shape)
-    print(observed_sample_size)
-    return 
     
     # Define priors for the parameters 
     prior_vars = abc_config['parameters']
