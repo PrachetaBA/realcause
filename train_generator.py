@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import gpytorch
 
-from data_loaders import apo
+from data_loaders import apo, lalonde
 from models import TarNet, preprocess, TrainingParams, MLPParams, LinearModel, GPModel, TarGPModel, GPParams
 from models import distributions
 import helpers
@@ -26,6 +26,11 @@ def get_data(args):
         w, t, y = d['w'], d['t'], d['y']
         ite = d['ite'] if 'ite' in d else None
         ate = d['ite'].mean() if 'ite' in d else None 
+    elif data_name == 'lalonde':
+        if data_id == 'psid1':
+            w, t, y = lalonde.load_lalonde(obs_version='psid')
+        elif data_id == 'cps1':
+            w, t, y = lalonde.load_lalonde(obs_version='cps')  
     else:
         raise ValueError(f"Dataset {data_name} not implemented")
     return w, t, y, ite, ate

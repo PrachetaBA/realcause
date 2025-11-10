@@ -182,7 +182,7 @@ def get_apo_data(identifier,
         }  # If requesting additional information
         if data_format == 'numpy':
             d = {
-                'w': osapo_df.drop(['treatment', 'outcome', 'ite'], axis='columns').to_numpy(),
+                'w': osapo_df.drop(['treatment', 'outcome', 'ite', 'counterfactual_outcome_0', 'counterfactual_outcome_1'], axis='columns').to_numpy(),
                 't': osapo_df['treatment'].to_numpy(),
                 'y': osapo_df['outcome'].to_numpy()
             }
@@ -193,7 +193,7 @@ def get_apo_data(identifier,
                 d['y1'] = osapo_df['counterfactual_outcome_1'].to_numpy()
         elif data_format == 'pandas':
             d = {
-                'w': osapo_df.drop(['treatment', 'outcome', 'ite'], axis='columns'),
+                'w': osapo_df.drop(['treatment', 'outcome', 'ite', 'counterfactual_outcome_0', 'counterfactual_outcome_1'], axis='columns'),
                 't': osapo_df['treatment'],
                 'y': osapo_df['outcome']
             }
@@ -329,7 +329,7 @@ def get_apo_data(identifier,
         }  # If requesting additional information
         if data_format == 'numpy':
             d = {
-                'w': osapo_df.drop([treatment_col, outcome_col, 'ite'], axis='columns').to_numpy(),
+                'w': osapo_df.drop([treatment_col, outcome_col, 'counterfactual_outcome_0', 'counterfactual_outcome_1', 'ite'], axis='columns').to_numpy(),
                 't': osapo_df[treatment_col].to_numpy(),
                 'y': osapo_df[outcome_col].to_numpy()
             }
@@ -340,7 +340,7 @@ def get_apo_data(identifier,
                 d['y1'] = osapo_df['counterfactual_outcome_1'].to_numpy()
         elif data_format == 'pandas':
             d = {
-                'w': osapo_df.drop([treatment_col, outcome_col, 'ite'], axis='columns'),
+                'w': osapo_df.drop([treatment_col, outcome_col, 'counterfactual_outcome_0', 'counterfactual_outcome_1', 'ite'], axis='columns'),
                 't': osapo_df[treatment_col],
                 'y': osapo_df[outcome_col]
             }
@@ -355,8 +355,26 @@ def get_apo_data(identifier,
     
 if __name__ == '__main__':
     # Test Postgres dataset
-    d = get_apo_data(identifier='postgres', data_format='pandas', return_ites=True, ret_counterfactual_outcomes=True, sample_size=3000)
+    # d = get_apo_data(identifier='postgres', data_format='pandas', return_ites=True, ret_counterfactual_outcomes=True, sample_size=3000)
+    # # Combine all columns into a single dataframe
+    # df = pd.concat([d['w'], d['t'], d['y'], d['ite'], d['y0'], d['y1']], axis=1)
+    # # Compute the ITE mean
+    # print(f'ATE: {df["ite"].mean()}')
+    
+    
+    # Test JDK dataset
+    # d = get_apo_data(identifier='jdk', data_format='pandas', return_ites=True, ret_counterfactual_outcomes=True, sample_size=None)
+    # # Combine all columns into a single dataframe
+    # df = pd.concat([d['w'], d['t'], d['y'], d['ite'], d['y0'], d['y1']], axis=1)
+    # print(df.head())
+    # print(df.shape)
+    # print(f'ATE: {df["ite"].mean()}')
+    
+    # Test n_acic_4 dataset
+    d = get_apo_data(identifier='n_acic_4', data_format='pandas', return_ites=True, ret_counterfactual_outcomes=True, sample_size=3000)
     # Combine all columns into a single dataframe
     df = pd.concat([d['w'], d['t'], d['y'], d['ite'], d['y0'], d['y1']], axis=1)
-    # Compute the ITE mean
+    print(df.columns)
+    print(df.head())
+    print(df.shape)
     print(f'ATE: {df["ite"].mean()}')

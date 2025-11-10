@@ -12,7 +12,7 @@ import pandas as pd
 import pyabc
 import yaml
 
-from data_loaders import apo
+from data_loaders import apo, lalonde
 from sbi import simulator 
 
 
@@ -55,16 +55,32 @@ def main(abc_config,
                              data_format='pandas', return_ites=False, 
                              ret_counterfactual_outcomes=False,
                              sample_size=sample_size)
+        # Get a pandas dataframe from the combination of the orig columns
+        observed_data = pd.concat([d['w'], d['t'], d['y']], axis=1)
+    elif dataset_name == 'lalonde':
+        if dataset_identifier == 'psid1':
+            d = lalonde.load_lalonde(obs_version='psid', data_format='pandas_single')
+        elif dataset_identifier == 'cps1':
+            d = lalonde.load_lalonde(obs_version='cps', data_format='pandas_single')
+        # Get a pandas dataframe from the combination of the original columns
+        observed_data = d
     else:
         raise ValueError(f"Dataset {dataset_name} not implemented")
-    # Get a pandas dataframe from the combination of the orig columns
-    observed_data = pd.concat([d['w'], d['t'], d['y']], axis=1)
+    
     # Numpy dictionary of the observed data
     observed = {
         'data': observed_data.values
     }
     # Sample_size observed
     observed_sample_size = observed_data.shape[0]
+    
+    ##### return ####
+    print(observed['data'])
+    print(observed['data'].shape)
+    print(observed_data.head())
+    print(observed_data.shape)
+    print(observed_sample_size)
+    return 
     
     # Define priors for the parameters 
     prior_vars = abc_config['parameters']

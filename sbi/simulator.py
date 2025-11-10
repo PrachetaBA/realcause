@@ -6,7 +6,7 @@ and generates the samples from it."""
 # Import libraries
 import numpy as np
 from loading import load_gen
-from data_loaders import apo
+from data_loaders import apo, lalonde
 
 def simulate_datasets(parameters, 
                       dataset_name,
@@ -26,6 +26,12 @@ def simulate_datasets(parameters,
                          data_format='numpy', return_ites=False, 
                          ret_counterfactual_outcomes=False,
                          sample_size=sample_size)
+    elif dataset_name == 'lalonde':
+        if dataset_identifier == 'psid1':
+            w, t, y = lalonde.load_lalonde(obs_version='psid')
+        elif dataset_identifier == 'cps1':
+            w, t, y = lalonde.load_lalonde(obs_version='cps')
+        d = {'w': w, 't': t, 'y': y}
     else:
         raise ValueError(f"Dataset {dataset_name} not implemented")
     
@@ -63,9 +69,28 @@ if __name__ == '__main__':
         'overlap': 0.1,
         'deg_hetero': 0.1
     }
-    dataset_name = 'postgres'
-    dataset_identifier = 'linear'
-    sample_size = 3000
-    realcause_model_path = f'results/{dataset_name}_{dataset_identifier}_{sample_size}/default'
-    d = simulate_datasets(parameters, dataset_name, dataset_identifier, sample_size, realcause_model_path)
-    print(d['data'].shape)
+    ### Postgres dataset ###
+    # dataset_name = 'postgres'
+    # dataset_identifier = 'linear'
+    # sample_size = 3000
+    # realcause_model_path = f'results/postgres_linear_3000/default'
+    
+    # d1 = simulate_datasets(parameters, dataset_name, dataset_identifier, sample_size, realcause_model_path)
+    # print(d1['data'])
+    # print(d1['data'].shape)
+
+    ### Lalonde CPS1 dataset ###
+    # dataset_name = 'lalonde'
+    # dataset_identifier = 'cps1'
+    # sample_size = None
+    # realcause_model_path = f'results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize'
+    
+    ### Lalonde PSID1 dataset ###
+    dataset_name = 'lalonde'
+    dataset_identifier = 'psid1'
+    sample_size = None
+    realcause_model_path = f'results/GenModelCkpts/lalonde/psid1/save'
+    
+    d3 = simulate_datasets(parameters, dataset_name, dataset_identifier, sample_size, realcause_model_path)
+    print(d3['data'])
+    print(d3['data'].shape)
