@@ -12,7 +12,7 @@ experiment_1:
       scale: 10.0
   distance: sliced_wass
   min_epsilon: 0.01
-  max_iterations: 30 
+  max_iterations: 20 
   realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
 
 experiment_2:
@@ -34,7 +34,7 @@ experiment_2:
       scale: 1.0
   distance: sliced_wass
   min_epsilon: 0.01
-  max_iterations: 30
+  max_iterations: 20
   realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
 
 experiment_3:
@@ -51,7 +51,7 @@ experiment_3:
       scale: 10.0
   distance: sliced_wass
   min_epsilon: 0.01
-  max_iterations: 3   # TEMPORARY
+  max_iterations: 20
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
 
 experiment_4:
@@ -73,5 +73,5 @@ experiment_4:
       scale: 1.0
   distance: sliced_wass
   min_epsilon: 0.01
-  max_iterations: 30
+  max_iterations: 20
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
