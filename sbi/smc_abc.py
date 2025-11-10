@@ -12,6 +12,7 @@ import pandas as pd
 import pyabc
 import yaml
 
+from loading import load_gen
 from data_loaders import apo, lalonde
 from sbi import simulator 
 
@@ -57,11 +58,13 @@ def main(abc_config,
                              sample_size=sample_size)
         # Get a pandas dataframe from the combination of the orig columns
         observed_data = pd.concat([d['w'], d['t'], d['y']], axis=1)
+        covariates_df = d['w'].values
     elif dataset_name == 'lalonde':
         if dataset_identifier == 'psid1':
             d = lalonde.load_lalonde(obs_version='psid', data_format='pandas_single')
         elif dataset_identifier == 'cps1':
             d = lalonde.load_lalonde(obs_version='cps', data_format='pandas_single')
+        d.drop(columns=['data_id'], inplace=True)
         outcome_col = 're78'
         treatment_col = 'treat'
         covariates_col = d.columns.tolist()
@@ -69,8 +72,7 @@ def main(abc_config,
         covariates_col.remove(treatment_col)
         # Reorder the columns to put all the covariates first, then treatment, then outcome
         d = d[covariates_col + [treatment_col, outcome_col]]
-        # Get a pandas dataframe from the combination of the original columns
-        d.drop(columns=['data_id'], inplace=True)
+        covariates_df = d[covariates_col].values
         observed_data = d
     else:
         raise ValueError(f"Dataset {dataset_name} not implemented")
@@ -81,6 +83,9 @@ def main(abc_config,
     }
     # Sample_size observed
     observed_sample_size = observed_data.shape[0]
+    
+    # Load the Realcause model from the specified path
+    rc_model, _ = load_gen(saveroot=abc_config['realcause_model_path'])
     
     # Define priors for the parameters 
     prior_vars = abc_config['parameters']
@@ -99,10 +104,8 @@ def main(abc_config,
     def simulator_pyabc(parameters):
         """Wrapper around the simulator function to be used by PyABC."""
         return simulator.simulate_datasets(parameters=parameters,
-                                           dataset_name=dataset_name,
-                                           dataset_identifier=dataset_identifier,
-                                           sample_size=sample_size,
-                                           realcause_model_path=abc_config['realcause_model_path'])
+                                           covariates_df=covariates_df,
+                                           realcause_model=rc_model)
         
     # Define the distance metrics for the data (TODO: Add more distance functions later) 
     DISTANCE_PARAM = pyabc.SlicedWassersteinDistance(metric='sqeuclidean',

@@ -1,21 +1,4 @@
 experiment_1:
-  dataset_name: postgres
-  dataset_identifier: linear
-  sample_size: 3000
-  random_seed: 3845
-  parameters:
-    - te
-  prior:
-    te:
-      distribution: normal
-      loc: 0.0
-      scale: 1.0
-  distance: sliced_wass
-  min_epsilon: 0.01
-  max_iterations: 100
-  realcause_model_path: results/postgres_linear_3000/default
-
-experiment_2:
   dataset_name: lalonde
   dataset_identifier: cps1
   sample_size: None
@@ -24,12 +7,34 @@ experiment_2:
     - te
   prior:
     te:
-      distribution: normal
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+  distance: sliced_wass
+  min_epsilon: 0.01
+  max_iterations: 30 
+  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
+
+experiment_2:
+  dataset_name: lalonde
+  dataset_identifier: cps1
+  sample_size: None
+  random_seed: 3845
+  parameters:
+    - te
+    - deg_hetero
+  prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
       loc: 0.0
       scale: 1.0
   distance: sliced_wass
   min_epsilon: 0.01
-  max_iterations: 1  # TEMPORARY
+  max_iterations: 30
   realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
 
 experiment_3:
@@ -41,10 +46,32 @@ experiment_3:
     - te
   prior:
     te:
-      distribution: normal
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+  distance: sliced_wass
+  min_epsilon: 0.01
+  max_iterations: 3   # TEMPORARY
+  realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
+
+experiment_4:
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  random_seed: 3845
+  parameters:
+    - te
+    - deg_hetero
+  prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
       loc: 0.0
       scale: 1.0
   distance: sliced_wass
   min_epsilon: 0.01
-  max_iterations: 1  # TEMPORARY
+  max_iterations: 30
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
