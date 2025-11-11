@@ -190,13 +190,27 @@ def main(abc_config,
             prior_s[var].append(prior_parameters[var[6:]])
         logger.info(f'Prior parameters: {prior_parameters}')
         prior_samples = pd.DataFrame(simulator_pyabc(prior_parameters)['data'])
+        # Name the columns as covariates_col + treatment_col + outcome_col
+        if dataset_name == 'lalonde':
+            prior_samples.columns = covariates_col + [treatment_col, outcome_col]
         prior_samples.to_csv(f'data/smc_abc/{expt_name}/prior_sample_{i}.csv', index=False)
 
         posterior_parameters = posterior.rvs()
+        # We want to ensure that the posterior parameters are within the prior bounds
+        for var in post_var_names:
+            if var[5:] in ['deg_hetero', 'overlap']:
+                # Ensure that the values are not less than 0 or greater than 1
+                if posterior_parameters[var[5:]] < 0.0:
+                    posterior_parameters[var[5:]] = 0.0
+                elif posterior_parameters[var[5:]] > 1.0:
+                    posterior_parameters[var[5:]] = 1.0
         for var in post_var_names:
             post_s[var].append(posterior_parameters[var[5:]])
         logger.info(f'Posterior parameters: {posterior_parameters}')
         posterior_samples = pd.DataFrame(simulator_pyabc(posterior_parameters)['data'])
+        # Name the columns as covariates_col + treatment_col + outcome_col
+        if dataset_name == 'lalonde':
+            posterior_samples.columns = covariates_col + [treatment_col, outcome_col]
         posterior_samples.to_csv(f'data/smc_abc/{expt_name}/posterior_sample_{i}.csv', index=False)
 
     # Save the prior and posterior samples in a single DataFrame with columns post_vars + prior_vars

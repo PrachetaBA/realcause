@@ -8,11 +8,11 @@ experiment_1:
   prior:
     te:
       distribution: uniform
-      loc: -5.0
-      scale: 10.0
+      loc: -1000.0
+      scale: 6000.0
   distance: sliced_wass
   min_epsilon: 0.01
-  max_iterations: 20 
+  max_iterations: 30
   realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
 
 experiment_2:
@@ -26,8 +26,8 @@ experiment_2:
   prior:
     te:
       distribution: uniform
-      loc: -5.0
-      scale: 10.0
+      loc: -1000.0
+      scale: 6000.0
     deg_hetero:
       distribution: uniform
       loc: 0.0
@@ -47,11 +47,11 @@ experiment_3:
   prior:
     te:
       distribution: uniform
-      loc: -5.0
-      scale: 10.0
+      loc: -1000.0
+      scale: 6000.0
   distance: sliced_wass
   min_epsilon: 0.01
-  max_iterations: 20
+  max_iterations: 30
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
 
 experiment_4:
@@ -65,8 +65,8 @@ experiment_4:
   prior:
     te:
       distribution: uniform
-      loc: -5.0
-      scale: 10.0
+      loc: -1000.0
+      scale: 6000.0
     deg_hetero:
       distribution: uniform
       loc: 0.0
