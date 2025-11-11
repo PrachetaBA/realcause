@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import gpytorch
 
-from data_loaders import apo, lalonde
+from data_loaders import apo, lalonde, twins
 from models import TarNet, preprocess, TrainingParams, MLPParams, LinearModel, GPModel, TarGPModel, GPParams
 from models import distributions
 import helpers
@@ -31,6 +31,9 @@ def get_data(args):
             w, t, y = lalonde.load_lalonde(obs_version='psid')
         elif data_id == 'cps1':
             w, t, y = lalonde.load_lalonde(obs_version='cps')  
+    elif data_name == 'twins':
+        d = twins.load_twins(data_format='numpy')
+        w, t, y = d['w'], d['t'], d['y']
     else:
         raise ValueError(f"Dataset {data_name} not implemented")
     return w, t, y, ite, ate

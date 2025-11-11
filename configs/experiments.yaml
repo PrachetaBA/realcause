@@ -75,3 +75,42 @@ experiment_4:
   min_epsilon: 0.01
   max_iterations: 30
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
+
+experiment_5:
+  dataset_name: twins
+  dataset_identifier: st
+  sample_size: None
+  random_seed: 3845
+  parameters:
+    - te
+  prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+  distance: sliced_wass
+  min_epsilon: 0.01
+  max_iterations: 30
+  realcause_model_path: results/GenModelCkpts/twins/twins/n_hidden_layers1-dim_h64-lr5e-05-w_transformNormalize
+
+experiment_6:
+  dataset_name: twins
+  dataset_identifier: st
+  sample_size: None
+  random_seed: 3845
+  parameters:
+    - te
+    - deg_hetero
+  prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  distance: sliced_wass
+  min_epsilon: 0.01
+  max_iterations: 30
+  realcause_model_path: results/GenModelCkpts/twins/twins/n_hidden_layers1-dim_h64-lr5e-05-w_transformNormalize

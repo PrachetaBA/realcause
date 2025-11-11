@@ -13,7 +13,7 @@ import pyabc
 import yaml
 
 from loading import load_gen
-from data_loaders import apo, lalonde
+from data_loaders import apo, lalonde, twins
 from sbi import simulator 
 
 
@@ -74,6 +74,13 @@ def main(abc_config,
         d = d[covariates_col + [treatment_col, outcome_col]]
         covariates_df = d[covariates_col].values
         observed_data = d
+    elif dataset_name == 'twins':
+        d = twins.load_twins(data_format='pandas')
+        observed_data = pd.concat([d['w'], d['t'], d['y']], axis=1)
+        covariates_df = d['w'].values
+        treatment_col = 'T'
+        outcome_col = 'yf'
+        covariates_col = d['w'].columns.tolist()
     else:
         raise ValueError(f"Dataset {dataset_name} not implemented")
     
@@ -191,7 +198,7 @@ def main(abc_config,
         logger.info(f'Prior parameters: {prior_parameters}')
         prior_samples = pd.DataFrame(simulator_pyabc(prior_parameters)['data'])
         # Name the columns as covariates_col + treatment_col + outcome_col
-        if dataset_name == 'lalonde':
+        if dataset_name in ['lalonde', 'twins']:
             prior_samples.columns = covariates_col + [treatment_col, outcome_col]
         prior_samples.to_csv(f'data/smc_abc/{expt_name}/prior_sample_{i}.csv', index=False)
 
@@ -209,7 +216,7 @@ def main(abc_config,
         logger.info(f'Posterior parameters: {posterior_parameters}')
         posterior_samples = pd.DataFrame(simulator_pyabc(posterior_parameters)['data'])
         # Name the columns as covariates_col + treatment_col + outcome_col
-        if dataset_name == 'lalonde':
+        if dataset_name in ['lalonde', 'twins']:
             posterior_samples.columns = covariates_col + [treatment_col, outcome_col]
         posterior_samples.to_csv(f'data/smc_abc/{expt_name}/posterior_sample_{i}.csv', index=False)
 
