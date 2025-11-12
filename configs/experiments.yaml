@@ -90,7 +90,7 @@ experiment_5:
       scale: 10.0
   distance: sliced_wass
   min_epsilon: 0.01
-  max_iterations: 30
+  max_iterations: 50
   realcause_model_path: results/GenModelCkpts/twins/twins/n_hidden_layers1-dim_h64-lr5e-05-w_transformNormalize
 
 experiment_6:
@@ -112,5 +112,27 @@ experiment_6:
       scale: 1.0
   distance: sliced_wass
   min_epsilon: 0.01
-  max_iterations: 30
+  max_iterations: 50
   realcause_model_path: results/GenModelCkpts/twins/twins/n_hidden_layers1-dim_h64-lr5e-05-w_transformNormalize
+
+experiment_7:   # Same as experiment 2 but for larger number of iterations
+  dataset_name: lalonde
+  dataset_identifier: cps1
+  sample_size: None
+  random_seed: 3845
+  parameters:
+    - te
+    - deg_hetero
+  prior:
+    te:
+      distribution: uniform
+      loc: -1000.0
+      scale: 6000.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  distance: sliced_wass
+  min_epsilon: 0.01
+  max_iterations: 50
+  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
