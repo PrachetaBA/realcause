@@ -1,7 +1,7 @@
 # pylint: disable=import-error, logging-fstring-interpolation, possibly-used-before-assignment
 """Script to run the ATE estimators on the generated datasets.
 
-Conda environment: rpy
+Conda environment: /work/pi_jensen_umass_edu/pboddavarama_umass_edu/pba-conda/envs/rpy
 
 The user may specify the ATE estimators as well as the range
 of replications to run. This will help in parallelizing the
@@ -17,7 +17,7 @@ import logging
 import os
 
 import pandas as pd
-import ate_estimators
+from .import ate_estimators
 from data_loaders import apo, lalonde, twins
 
 # Set logger to INFO level
@@ -190,25 +190,20 @@ def load_smcabc(dataset_name,
         'treatment_col': output['treatment'],
         'data': data,
     }
-
-info = load_smcabc('twins', 'st', None, 'data/smc_abc/twins_st_None_dist_sliced_wass_expt_6/1', 1, observed_data=True)
-print(info['parameters'])
-print(info['data'].head())
-
-info = load_smcabc('twins', 'st', None, 'data/smc_abc/twins_st_None_dist_sliced_wass_expt_6/1', 1, observed_data=False, posterior_or_prior='posterior')
-print(info['parameters'])
-print(info['data'].head())
-
+    
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run causal estimators on the Realcause datasets.')
     parser.add_argument('--dataset_name', type=str, default=None)
     parser.add_argument('--dataset_identifier', type=str, default=None)
     parser.add_argument('--sample_size', type=int, default=None, required=False)
-    parser.add_argument('--dataset_path', type=str, default=None)
+    parser.add_argument('--experiment_number', type=int, default=None)
+    parser.add_argument('--distance_function', type=str, default='sliced_wass', required=False)
     parser.add_argument('--observed_data', action='store_true', default=False)
     parser.add_argument('--posterior_or_prior', type=str, default='posterior', required=False, choices=['posterior', 'prior'])
     parser.add_argument('--num_replications', type=int, default=50, required=False)
     parser.add_argument('--set_of_estimators', type=str, default='all', required=False)
+    # For e.g. python -m sbice.get_ate_estimates --dataset_name lalonde --dataset_identifier psid1 
+    # --experiment_number 3 --posterior_or_prior posterior --num_replications 1 --set_of_estimators meta
     args = parser.parse_args()
 
     if args.observed_data:
@@ -241,7 +236,7 @@ if __name__ == '__main__':
             gen_data_info = load_smcabc(dataset_name = args.dataset_name, 
                                         dataset_identifier = args.dataset_identifier, 
                                         sample_size = args.sample_size, 
-                                        dataset_path = args.dataset_path, 
+                                        dataset_path = f'data/smc_abc/{args.dataset_name}_{args.dataset_identifier}_{args.sample_size}_dist_{args.distance_function}_expt_{args.experiment_number}/1', 
                                         dataset_number = itr, 
                                         observed_data = False, 
                                         posterior_or_prior = args.posterior_or_prior)
@@ -249,7 +244,7 @@ if __name__ == '__main__':
                 outcome=gen_data_info['outcome_col'],
                 treatment=gen_data_info['treatment_col'],
                 data=gen_data_info['data'],
-                dataset_identifier=f'{args.dataset_name}_{args.dataset_identifier}_{args.sample_size}_{itr}',
+                dataset_identifier=f'{args.dataset_name}_{args.dataset_identifier}_{args.sample_size}_dist_{args.distance_function}_expt_{args.experiment_number}_{itr}',
                 set_of_estimators=ALL_ESTIMATORS if args.set_of_estimators == 'all' else META_ESTIMATORS,
                 repeats=1)
             estimated_ate['df'] = f'{args.dataset_name}_{args.dataset_identifier}_{args.sample_size}'
