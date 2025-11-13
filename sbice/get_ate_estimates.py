@@ -195,7 +195,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run causal estimators on the Realcause datasets.')
     parser.add_argument('--dataset_name', type=str, default=None)
     parser.add_argument('--dataset_identifier', type=str, default=None)
-    parser.add_argument('--sample_size', type=int, default=None, required=False)
+    parser.add_argument('--sample_size', type=str, default=None, required=False)
     parser.add_argument('--experiment_number', type=int, default=None)
     parser.add_argument('--distance_function', type=str, default='sliced_wass', required=False)
     parser.add_argument('--observed_data', action='store_true', default=False)
