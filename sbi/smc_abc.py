@@ -13,6 +13,7 @@ import pyabc
 import yaml
 
 from loading import load_gen
+from models import preprocess
 from data_loaders import apo, lalonde, twins
 from sbi import simulator 
 
@@ -70,10 +71,7 @@ def main(abc_config,
         covariates_col = d.columns.tolist()
         covariates_col.remove(outcome_col)
         covariates_col.remove(treatment_col)
-        # Reorder the columns to put all the covariates first, then treatment, then outcome
-        d = d[covariates_col + [treatment_col, outcome_col]]
-        covariates_df = d[covariates_col].values
-        observed_data = d
+        covariates_df = d[covariates_col].values   # This is the original covariates dataframe (not transformed)
     elif dataset_name == 'twins':
         d = twins.load_twins(data_format='pandas')
         observed_data = pd.concat([d['w'], d['t'], d['y']], axis=1)
@@ -84,15 +82,35 @@ def main(abc_config,
     else:
         raise ValueError(f"Dataset {dataset_name} not implemented")
     
+    # Load the Realcause model from the specified path (before applying transformations)
+    # We need to use the model's transforms to ensure scales match
+    rc_model, _ = load_gen(saveroot=abc_config['realcause_model_path'])
+    
+    # Apply transformations using the model's transforms (if specified in config)
+    # This ensures the observed data is normalized using the same parameters as the model
+    if dataset_name == 'lalonde':
+        if abc_config['transform'] == True:
+            print(f'The covariates columns are: {covariates_col}')
+            # The model's w_transform was created from training data
+            # Transform the covariates using the model's transform
+            transformed_w = rc_model.w_transform.transform(d[covariates_col].values)
+            # Assign back to DataFrame columns
+            for i, col in enumerate(covariates_col):
+                d[col] = transformed_w[:, i]
+                
+            # Do the same for the outcome column
+            transformed_y = rc_model.y_transform.transform(d[outcome_col].values.reshape(-1, 1))
+            d[outcome_col] = transformed_y.flatten()
+        # Reorder the columns to put all the covariates first, then treatment, then outcome
+        d = d[covariates_col + [treatment_col, outcome_col]]
+        observed_data = d
+    
     # Numpy dictionary of the observed data
     observed = {
         'data': observed_data.values
     }
     # Sample_size observed
-    observed_sample_size = observed_data.shape[0]
-    
-    # Load the Realcause model from the specified path
-    rc_model, _ = load_gen(saveroot=abc_config['realcause_model_path'])
+    observed_sample_size = observed_data.shape[0]    
     
     # Define priors for the parameters 
     prior_vars = abc_config['parameters']

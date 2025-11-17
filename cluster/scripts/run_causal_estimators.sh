@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=estimators-causal  # Job name
-#SBATCH --mem=4G  # Requested Memory
+#SBATCH --mem=16G  # Requested Memory
 #SBATCH --partition=cpu      # Partition
 #SBATCH -t 1-00:00:00  # Job time limit
 #SBATCH -o ../logs/causal_estimators/job-%j.out
