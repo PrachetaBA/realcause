@@ -108,11 +108,10 @@ def load_source_dataset(dataset_name,
         source_data = d
         # Compute the true ATE as just the values from the RCT data (after applying the standardization from the Realcause model)
         rc_model, _ = load_gen(saveroot=realcause_model_path)
+        # Apply the transformmations to the source data and compute the true ATE 
         rct_data = lalonde.load_lalonde(rct_version='dw', rct=True, data_format='pandas_single')
-        # Transform the covariates and the outcome columns using the Realcause model preprocessing
         rct_data[covariates_col] = rc_model.w_transform.transform(rct_data[covariates_col].values)
         rct_data[outcome_col] = rc_model.y_transform.transform(rct_data[outcome_col].values.reshape(-1, 1))
-        # Compute the true ATE as just the values from the RCT data (after applying the standardization from the Realcause model)
         true_ate = rct_data['re78'][rct_data['treat'] == 1].mean() - rct_data['re78'][rct_data['treat'] == 0].mean()
     elif dataset_name == 'twins':
         d = twins.load_twins(data_format='pandas', return_sketchy_ites=True)
@@ -222,24 +221,37 @@ if __name__ == '__main__':
 
     if args.observed_data:
         source_data_info = load_source_dataset(args.dataset_name, args.dataset_identifier, args.sample_size, args.realcause_model_path)
+        # Use the observed data to compute the ATE estimates on the source data
         logger.info(f'Running ATE estimators on {args.dataset_name}_{args.dataset_identifier}_{args.sample_size} dataset!')
         logger.info(f'True ATE (transformed, if applicable): {source_data_info["true_ate"]}')
+        # Use this to extract the true ATE from the source data (after applying the transformations if applicable)
+        source_data_true_ate = source_data_info['true_ate']
+        # Load the observed data 
+        observed_data = load_smcabc(dataset_name = args.dataset_name, 
+                                    dataset_identifier = args.dataset_identifier, 
+                                    sample_size = args.sample_size, 
+                                    dataset_path = f'data/smc_abc/{args.dataset_name}_{args.dataset_identifier}_{args.sample_size}_dist_{args.distance_function}_expt_{args.experiment_number}/1', 
+                                    dataset_number = 0, 
+                                    observed_data = True, 
+                                    posterior_or_prior = None,
+                                    realcause_model_path = args.realcause_model_path)
         estimated_ate = ate_estimators.bootstrap_ate_inference(
-            outcome=source_data_info['outcome'],
-            treatment=source_data_info['treatment'],
-            data=source_data_info['data'],
-            dataset_identifier=f'{args.dataset_name}_{args.dataset_identifier}_{args.sample_size}',
+            outcome=observed_data['outcome_col'],
+            treatment=observed_data['treatment_col'],
+            data=observed_data['data'],
+            dataset_identifier=f'{args.dataset_name}_{args.dataset_identifier}_{args.sample_size}_expt_{args.experiment_number}_base',
             set_of_estimators=ALL_ESTIMATORS if args.set_of_estimators == 'all' else META_ESTIMATORS,
             repeats=1)
         estimated_ate['df'] = f'{args.dataset_name}_{args.dataset_identifier}_{args.sample_size}'
-        estimated_ate['true_ate'] = source_data_info['true_ate']
+        estimated_ate['true_ate'] = source_data_true_ate
         
         ate_df_path = f'{ESTIMATED_ATE_PATH}/{args.dataset_name}_{args.dataset_identifier}_{args.sample_size}/'
         if not os.path.exists(ate_df_path):
             os.makedirs(ate_df_path)
         logger.info(f'Computed ATEs for the source dataset!')
         # Save the dataframe to a csv file
-        ATE_DF_FILENAME = f'{ate_df_path}{args.dataset_name}_{args.dataset_identifier}_{args.sample_size}_base_ate.csv'
+        # Experiment number is required to be specified (in case the transformation is applied to the source data)
+        ATE_DF_FILENAME = f'{ate_df_path}{args.dataset_name}_{args.dataset_identifier}_{args.sample_size}_expt_{args.experiment_number}_base_ate.csv'
         logger.info(f'Saving the ATE estimates to {ATE_DF_FILENAME}')
         estimated_ate.to_csv(ATE_DF_FILENAME, index=False)
         
@@ -265,6 +277,7 @@ if __name__ == '__main__':
                 repeats=1)
             estimated_ate['df'] = f'{args.dataset_name}_{args.dataset_identifier}_{args.sample_size}'
             estimated_ate['true_ate'] = gen_data_info['parameters']['te']
+            logger.info(f'ATE estimate: {gen_data_info["parameters"]["te"]}')
             ate_df = pd.concat([ate_df, estimated_ate], axis=0)
         
         logger.info(f'#'*50)
