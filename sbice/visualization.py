@@ -117,9 +117,13 @@ CLASS_SHORT_TICKLABELS = [
 ##############################################################
 # Functions to extract data for the plots ####################
 ##############################################################
-def extract_estimated_ate_base(ds_name, ds_id, sample_size):
+def extract_estimated_ate_base(ds_name, ds_id, sample_size, expt_id=None):
     """Extract the estimated ATE for the base datasets."""
-    df = pd.read_csv(f'output/ate_estimates/{ds_name}_{ds_id}_{sample_size}/{ds_name}_{ds_id}_{sample_size}_base_ate.csv',
+    if expt_id is None:
+        df = pd.read_csv(f'output/ate_estimates/{ds_name}_{ds_id}_{sample_size}/{ds_name}_{ds_id}_{sample_size}_base_ate.csv',
+                         index_col='df')
+    else:
+        df = pd.read_csv(f'output/ate_estimates/{ds_name}_{ds_id}_{sample_size}/{ds_name}_{ds_id}_{sample_size}_expt_{expt_id}_base_ate.csv',
                      index_col='df')
     # Get the true_ate
     true_ate = df['true_ate'].values[0]
@@ -129,13 +133,17 @@ def extract_estimated_ate_base(ds_name, ds_id, sample_size):
     return df, true_ate
 
 
-def extract_regret_base(ds_name, ds_id, sample_size):
+def extract_regret_base(ds_name, ds_id, sample_size, expt_id=None):
     """Extract the regret for all base datasets.
     
     Regret = |ATE_estimated - ATE_true| for every estimator
     """
-    df = pd.read_csv(f'output/ate_estimates/{ds_name}_{ds_id}_{sample_size}/{ds_name}_{ds_id}_{sample_size}_base_ate.csv',
-                     index_col='df')
+    if expt_id is None:
+        df = pd.read_csv(f'output/ate_estimates/{ds_name}_{ds_id}_{sample_size}/{ds_name}_{ds_id}_{sample_size}_base_ate.csv',
+                         index_col='df')
+    else:
+        df = pd.read_csv(f'output/ate_estimates/{ds_name}_{ds_id}_{sample_size}/{ds_name}_{ds_id}_{sample_size}_expt_{expt_id}_base_ate.csv',
+                         index_col='df')
     df = df.subtract(df['true_ate'], axis=0)
     # Drop the true_ate column
     df = df.drop(columns=['true_ate'])
@@ -211,7 +219,7 @@ def plot_bias_squared_error(estimators='class',
     # Create the combined dataframe
     df = []
     # Extract the regret for the base dataset
-    df_source = extract_regret_base(ds_name, ds_id, sample_size)
+    df_source = extract_regret_base(ds_name, ds_id, sample_size, expt_id)
     # Extract the regret for the posterior dataset
     df_post = extract_regret(ds_name, ds_id, sample_size, expt_id, 'posterior')
     df_post = (df_post - df_source.iloc[0])**2 
@@ -245,6 +253,10 @@ def plot_bias_squared_error(estimators='class',
         order = CLASS_ESTIMATORS
         ticks = len(CLASS_ESTIMATORS)
         short_ticklabels = CLASS_SHORT_TICKLABELS
+    elif estimators == 'all':
+        order = ALL_ESTIMATORS
+        ticks = len(ALL_ESTIMATORS)
+        short_ticklabels = ALL_SHORT_TICKLABELS
 
     font_size = 16
     plt.rcParams.update({'font.size': font_size})
@@ -284,7 +296,7 @@ def plot_bias_squared_error(estimators='class',
 
     folder_path = f'plots/sbice/{ds_name}_{ds_id}_{sample_size}'
     os.makedirs(folder_path, exist_ok=True)
-    figure_path = f'{folder_path}/bse-estimators-{estimators}.png'
+    figure_path = f'{folder_path}/bse-estimators-{estimators}-expt_{expt_id}.png'
     print(f'Saving figure to {figure_path}')
 
     # Add a horizontal line at 0
@@ -295,12 +307,21 @@ def plot_bias_squared_error(estimators='class',
     plt.title(f'Bias Squared Error for {dataset_name}, Experiment {expt_id}')
     plt.savefig(figure_path, bbox_inches='tight', dpi=300)
     
-
-plot_bias_squared_error(estimators='class',
-                        ds_name='lalonde',
-                        ds_id='psid1',
-                        sample_size=None,
-                        expt_id=3,
-                        distance_function='sliced_wass',
-                        ylims=[None, None])
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--estimators', type=str, default='all', choices=['class', 'all'])
+    parser.add_argument('--ds_name', type=str, default=None)
+    parser.add_argument('--ds_id', type=str, default=None)
+    parser.add_argument('--sample_size', type=str, default=None)
+    parser.add_argument('--expt_id', type=int, default=None)
+    parser.add_argument('--distance_function', type=str, default='sliced_wass')
+    parser.add_argument('--ylims', type=list, default=[None, None])
+    args = parser.parse_args()
     
+    plot_bias_squared_error(estimators=args.estimators,
+                        ds_name=args.ds_name,
+                        ds_id=args.ds_id,
+                        sample_size=args.sample_size,
+                        expt_id=args.expt_id,
+                        distance_function=args.distance_function,
+                        ylims=args.ylims)

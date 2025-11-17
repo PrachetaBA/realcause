@@ -226,3 +226,218 @@ experiment_11:   # Normalized source data with untransform=False and min_epsilon
   min_epsilon: 0.0001
   max_iterations: 50
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
+
+experiment_12:   # Normalized source data with untransform=False and min_epsilon=0.0001
+  dataset_name: lalonde
+  dataset_identifier: cps1
+  sample_size: None
+  random_seed: 3845
+  parameters:
+    - te
+  prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+  transform: true
+  distance: sliced_wass
+  min_epsilon: 0.001
+  max_iterations: 50
+  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
+
+experiment_13:   # Normalized source data with untransform=False and min_epsilon=0.0001 and deg_hetero parameter
+  dataset_name: lalonde
+  dataset_identifier: cps1
+  sample_size: None
+  random_seed: 3845
+  parameters:
+    - te
+    - deg_hetero
+  prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  transform: true
+  distance: sliced_wass
+  min_epsilon: 0.001
+  max_iterations: 50
+  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
+
+experiment_14:   # Normalized source data with untransform=False and min_epsilon=0.0001 and deg_hetero parameter and overlap parameter
+  dataset_name: lalonde
+  dataset_identifier: cps1
+  sample_size: None
+  random_seed: 3845
+  parameters:
+    - te
+    - deg_hetero
+    - overlap
+  prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  transform: true
+  distance: sliced_wass
+  min_epsilon: 0.001
+  max_iterations: 50
+  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
+
+experiment_15:   # Normalized source data with untransform=False and min_epsilon=0.0001
+  dataset_name: lalonde
+  dataset_identifier: cps1
+  sample_size: None
+  random_seed: 3845
+  parameters:
+    - te
+  prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+  transform: true
+  distance: sliced_wass
+  min_epsilon: 0.0001
+  max_iterations: 50
+  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
+
+experiment_16:   # Normalized source data with untransform=False and min_epsilon=0.0001 and deg_hetero parameter
+  dataset_name: lalonde
+  dataset_identifier: cps1
+  sample_size: None
+  random_seed: 3845
+  parameters:
+    - te
+    - deg_hetero
+  prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  transform: true
+  distance: sliced_wass
+  min_epsilon: 0.0001
+  max_iterations: 50
+  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
+
+experiment_17:   # Normalized source data with untransform=False and min_epsilon=0.0001 and deg_hetero parameter and overlap parameter
+  dataset_name: lalonde
+  dataset_identifier: cps1
+  sample_size: None
+  random_seed: 3845
+  parameters:
+    - te
+    - deg_hetero
+    - overlap
+  prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  transform: true
+  distance: sliced_wass
+  min_epsilon: 0.0001
+  max_iterations: 50
+  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
+
+# Only deg_hetero and overlap parameters are used
+experiment_18:   # Normalized source data with untransform=True and min_epsilon=0.001 and deg_hetero parameter and overlap parameter 
+  dataset_name: lalonde
+  dataset_identifier: cps1
+  sample_size: None
+  random_seed: 3845
+  parameters:
+    - deg_hetero
+    - overlap
+  prior:
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  transform: false
+  distance: sliced_wass
+  min_epsilon: 0.001
+  max_iterations: 50
+  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
+
+# Only deg_hetero and overlap parameters are used
+experiment_19:   # Normalized source data with untransform=True and min_epsilon=0.001 and deg_hetero parameter and overlap parameter 
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  random_seed: 3845
+  parameters:
+    - deg_hetero
+    - overlap
+  prior:
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  transform: false
+  distance: sliced_wass
+  min_epsilon: 0.001
+  max_iterations: 50
+  realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
+
+# Twins dataset 
+experiment_20: 
+  dataset_name: twins
+  dataset_identifier: st
+  sample_size: None
+  random_seed: 3845
+  parameters:
+    - te
+    - deg_hetero
+    - overlap
+  prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  transform: false
+  distance: sliced_wass
+  min_epsilon: 0.001
+  max_iterations: 50
+  realcause_model_path: results/GenModelCkpts/twins/twins/n_hidden_layers1-dim_h64-lr5e-05-w_transformNormalize
