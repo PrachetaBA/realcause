@@ -1,0 +1,26 @@
+experiment_100:   # Test experiment to check if the code runs with both models
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  random_seed: 3845
+  realcause_parameters:
+    - te
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+  frugalflows_parameters:
+    - ate
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+  distance: sliced_wass
+  transform: true
+  min_epsilon: 0.01
+  max_iterations: 1 
+  causal_model: location_translation
+  realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
+  frugalflows_hp_file: results/frugalflows_models/lalonde_psid1_None_hps.yaml

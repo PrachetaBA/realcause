@@ -35,7 +35,7 @@ def simulate_datasets(parameters,
     y = y.reshape(-1, 1) if y.ndim == 1 else y
     
     # Concatenate arrays horizontally
-    generated_data = np.column_stack([w, t, y])
+    generated_data = np.column_stack([y, t, w])
     
     return {
         'data': generated_data
