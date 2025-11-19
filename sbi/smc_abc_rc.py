@@ -14,7 +14,7 @@ import yaml
 
 from loading import load_gen
 from data_loaders import apo, lalonde, twins
-from sbi import simulator 
+from sbi import rc_simulator as simulator 
 
 
 # Defing logging 
