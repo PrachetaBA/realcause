@@ -315,7 +315,7 @@ if __name__ == '__main__':
     parser.add_argument('--sample_size', type=str, default=None)
     parser.add_argument('--expt_id', type=int, default=None)
     parser.add_argument('--distance_function', type=str, default='sliced_wass')
-    parser.add_argument('--ylims', type=list, default=[None, None])
+    parser.add_argument('--ylims', type=float, nargs=2, required=False, default=[None, None])
     args = parser.parse_args()
     
     plot_bias_squared_error(estimators=args.estimators,

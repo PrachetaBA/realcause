@@ -1,0 +1,150 @@
+experiment_21:
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  random_seed: 2789
+  parameters:
+    - te
+  prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+  distance: sliced_wass
+  transform: true
+  min_epsilon: 0.0005
+  max_iterations: 30
+  realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
+
+experiment_22: 
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  random_seed: 1904
+  parameters:
+    - te
+    - deg_hetero
+  prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  distance: sliced_wass
+  transform: true
+  min_epsilon: 0.0005
+  max_iterations: 30
+  realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
+
+experiment_23:
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  random_seed: 9278
+  parameters:
+    - te
+    - deg_hetero
+    - overlap
+  prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  distance: sliced_wass
+  transform: true
+  min_epsilon: 0.0005
+  max_iterations: 30
+  realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
+
+experiment_24:
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  random_seed: 76
+  parameters:
+    - deg_hetero
+    - overlap
+  prior:
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  distance: sliced_wass
+  transform: false
+  min_epsilon: 0.01
+  max_iterations: 30
+  realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
+
+experiment_25:
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  random_seed: 904
+  parameters:
+    - deg_hetero
+  prior:
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  distance: sliced_wass
+  transform: false
+  min_epsilon: 0.01
+  max_iterations: 30
+  realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
+
+experiment_26:
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  random_seed: 45
+  parameters:
+    - overlap
+  prior:
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  distance: sliced_wass
+  transform: false
+  min_epsilon: 0.01
+  max_iterations: 30
+  realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
+
+experiment_27:
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  random_seed: 7556
+  parameters:
+    - te
+    - overlap
+  prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  distance: sliced_wass
+  transform: true
+  min_epsilon: 0.0005
+  max_iterations: 30
+  realcause_model_path: results/GenModelCkpts/lalonde/psid1/save

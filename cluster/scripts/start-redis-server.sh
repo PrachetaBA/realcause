@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=redis-server-launch
 #SBATCH -p cpu
-#SBATCH -t 12:00:00
+#SBATCH -t 2-00:00:00
 #SBATCH -o ../logs/redis-samplers/server-%j.out
 #SBATCH -e ../logs/redis-samplers/server-%j.err
 #SBATCH --export=ALL,PYTHONPATH=/scratch3/workspace/pboddavarama_umass_edu-sbice/realcause
