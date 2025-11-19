@@ -270,7 +270,7 @@ def main(abc_config,
     logger.info(f"FrugalFlows model (m=1) has {len(extended_population_ff)} particles")
     
     # Sample particles from each model according to their weights
-    NUM_PARTICLES = 10
+    NUM_PARTICLES = 50
     
     # Calculate how many particles to sample from each model based on model probabilities
     # You can either use model probabilities or sample proportionally
