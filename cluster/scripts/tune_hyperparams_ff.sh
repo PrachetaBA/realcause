@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=ff_tune
-#SBATCH --nodes=2  # 10 for full sweep; 1 for testing
+#SBATCH --nodes=7  #1 for testing; use more for full sweep
 #SBATCH --partition=cpu  # cpu
 #SBATCH --mem=4G
 #SBATCH --time=2-00:00:00
@@ -10,7 +10,7 @@
 ######### Set job-specific variables #########
 dataset_name=$1 # 'e.g. n_acic_4'
 dataset_identifier=$2 # 'e.g. linear'
-sample_size=$3 # 'e.g., 3000 or all'
+sample_size=$3 # 'e.g., 3000 or all or None'
 causal_model=$4 # 'e.g. location_translation'
 #############################################
 
