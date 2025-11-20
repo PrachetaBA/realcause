@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=smc_abc  # Job name
-#SBATCH --mem=32G  # Requested Memory
+#SBATCH --mem=2G  # Requested Memory
 #SBATCH --partition=cpu      # Partition
 #SBATCH -t 2-00:00:00  # Job time limit
 #SBATCH -o ../logs/smc_abc_runs/job-%j.out
