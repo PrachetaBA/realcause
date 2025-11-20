@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=ff_tune
-#SBATCH --nodes=1  # 10 for full sweep; 1 for testing
-#SBATCH --partition=cpu  # Changed from cpu to GPU partition
+#SBATCH --nodes=2  # 10 for full sweep; 1 for testing
+#SBATCH --partition=cpu  # cpu
 #SBATCH --mem=4G
 #SBATCH --time=2-00:00:00
 #SBATCH --output=../logs/frugalflows_tune/job-%j.log

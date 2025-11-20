@@ -20,7 +20,6 @@ if os.path.exists('keys.json'):
 result = subprocess.run(['scontrol', 'show', 'hostnames'], stdout=subprocess.PIPE)
 node_list = result.stdout.decode('utf-8').split('\n')[:-1]
 
-
 @click.command()
 @click.argument('config_yaml')
 @click.argument('train_file')
@@ -49,6 +48,7 @@ def run(config_yaml, train_file, project_name):
                 'srun',
                 '--nodes=1',
                 '--ntasks=1',
+                '--gres=none',
                 '-w',
                 node,
                 start_agent_script,

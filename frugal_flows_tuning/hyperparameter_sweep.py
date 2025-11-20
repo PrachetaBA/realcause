@@ -3,6 +3,7 @@
 # Add workspace root to Python path to enable importing frugal_flows
 import sys
 import os
+
 workspace_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if workspace_root not in sys.path:
     sys.path.insert(0, workspace_root)
@@ -18,6 +19,9 @@ from ff_data_loader import load_data_ff
 # Some fixed settings
 jnp.set_printoptions(precision=2)
 jax.config.update('jax_enable_x64', True)
+
+# Log which platform JAX is using
+print(f"JAX platform: {jax.devices()}")
 
 def train(dataset_name, config=None, dataset_identifier=None, sample_size=None, causal_model=None, rc_model_path=None):
     """Function to train the Frugal flow model on the data defined by the arguments."""
