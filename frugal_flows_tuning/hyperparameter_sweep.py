@@ -1,5 +1,12 @@
 """Script to search for optimal hyperparameters for the Frugal Flows model."""
 
+# Add workspace root to Python path to enable importing frugal_flows
+import sys
+import os
+workspace_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if workspace_root not in sys.path:
+    sys.path.insert(0, workspace_root)
+
 # Import libraries
 import argparse
 import jax

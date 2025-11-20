@@ -38,6 +38,10 @@ def run(config_yaml, train_file, project_name):
 
     sweep_id = wandb.sweep(config_dict, project=project_name)
 
+    # Get absolute path to start-agent.sh
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    start_agent_script = os.path.join(script_dir, 'start-agent.sh')
+
     sp = []
     for node in node_list:
         sp.append(
@@ -47,7 +51,7 @@ def run(config_yaml, train_file, project_name):
                 '--ntasks=1',
                 '-w',
                 node,
-                'start-agent.sh',
+                start_agent_script,
                 sweep_id,
                 project_name
             ]))

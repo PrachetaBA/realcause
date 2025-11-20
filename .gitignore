@@ -237,3 +237,4 @@ database/
 data/
 logs/
 output/ate_estimates/
+wandb/
