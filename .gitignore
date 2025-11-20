@@ -228,10 +228,11 @@ results/
 cluster/logs/
 
 # Hyperparameters
-hyperparameters/
+rc_hyperparameters/
 src/generate_datasets.py
 tuned_models/
-hyperparameter_tuning/
+rc_hyperparameter_tuning/
+ff_hyperparameter_tuning/
 database/
 data/
 logs/
