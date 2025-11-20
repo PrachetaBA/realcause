@@ -227,7 +227,7 @@ def main(abc_config,
     abc = pyabc.ABCSMC(models=[rc_simulator_pyabc, ff_simulator_pyabc],
                        parameter_priors=[rc_prior, ff_prior],
                        distance_function=DISTANCE_PARAM,
-                       population_size=50,
+                       population_size=1,  # TODO: Change after testing
                        sampler=sampler,
                        eps=pyabc.MedianEpsilon())
 
@@ -252,15 +252,11 @@ def main(abc_config,
     logger.info(f'Number of Generations: {abc_config["max_iterations"]}')
     logger.info('-' * 50)
     
-    # Get model probabilities to determine how samples are distributed between the two models
-    model_probs = history.get_model_probabilities()
-    logger.info("Model probabilities:")
-    logger.info(model_probs) 
-    
-    # Get the model probabilities for the last generation
-    last_gen_model_probs = history.get_model_probabilities(t=history.max_t)
-    logger.info(f"Model probabilities at generation {history.max_t}:")
-    logger.info(last_gen_model_probs)
+    # Get model probabilities - this returns a DataFrame indexed by generation (t)
+    # with columns corresponding to model IDs (0, 1, etc.)
+    model_probs_df = history.get_model_probabilities()
+    logger.info("Model probabilities over all generations:")
+    logger.info(model_probs_df)
     
     # Get extended populations for both models
     extended_population_rc = history.get_population_extended(m=0, t='last', tidy=True)
@@ -272,10 +268,16 @@ def main(abc_config,
     # Sample particles from each model according to their weights
     NUM_PARTICLES = 50
     
-    # Calculate how many particles to sample from each model based on model probabilities
-    # You can either use model probabilities or sample proportionally
-    prob_rc = last_gen_model_probs.loc[history.max_t, 'p'][0]  # Probability of model 0
-    prob_ff = last_gen_model_probs.loc[history.max_t, 'p'][1]  # Probability of model 1
+    # Extract model probabilities for the last generation
+    # The DataFrame has columns 0, 1 (model IDs) and rows indexed by generation t
+    if history.max_t in model_probs_df.index:
+        last_gen_probs = model_probs_df.loc[history.max_t]
+        prob_rc = float(last_gen_probs[0])  # Model 0 (Realcause)
+        prob_ff = float(last_gen_probs[1])  # Model 1 (FrugalFlows)
+    else:
+        logger.warning(f"Generation {history.max_t} not found in model probabilities, using equal weights")
+        prob_rc = 0.5
+        prob_ff = 0.5
     
     num_particles_rc = int(np.round(NUM_PARTICLES * prob_rc))
     num_particles_ff = NUM_PARTICLES - num_particles_rc
@@ -423,7 +425,7 @@ def main(abc_config,
     ff_parameter_samples.to_csv(f'data/smc_abc/{expt_name}/ff_parameter_samples.csv', index=False)
     
     # Also save model probabilities over time
-    model_probs.to_csv(f'data/smc_abc/{expt_name}/model_probabilities.csv', index=True)
+    model_probs_df.to_csv(f'data/smc_abc/{expt_name}/model_probabilities.csv', index=True)
 
     logger.info('Saved posterior and prior samples!')
 
