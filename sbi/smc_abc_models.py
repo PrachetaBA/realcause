@@ -21,6 +21,7 @@ jax.config.update('jax_enable_x64', True)
 
 from loading import load_gen
 from data_loaders import lalonde as rc_lalonde # Data loaders for Realcause simulator
+from data_loaders import twins as rc_twins # Data loaders for Twins simulator
 from sbi import rc_simulator  # Realcause simulator
 from sbi import ff_simulator # FrugalFlows simulator
 from frugal_flows.benchmarking import FrugalFlowModel
@@ -28,6 +29,24 @@ from frugal_flows.benchmarking import FrugalFlowModel
 # Defing logging 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Clear any cached GPU state to avoid CUDA_ERROR_ILLEGAL_ADDRESS
+# This helps when GPU is in a corrupted state from previous jobs in Slurm
+try:
+    # Try to get devices to ensure proper initialization
+    # This will fail early if GPU is corrupted, allowing better error messages
+    devices = jax.devices()
+    logger.info(f"JAX initialized with devices: {devices}")
+    
+    # Try a simple operation to test GPU state
+    test_array = jnp.array([1.0, 2.0, 3.0])
+    _ = jnp.sum(test_array)
+    logger.info("JAX GPU test operation successful")
+except Exception as e:
+    logger.error(f"JAX GPU initialization failed: {e}")
+    logger.error("This may indicate GPU memory corruption from a previous job.")
+    logger.error("Try requesting a different GPU node or contact cluster admin.")
+    raise
 
 
 class IdSumStat(pyabc.Sumstat):
@@ -62,6 +81,10 @@ def main(abc_config,
     if dataset_name == 'lalonde':
         if dataset_identifier == 'psid1':
             d = rc_lalonde.load_lalonde(obs_version='psid', data_format='pandas_single')
+        elif dataset_identifier == 'cps1':
+            d = rc_lalonde.load_lalonde(obs_version='cps', data_format='pandas_single')
+        else:
+            raise ValueError(f"Dataset identifier {dataset_identifier} not implemented")
         d.drop(columns=['data_id'], inplace=True)
         outcome_col = 're78'
         treatment_col = 'treat'
@@ -70,6 +93,17 @@ def main(abc_config,
         # Sort the covariates columns to put the continous first, then the categorical
         covariates_col = continuous_vars + categorical_vars
         covariates_df = d[covariates_col].values   # This is the original covariates dataframe (not transformed)
+    elif dataset_name == 'twins':
+        if dataset_identifier == 'st':
+            d = rc_twins.load_twins(data_format='pandas')
+        covariates_col = d['w'].columns.tolist()
+        covariates_df = d['w'].values
+        observed_data = pd.concat([d['w'], d['t'], d['y']], axis=1)
+        covariates_df = d['w'].values
+        treatment_col = 'T'
+        outcome_col = 'yf'
+        categorical_vars = covariates_col
+        continuous_vars = []
     else:
         raise ValueError(f"Dataset {dataset_name} not implemented")
     
@@ -79,7 +113,7 @@ def main(abc_config,
     
     # Apply transformations using the model's transforms (if specified in config)
     # This ensures the observed data is normalized using the same parameters as the model
-    if dataset_name == 'lalonde':
+    if dataset_name in ['lalonde', 'twins']:
         if abc_config['transform'] == True:
             print(f'The covariates columns are: {covariates_col}')
             # The model's w_transform was created from training data
@@ -120,8 +154,8 @@ def main(abc_config,
         tuned_hyperparams = yaml.safe_load(file)
 
     # Set tuning parameters for Normalizing Flows
-    max_patience = abc_config.get('max_patience', 1)    # Default is 200 TODO: Change after testing
-    max_epochs = abc_config.get('max_epochs', 1)    # Default is 10000 TODO: Change after testing
+    max_patience = abc_config.get('max_patience', 200)    # Default is 200 TODO: Change after testing
+    max_epochs = abc_config.get('max_epochs', 5000)    # Default is 5000 TODO: Change after testing
     tuned_hyperparams['hyperparameters']['max_patience'] = max_patience
     tuned_hyperparams['hyperparameters']['max_epochs'] = max_epochs
 
@@ -227,7 +261,7 @@ def main(abc_config,
     abc = pyabc.ABCSMC(models=[rc_simulator_pyabc, ff_simulator_pyabc],
                        parameter_priors=[rc_prior, ff_prior],
                        distance_function=DISTANCE_PARAM,
-                       population_size=1,  # TODO: Change after testing
+                       population_size=30,
                        sampler=sampler,
                        eps=pyabc.MedianEpsilon())
 
@@ -239,7 +273,15 @@ def main(abc_config,
     # Get a random number for the database name
     db_path = os.path.join('database', f'{expt_name}_{np.random.randint(100)}.db')
     logger.info(f'Using the following database: {db_path}')
-    abc.new(db='sqlite:///' + db_path, observed_sum_stat=observed_sum_stat)
+    
+    # Set initial model probabilities to 0.5 for both models (equal prior)
+    # This ensures both models start with equal probability
+    initial_model_probs = {0: 0.5, 1: 0.5}  # Model 0 (Realcause): 0.5, Model 1 (FrugalFlows): 0.5
+    logger.info(f'Setting initial model probabilities: Realcause={initial_model_probs[0]}, FrugalFlows={initial_model_probs[1]}')
+    
+    abc.new(db='sqlite:///' + db_path, 
+            observed_sum_stat=observed_sum_stat,
+            model_probabilities=initial_model_probs)
     logger.info(f'Epsilon value: {abc_config["min_epsilon"]}')
     logger.info(f'-' * 50)
     logger.info(f'Configuration: {abc_config}')
@@ -258,6 +300,28 @@ def main(abc_config,
     logger.info("Model probabilities over all generations:")
     logger.info(model_probs_df)
     
+    # Verify initial model probabilities (generation 0) are 0.5 for both models
+    if 0 in model_probs_df.index:
+        initial_probs = model_probs_df.loc[0]
+        prob_rc_init = float(initial_probs.get(0, 0.0))
+        prob_ff_init = float(initial_probs.get(1, 0.0))
+        logger.info(f"Initial model probabilities (generation 0): Realcause={prob_rc_init:.3f}, FrugalFlows={prob_ff_init:.3f}")
+        if abs(prob_rc_init - 0.5) > 0.01 or abs(prob_ff_init - 0.5) > 0.01:
+            logger.warning(f"Initial model probabilities are not exactly 0.5! This may indicate an issue.")
+    else:
+        logger.warning("Generation 0 not found in model probabilities DataFrame")
+    
+    # Verify initial model probabilities (generation 0) are 0.5 for both models
+    if 0 in model_probs_df.index:
+        initial_probs = model_probs_df.loc[0]
+        prob_rc_init = float(initial_probs.get(0, 0.0))
+        prob_ff_init = float(initial_probs.get(1, 0.0))
+        logger.info(f"Initial model probabilities (generation 0): Realcause={prob_rc_init:.3f}, FrugalFlows={prob_ff_init:.3f}")
+        if abs(prob_rc_init - 0.5) > 0.01 or abs(prob_ff_init - 0.5) > 0.01:
+            logger.warning(f"Initial model probabilities are not exactly 0.5! This may indicate an issue.")
+    else:
+        logger.warning("Generation 0 not found in model probabilities DataFrame")
+    
     # Get extended populations for both models
     extended_population_rc = history.get_population_extended(m=0, t='last', tidy=True)
     extended_population_ff = history.get_population_extended(m=1, t='last', tidy=True)
@@ -270,17 +334,49 @@ def main(abc_config,
     
     # Extract model probabilities for the last generation
     # The DataFrame has columns 0, 1 (model IDs) and rows indexed by generation t
+    # Note: If all particles come from one model, the DataFrame may only have one column
     if history.max_t in model_probs_df.index:
         last_gen_probs = model_probs_df.loc[history.max_t]
-        prob_rc = float(last_gen_probs[0])  # Model 0 (Realcause)
-        prob_ff = float(last_gen_probs[1])  # Model 1 (FrugalFlows)
+        # Use .get() with default 0.0 to handle missing model columns
+        # (occurs when a model has no particles in that generation)
+        prob_rc = float(last_gen_probs.get(0, 0.0))  # Model 0 (Realcause)
+        prob_ff = float(last_gen_probs.get(1, 0.0))  # Model 1 (FrugalFlows)
+        
+        # Normalize probabilities if they don't sum to 1 (shouldn't happen, but safety check)
+        total_prob = prob_rc + prob_ff
+        if total_prob > 0:
+            prob_rc = prob_rc / total_prob
+            prob_ff = prob_ff / total_prob
+        else:
+            logger.warning("Both model probabilities are 0, using equal weights")
+            prob_rc = 0.5
+            prob_ff = 0.5
     else:
         logger.warning(f"Generation {history.max_t} not found in model probabilities, using equal weights")
         prob_rc = 0.5
         prob_ff = 0.5
     
+    # Check if all particles come from the same model
+    if prob_rc == 1.0 or prob_ff == 1.0:
+        if prob_rc == 1.0:
+            logger.warning("All particles come from Realcause model (prob_rc=1.0, prob_ff=0.0)")
+        else:
+            logger.warning("All particles come from FrugalFlows model (prob_rc=0.0, prob_ff=1.0)")
+    
+    # Ensure we have at least some particles from each model if both models have particles
+    # If one model has 0 particles, we can't sample from it anyway
     num_particles_rc = int(np.round(NUM_PARTICLES * prob_rc))
     num_particles_ff = NUM_PARTICLES - num_particles_rc
+    
+    # Adjust if one model has no particles available
+    if len(extended_population_rc) == 0:
+        logger.warning("Realcause model has no particles available, adjusting particle counts")
+        num_particles_rc = 0
+        num_particles_ff = NUM_PARTICLES
+    elif len(extended_population_ff) == 0:
+        logger.warning("FrugalFlows model has no particles available, adjusting particle counts")
+        num_particles_rc = NUM_PARTICLES
+        num_particles_ff = 0
     
     logger.info(f"Sampling {num_particles_rc} particles from Realcause model (prob={prob_rc:.3f})")
     logger.info(f"Sampling {num_particles_ff} particles from FrugalFlows model (prob={prob_ff:.3f})")
@@ -325,12 +421,31 @@ def main(abc_config,
     NUM_SAMPLES = 50
 
     # Save the samples drawn from the posterior for BOTH models
-    # Fit posterior distributions for each model
-    posterior_rc = pyabc.transition.MultivariateNormalTransition()
-    posterior_rc.fit(*history.get_distribution(m=0, t=history.max_t))
+    # Fit posterior distributions for each model (only if particles are available)
+    posterior_rc = None
+    posterior_ff = None
     
-    posterior_ff = pyabc.transition.MultivariateNormalTransition()
-    posterior_ff.fit(*history.get_distribution(m=1, t=history.max_t))
+    if len(extended_population_rc) > 0:
+        try:
+            posterior_rc = pyabc.transition.MultivariateNormalTransition()
+            posterior_rc.fit(*history.get_distribution(m=0, t=history.max_t))
+            logger.info("Successfully fitted Realcause posterior")
+        except Exception as e:
+            logger.warning(f"Failed to fit Realcause posterior: {e}")
+            posterior_rc = None
+    else:
+        logger.warning("Cannot fit Realcause posterior: no particles available")
+    
+    if len(extended_population_ff) > 0:
+        try:
+            posterior_ff = pyabc.transition.MultivariateNormalTransition()
+            posterior_ff.fit(*history.get_distribution(m=1, t=history.max_t))
+            logger.info("Successfully fitted FrugalFlows posterior")
+        except Exception as e:
+            logger.warning(f"Failed to fit FrugalFlows posterior: {e}")
+            posterior_ff = None
+    else:
+        logger.warning("Cannot fit FrugalFlows posterior: no particles available")
 
     # Create a dataframe of the posterior and prior parameter samples for both models
     # Realcause parameters
@@ -346,83 +461,111 @@ def main(abc_config,
     ff_post_s = {x: [] for x in ff_post_var_names}
 
     # Calculate how many samples to draw from each model based on model probabilities
-    num_samples_rc = int(np.round(NUM_SAMPLES * prob_rc))
-    num_samples_ff = NUM_SAMPLES - num_samples_rc
+    # Only sample from models that have fitted posteriors
+    if posterior_rc is None and posterior_ff is None:
+        logger.error("No posteriors available for either model! Cannot sample.")
+        num_samples_rc = 0
+        num_samples_ff = 0
+    elif posterior_rc is None:
+        # Only FrugalFlows posterior available
+        num_samples_rc = 0
+        num_samples_ff = NUM_SAMPLES
+    elif posterior_ff is None:
+        # Only Realcause posterior available
+        num_samples_rc = NUM_SAMPLES
+        num_samples_ff = 0
+    else:
+        # Both posteriors available, use model probabilities
+        num_samples_rc = int(np.round(NUM_SAMPLES * prob_rc))
+        num_samples_ff = NUM_SAMPLES - num_samples_rc
     
-    logger.info(f'Drawing {num_samples_rc} samples from Realcause posterior')
-    logger.info(f'Drawing {num_samples_ff} samples from FrugalFlows posterior')
+    logger.info(f'Drawing {num_samples_rc} samples from Realcause posterior' + (' (posterior available)' if posterior_rc is not None else ' (no posterior available)'))
+    logger.info(f'Drawing {num_samples_ff} samples from FrugalFlows posterior' + (' (posterior available)' if posterior_ff is not None else ' (no posterior available)'))
 
     sample_counter = 0
     
     # Sample from Realcause model
-    for i in range(num_samples_rc):
-        # Prior
-        prior_parameters = rc_prior.rvs()
-        for var in rc_prior_var_names:
-            rc_prior_s[var].append(prior_parameters[var[9:]])  # Remove 'rc_prior_' prefix
-        logger.info(f'RC Prior parameters: {prior_parameters}')
-        prior_samples = pd.DataFrame(rc_simulator_pyabc(prior_parameters)['data'])
-        if dataset_name in ['lalonde', 'twins']:
-            prior_samples.columns = [outcome_col, treatment_col] + covariates_col
-        prior_samples.to_csv(f'data/smc_abc/{expt_name}/rc_prior_sample_{i}.csv', index=False)
+    if num_samples_rc > 0 and posterior_rc is not None:
+        for i in range(num_samples_rc):
+            # Prior
+            prior_parameters = rc_prior.rvs()
+            for var in rc_prior_var_names:
+                rc_prior_s[var].append(prior_parameters[var[9:]])  # Remove 'rc_prior_' prefix
+            logger.info(f'RC Prior parameters: {prior_parameters}')
+            prior_samples = pd.DataFrame(rc_simulator_pyabc(prior_parameters)['data'])
+            if dataset_name in ['lalonde', 'twins']:
+                prior_samples.columns = [outcome_col, treatment_col] + covariates_col
+            prior_samples.to_csv(f'data/smc_abc/{expt_name}/rc_prior_sample_{i}.csv', index=False)
 
-        # Posterior
-        posterior_parameters = posterior_rc.rvs()
-        # Ensure parameters are within bounds
-        for var in rc_post_var_names:
-            var_name = var[8:]  # Remove 'rc_post_' prefix
-            if var_name in ['deg_hetero', 'overlap']:
-                if posterior_parameters[var_name] < 0.0:
-                    posterior_parameters[var_name] = 0.0
-                elif posterior_parameters[var_name] > 1.0:
-                    posterior_parameters[var_name] = 1.0
-        for var in rc_post_var_names:
-            rc_post_s[var].append(posterior_parameters[var[8:]])
-        logger.info(f'RC Posterior parameters: {posterior_parameters}')
-        posterior_samples = pd.DataFrame(rc_simulator_pyabc(posterior_parameters)['data'])
-        if dataset_name in ['lalonde', 'twins']:
-            posterior_samples.columns = [outcome_col, treatment_col] + covariates_col
-        posterior_samples.to_csv(f'data/smc_abc/{expt_name}/rc_posterior_sample_{i}.csv', index=False)
-        sample_counter += 1
+            # Posterior
+            posterior_parameters = posterior_rc.rvs()
+            # Ensure parameters are within bounds
+            for var in rc_post_var_names:
+                var_name = var[8:]  # Remove 'rc_post_' prefix
+                if var_name in ['deg_hetero', 'overlap']:
+                    if posterior_parameters[var_name] < 0.0:
+                        posterior_parameters[var_name] = 0.0
+                    elif posterior_parameters[var_name] > 1.0:
+                        posterior_parameters[var_name] = 1.0
+            for var in rc_post_var_names:
+                rc_post_s[var].append(posterior_parameters[var[8:]])
+            logger.info(f'RC Posterior parameters: {posterior_parameters}')
+            posterior_samples = pd.DataFrame(rc_simulator_pyabc(posterior_parameters)['data'])
+            if dataset_name in ['lalonde', 'twins']:
+                posterior_samples.columns = [outcome_col, treatment_col] + covariates_col
+            posterior_samples.to_csv(f'data/smc_abc/{expt_name}/rc_posterior_sample_{i}.csv', index=False)
+            sample_counter += 1
+    else:
+        logger.warning("Skipping Realcause sampling: no posterior available")
 
     # Sample from FrugalFlows model
-    for i in range(num_samples_ff):
-        # Prior
-        prior_parameters = ff_prior.rvs()
-        for var in ff_prior_var_names:
-            ff_prior_s[var].append(prior_parameters[var[9:]])  # Remove 'ff_prior_' prefix
-        logger.info(f'FF Prior parameters: {prior_parameters}')
-        prior_samples = pd.DataFrame(ff_simulator_pyabc(prior_parameters)['data'])
-        if dataset_name in ['lalonde', 'twins']:
-            prior_samples.columns = [outcome_col, treatment_col] + covariates_col
-        prior_samples.to_csv(f'data/smc_abc/{expt_name}/ff_prior_sample_{i}.csv', index=False)
+    if num_samples_ff > 0 and posterior_ff is not None:
+        for i in range(num_samples_ff):
+            # Prior
+            prior_parameters = ff_prior.rvs()
+            for var in ff_prior_var_names:
+                ff_prior_s[var].append(prior_parameters[var[9:]])  # Remove 'ff_prior_' prefix
+            logger.info(f'FF Prior parameters: {prior_parameters}')
+            prior_samples = pd.DataFrame(ff_simulator_pyabc(prior_parameters)['data'])
+            if dataset_name in ['lalonde', 'twins']:
+                prior_samples.columns = [outcome_col, treatment_col] + covariates_col
+            prior_samples.to_csv(f'data/smc_abc/{expt_name}/ff_prior_sample_{i}.csv', index=False)
 
-        # Posterior
-        posterior_parameters = posterior_ff.rvs()
-        # Ensure ATE parameters are within reasonable bounds if needed
-        for var in ff_post_var_names:
-            ff_post_s[var].append(posterior_parameters[var[8:]])  # Remove 'ff_post_' prefix
-        logger.info(f'FF Posterior parameters: {posterior_parameters}')
-        posterior_samples = pd.DataFrame(ff_simulator_pyabc(posterior_parameters)['data'])
-        if dataset_name in ['lalonde', 'twins']:
-            posterior_samples.columns = [outcome_col, treatment_col] + covariates_col
-        posterior_samples.to_csv(f'data/smc_abc/{expt_name}/ff_posterior_sample_{i}.csv', index=False)
-        sample_counter += 1
+            # Posterior
+            posterior_parameters = posterior_ff.rvs()
+            # Ensure ATE parameters are within reasonable bounds if needed
+            for var in ff_post_var_names:
+                ff_post_s[var].append(posterior_parameters[var[8:]])  # Remove 'ff_post_' prefix
+            logger.info(f'FF Posterior parameters: {posterior_parameters}')
+            posterior_samples = pd.DataFrame(ff_simulator_pyabc(posterior_parameters)['data'])
+            if dataset_name in ['lalonde', 'twins']:
+                posterior_samples.columns = [outcome_col, treatment_col] + covariates_col
+            posterior_samples.to_csv(f'data/smc_abc/{expt_name}/ff_posterior_sample_{i}.csv', index=False)
+            sample_counter += 1
+    else:
+        logger.warning("Skipping FrugalFlows sampling: no posterior available")
 
     # Save the prior and posterior samples in a single DataFrame
-    # Combine both models' parameters
-    rc_parameter_samples = pd.DataFrame(rc_post_s).join(pd.DataFrame(rc_prior_s))
-    ff_parameter_samples = pd.DataFrame(ff_post_s).join(pd.DataFrame(ff_prior_s))
+    # Combine both models' parameters (only if samples exist)
+    if len(rc_post_s) > 0 and len(rc_prior_s) > 0:
+        rc_parameter_samples = pd.DataFrame(rc_post_s).join(pd.DataFrame(rc_prior_s))
+        # Add model probabilities as columns
+        rc_parameter_samples['model_prob_rc'] = prob_rc
+        rc_parameter_samples['model_prob_ff'] = prob_ff
+        rc_parameter_samples.to_csv(f'data/smc_abc/{expt_name}/rc_parameter_samples.csv', index=False)
+        logger.info(f"Saved {len(rc_parameter_samples)} Realcause parameter samples")
+    else:
+        logger.warning("No Realcause parameter samples to save")
     
-    # Add model probabilities as columns
-    rc_parameter_samples['model_prob_rc'] = prob_rc
-    rc_parameter_samples['model_prob_ff'] = prob_ff
-    ff_parameter_samples['model_prob_rc'] = prob_rc
-    ff_parameter_samples['model_prob_ff'] = prob_ff
-    
-    # Save separately
-    rc_parameter_samples.to_csv(f'data/smc_abc/{expt_name}/rc_parameter_samples.csv', index=False)
-    ff_parameter_samples.to_csv(f'data/smc_abc/{expt_name}/ff_parameter_samples.csv', index=False)
+    if len(ff_post_s) > 0 and len(ff_prior_s) > 0:
+        ff_parameter_samples = pd.DataFrame(ff_post_s).join(pd.DataFrame(ff_prior_s))
+        # Add model probabilities as columns
+        ff_parameter_samples['model_prob_rc'] = prob_rc
+        ff_parameter_samples['model_prob_ff'] = prob_ff
+        ff_parameter_samples.to_csv(f'data/smc_abc/{expt_name}/ff_parameter_samples.csv', index=False)
+        logger.info(f"Saved {len(ff_parameter_samples)} FrugalFlows parameter samples")
+    else:
+        logger.warning("No FrugalFlows parameter samples to save")
     
     # Also save model probabilities over time
     model_probs_df.to_csv(f'data/smc_abc/{expt_name}/model_probabilities.csv', index=True)
@@ -487,45 +630,60 @@ def main(abc_config,
         ('realcause', rc_prior_vars, 'realcause_prior'),
         ('frugalflows', ff_prior_vars, 'frugalflows_prior')
     ]):
+        # Check if this model has particles before plotting
+        population = extended_population_rc if model_idx == 0 else extended_population_ff
+        if len(population) == 0:
+            logger.warning(f'Skipping plots for {model_name} model (m={model_idx}): no particles available')
+            continue
+            
         logger.info(f'Creating plots for {model_name} model (m={model_idx})')
         
         for t in [0, history.max_t]:
-            if len(prior_vars) > 1:
-                # Grouped plots when there are more than a single parameter
-                pyabc.visualization.plot_kde_matrix_highlevel(
-                    history, m=model_idx, t=t)
-                plt.savefig(f'plots/smc_abc/{expt_name}/{model_name}_kde_matrix_t{t}.png')
-                plt.close()
-            else:
-                # Plot the marginal distribution when there are single parameters
-                pyabc.visualization.plot_kde_1d_highlevel(
-                    history, x=prior_vars[0], m=model_idx, t=t, 
-                    title=f'{model_name} - {prior_vars[0]} - t = {t}')
-                plt.savefig(f'plots/smc_abc/{expt_name}/{model_name}_parameterized_{prior_vars[0]}_t{t}.png')
-                plt.close()
+            try:
+                if len(prior_vars) > 1:
+                    # Grouped plots when there are more than a single parameter
+                    pyabc.visualization.plot_kde_matrix_highlevel(
+                        history, m=model_idx, t=t)
+                    plt.savefig(f'plots/smc_abc/{expt_name}/{model_name}_kde_matrix_t{t}.png')
+                    plt.close()
+                else:
+                    # Plot the marginal distribution when there are single parameters
+                    pyabc.visualization.plot_kde_1d_highlevel(
+                        history, x=prior_vars[0], m=model_idx, t=t, 
+                        title=f'{model_name} - {prior_vars[0]} - t = {t}')
+                    plt.savefig(f'plots/smc_abc/{expt_name}/{model_name}_parameterized_{prior_vars[0]}_t{t}.png')
+                    plt.close()
+            except Exception as e:
+                logger.warning(f'Failed to create KDE plots for {model_name} at t={t}: {e}')
 
         # Credible intervals for this model
-        pyabc.visualization.plot_credible_intervals(history,
-                                                    levels=[0.95],
-                                                    m=model_idx,
-                                                    ts=[history.max_t],
-                                                    show_kde_max_1d=True)
-        plt.savefig(f'plots/smc_abc/{expt_name}/{model_name}_credible_intervals.png')
-        plt.close()
+        try:
+            pyabc.visualization.plot_credible_intervals(history,
+                                                        levels=[0.95],
+                                                        m=model_idx,
+                                                        ts=[history.max_t],
+                                                        show_kde_max_1d=True)
+            plt.savefig(f'plots/smc_abc/{expt_name}/{model_name}_credible_intervals.png')
+            plt.close()
+        except Exception as e:
+            logger.warning(f'Failed to create credible intervals plot for {model_name}: {e}')
 
         # Individual parameter KDE plots
         for var in prior_vars:
-            pyabc.visualization.plot_kde_1d_highlevel(history,
-                                                    x=var,
-                                                    m=model_idx,
-                                                    t=history.max_t,
-                                                    xmin=abc_config[prior_config_key][var]['loc'] - 1.0,
-                                                    xmax=abc_config[prior_config_key][var]['loc'] +
-                                                    abc_config[prior_config_key][var]['scale'] + 1.0,
-                                                    numx=100,
-                                                    title=f'{model_name} - KDE of {var}')
-            plt.savefig(f'plots/smc_abc/{expt_name}/{model_name}_kde_{var}.png')
-            plt.close()
+            try:
+                pyabc.visualization.plot_kde_1d_highlevel(history,
+                                                        x=var,
+                                                        m=model_idx,
+                                                        t=history.max_t,
+                                                        xmin=abc_config[prior_config_key][var]['loc'] - 1.0,
+                                                        xmax=abc_config[prior_config_key][var]['loc'] +
+                                                        abc_config[prior_config_key][var]['scale'] + 1.0,
+                                                        numx=100,
+                                                        title=f'{model_name} - KDE of {var}')
+                plt.savefig(f'plots/smc_abc/{expt_name}/{model_name}_kde_{var}.png')
+                plt.close()
+            except Exception as e:
+                logger.warning(f'Failed to create KDE plot for {model_name} parameter {var}: {e}')
 
     # Create the credible interval plot for the last generation
     logger.info('Saved plots for individual posteriors, credible intervals, and model probabilities!')

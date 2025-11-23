@@ -85,8 +85,8 @@ experiment_24:
       loc: 0.0
       scale: 1.0
   distance: sliced_wass
-  transform: false
-  min_epsilon: 0.01
+  transform: true 
+  min_epsilon: 0.0001
   max_iterations: 20
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
 
@@ -103,8 +103,8 @@ experiment_25:
       loc: 0.0
       scale: 1.0
   distance: sliced_wass
-  transform: false
-  min_epsilon: 0.01
+  transform: true
+  min_epsilon: 0.0001
   max_iterations: 20
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
 
@@ -121,8 +121,8 @@ experiment_26:
       loc: 0.0
       scale: 1.0
   distance: sliced_wass
-  transform: false
-  min_epsilon: 0.01
+  transform: true
+  min_epsilon: 0.0001
   max_iterations: 20
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
 
@@ -145,6 +145,6 @@ experiment_27:
       scale: 1.0
   distance: sliced_wass
   transform: true
-  min_epsilon: 0.0005
-  max_iterations: 30
+  min_epsilon: 0.0001
+  max_iterations: 20
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save

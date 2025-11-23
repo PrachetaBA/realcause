@@ -1,8 +1,8 @@
-experiment_100: 
+experiment_200: 
   dataset_name: lalonde
-  dataset_identifier: psid1
+  dataset_identifier: cps1
   sample_size: None
-  random_seed: 88
+  random_seed: 40
   realcause_parameters:
     - te
   realcause_prior:
@@ -22,5 +22,5 @@ experiment_100:
   min_epsilon: 0.01
   max_iterations: 15
   causal_model: location_translation
-  realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
-  frugalflows_hp_file: results/frugalflows_models/lalonde_psid1_None_hps.yaml
+  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
+  frugalflows_hp_file: results/frugalflows_models/lalonde_cps1_None_hps.yaml

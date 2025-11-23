@@ -73,11 +73,11 @@ def main(abc_config,
         covariates_df = d[covariates_col].values   # This is the original covariates dataframe (not transformed)
     elif dataset_name == 'twins':
         d = twins.load_twins(data_format='pandas')
+        covariates_col = d['w'].columns.tolist()
         observed_data = pd.concat([d['w'], d['t'], d['y']], axis=1)
         covariates_df = d['w'].values
         treatment_col = 'T'
         outcome_col = 'yf'
-        covariates_col = d['w'].columns.tolist()
     else:
         raise ValueError(f"Dataset {dataset_name} not implemented")
     
@@ -87,9 +87,10 @@ def main(abc_config,
     
     # Apply transformations using the model's transforms (if specified in config)
     # This ensures the observed data is normalized using the same parameters as the model
-    if dataset_name == 'lalonde':
+    if dataset_name in ['lalonde', 'twins']:
         if abc_config['transform'] == True:
-            print(f'The covariates columns are: {covariates_col}')
+            logger.info(f'Transforming the data using the Realcause model')
+            logger.info(f'The covariate columns are: {covariates_col}')
             # The model's w_transform was created from training data
             # Transform the covariates using the model's transform
             transformed_w = rc_model.w_transform.transform(d[covariates_col].values)

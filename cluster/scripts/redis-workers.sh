@@ -9,8 +9,8 @@
 
 # prepare environment, e.g. set path
 module load conda/latest
-conda activate realcause-sbi
+conda activate rc-ff-sbi
 
 cd /scratch3/workspace/pboddavarama_umass_edu-sbice/realcause/
 # run
-abc-redis-worker --host="$1" --port="$2" --runtime=48h
+abc-redis-worker --host="$1" --port="$2" --runtime=4d

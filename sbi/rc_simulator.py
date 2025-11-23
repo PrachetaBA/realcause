@@ -16,10 +16,9 @@ def simulate_datasets(parameters,
     causal_effect = None # By default, we do not set the causal effect
     overlap = 1.0
     deg_hetero = 1.0
-    untransform = True # By default, we transform the data back to the original scale
+    untransform = False # Let's always use the transformed data scale 
     if 'te' in parameters and parameters['te'] is not None:
         causal_effect = parameters['te'] 
-        untransform = False # If we are setting the causal effect, we do not want to transform the data back to the original scale, so that the causal effect scale is as specified in the parameters
     if 'overlap' in parameters and parameters['overlap'] is not None:
         overlap = parameters['overlap']
     if 'deg_hetero' in parameters and parameters['deg_hetero'] is not None:

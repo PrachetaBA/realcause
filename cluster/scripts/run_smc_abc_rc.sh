@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=smc_abc  # Job name
+#SBATCH --job-name=smc_abc_rc  # Job name
 #SBATCH --mem=2G  # Requested Memory
 #SBATCH --partition=cpu      # Partition
 #SBATCH -t 2-00:00:00  # Job time limit
