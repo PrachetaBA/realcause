@@ -13,4 +13,4 @@ conda activate rc-ff-sbi
 
 cd /scratch3/workspace/pboddavarama_umass_edu-sbice/realcause/
 # run
-abc-redis-worker --host="$1" --port="$2" --runtime=4d
+abc-redis-worker --host="$1" --port="$2" --runtime=2d

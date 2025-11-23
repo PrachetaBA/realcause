@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import pyabc
 import yaml
+from datetime import timedelta
 
 import jax
 import jax.random as jr
@@ -258,10 +259,11 @@ def main(abc_config,
         sampler = redis_sampler
         
     # Initialize the ABC object
-    abc = pyabc.ABCSMC(models=[rc_simulator_pyabc, ff_simulator_pyabc],
-                       parameter_priors=[rc_prior, ff_prior],
+    # NOTE: Model order matters! Model 0 = FrugalFlows, Model 1 = Realcause
+    abc = pyabc.ABCSMC(models=[ff_simulator_pyabc, rc_simulator_pyabc],
+                       parameter_priors=[ff_prior, rc_prior],
                        distance_function=DISTANCE_PARAM,
-                       population_size=30,
+                       population_size=35,
                        sampler=sampler,
                        eps=pyabc.MedianEpsilon())
 
@@ -274,24 +276,22 @@ def main(abc_config,
     db_path = os.path.join('database', f'{expt_name}_{np.random.randint(100)}.db')
     logger.info(f'Using the following database: {db_path}')
     
-    # Set initial model probabilities to 0.5 for both models (equal prior)
-    # This ensures both models start with equal probability
-    initial_model_probs = {0: 0.5, 1: 0.5}  # Model 0 (Realcause): 0.5, Model 1 (FrugalFlows): 0.5
-    logger.info(f'Setting initial model probabilities: Realcause={initial_model_probs[0]}, FrugalFlows={initial_model_probs[1]}')
-    
     abc.new(db='sqlite:///' + db_path, 
-            observed_sum_stat=observed_sum_stat,
-            model_probabilities=initial_model_probs)
+            observed_sum_stat=observed_sum_stat)
     logger.info(f'Epsilon value: {abc_config["min_epsilon"]}')
     logger.info(f'-' * 50)
     logger.info(f'Configuration: {abc_config}')
     logger.info(f'-' * 50)
     history = abc.run(min_eps_diff=abc_config['min_epsilon'],
-                      max_nr_populations=abc_config['max_iterations'])
+                      max_nr_populations=abc_config['max_iterations'],
+                      max_walltime=abc_config.get('max_walltime', timedelta(days=1)),
+                      max_total_nr_simulations=abc_config.get('max_total_nr_simulations', 1000000)) # Provide default value if not specified in config
     logger.info(
-        'Stopping Criteria: Minimum Epsilon reached or Maximum Iterations reached, set to - ')
+        'Stopping Criteria: Minimum Epsilon reached or Maximum Iterations reached or Maximum Walltime reached, set to - ')
     logger.info(f'Minimum Epsilon: {abc_config["min_epsilon"]}')
     logger.info(f'Number of Generations: {abc_config["max_iterations"]}')
+    logger.info(f'Maximum Walltime: {abc_config.get("max_walltime", timedelta(days=1))}')
+    logger.info(f'Minimum Epsilon Difference: {abc_config.get("min_eps_diff", 0.005)}')
     logger.info('-' * 50)
     
     # Get model probabilities - this returns a DataFrame indexed by generation (t)
@@ -303,31 +303,20 @@ def main(abc_config,
     # Verify initial model probabilities (generation 0) are 0.5 for both models
     if 0 in model_probs_df.index:
         initial_probs = model_probs_df.loc[0]
-        prob_rc_init = float(initial_probs.get(0, 0.0))
-        prob_ff_init = float(initial_probs.get(1, 0.0))
+        prob_rc_init = float(initial_probs.get(1, 0.0))  # Model 1 (Realcause)
+        prob_ff_init = float(initial_probs.get(0, 0.0))  # Model 0 (FrugalFlows)
         logger.info(f"Initial model probabilities (generation 0): Realcause={prob_rc_init:.3f}, FrugalFlows={prob_ff_init:.3f}")
         if abs(prob_rc_init - 0.5) > 0.01 or abs(prob_ff_init - 0.5) > 0.01:
             logger.warning(f"Initial model probabilities are not exactly 0.5! This may indicate an issue.")
     else:
         logger.warning("Generation 0 not found in model probabilities DataFrame")
-    
-    # Verify initial model probabilities (generation 0) are 0.5 for both models
-    if 0 in model_probs_df.index:
-        initial_probs = model_probs_df.loc[0]
-        prob_rc_init = float(initial_probs.get(0, 0.0))
-        prob_ff_init = float(initial_probs.get(1, 0.0))
-        logger.info(f"Initial model probabilities (generation 0): Realcause={prob_rc_init:.3f}, FrugalFlows={prob_ff_init:.3f}")
-        if abs(prob_rc_init - 0.5) > 0.01 or abs(prob_ff_init - 0.5) > 0.01:
-            logger.warning(f"Initial model probabilities are not exactly 0.5! This may indicate an issue.")
-    else:
-        logger.warning("Generation 0 not found in model probabilities DataFrame")
-    
+
     # Get extended populations for both models
-    extended_population_rc = history.get_population_extended(m=0, t='last', tidy=True)
-    extended_population_ff = history.get_population_extended(m=1, t='last', tidy=True)
+    extended_population_rc = history.get_population_extended(m=1, t='last', tidy=True)  # Model 1 (Realcause)
+    extended_population_ff = history.get_population_extended(m=0, t='last', tidy=True)  # Model 0 (FrugalFlows)
     
-    logger.info(f"Realcause model (m=0) has {len(extended_population_rc)} particles")
-    logger.info(f"FrugalFlows model (m=1) has {len(extended_population_ff)} particles")
+    logger.info(f"Realcause model (m=1) has {len(extended_population_rc)} particles")
+    logger.info(f"FrugalFlows model (m=0) has {len(extended_population_ff)} particles")  # Model 0 (FrugalFlows)
     
     # Sample particles from each model according to their weights
     NUM_PARTICLES = 50
@@ -339,8 +328,8 @@ def main(abc_config,
         last_gen_probs = model_probs_df.loc[history.max_t]
         # Use .get() with default 0.0 to handle missing model columns
         # (occurs when a model has no particles in that generation)
-        prob_rc = float(last_gen_probs.get(0, 0.0))  # Model 0 (Realcause)
-        prob_ff = float(last_gen_probs.get(1, 0.0))  # Model 1 (FrugalFlows)
+        prob_rc = float(last_gen_probs.get(1, 0.0))  # Model 1 (Realcause)
+        prob_ff = float(last_gen_probs.get(0, 0.0))  # Model 0 (FrugalFlows)
         
         # Normalize probabilities if they don't sum to 1 (shouldn't happen, but safety check)
         total_prob = prob_rc + prob_ff
@@ -428,7 +417,7 @@ def main(abc_config,
     if len(extended_population_rc) > 0:
         try:
             posterior_rc = pyabc.transition.MultivariateNormalTransition()
-            posterior_rc.fit(*history.get_distribution(m=0, t=history.max_t))
+            posterior_rc.fit(*history.get_distribution(m=1, t=history.max_t))  # Model 1 (Realcause)
             logger.info("Successfully fitted Realcause posterior")
         except Exception as e:
             logger.warning(f"Failed to fit Realcause posterior: {e}")
@@ -439,7 +428,7 @@ def main(abc_config,
     if len(extended_population_ff) > 0:
         try:
             posterior_ff = pyabc.transition.MultivariateNormalTransition()
-            posterior_ff.fit(*history.get_distribution(m=1, t=history.max_t))
+            posterior_ff.fit(*history.get_distribution(m=0, t=history.max_t))  # Model 0 (FrugalFlows)
             logger.info("Successfully fitted FrugalFlows posterior")
         except Exception as e:
             logger.warning(f"Failed to fit FrugalFlows posterior: {e}")
@@ -626,12 +615,13 @@ def main(abc_config,
     plt.close()
     
     # For creating the posterior plots for BOTH models
+    # NOTE: Order must match pyABC model ordering (Model 0 = FrugalFlows, Model 1 = Realcause)
     for model_idx, (model_name, prior_vars, prior_config_key) in enumerate([
-        ('realcause', rc_prior_vars, 'realcause_prior'),
-        ('frugalflows', ff_prior_vars, 'frugalflows_prior')
+        ('frugalflows', ff_prior_vars, 'frugalflows_prior'),  # Model 0 (FrugalFlows)
+        ('realcause', rc_prior_vars, 'realcause_prior')       # Model 1 (Realcause)
     ]):
         # Check if this model has particles before plotting
-        population = extended_population_rc if model_idx == 0 else extended_population_ff
+        population = extended_population_ff if model_idx == 0 else extended_population_rc
         if len(population) == 0:
             logger.warning(f'Skipping plots for {model_name} model (m={model_idx}): no particles available')
             continue

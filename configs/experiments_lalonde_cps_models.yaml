@@ -20,7 +20,7 @@ experiment_200:
   distance: sliced_wass
   transform: true
   min_epsilon: 0.01
-  max_iterations: 15
+  max_iterations: 12    
   causal_model: location_translation
   realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
   frugalflows_hp_file: results/frugalflows_models/lalonde_cps1_None_hps.yaml

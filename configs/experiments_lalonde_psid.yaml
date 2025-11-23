@@ -87,7 +87,7 @@ experiment_24:
   distance: sliced_wass
   transform: true 
   min_epsilon: 0.0001
-  max_iterations: 20
+  max_iterations: 20 # try 12
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
 
 experiment_25:
@@ -105,7 +105,7 @@ experiment_25:
   distance: sliced_wass
   transform: true
   min_epsilon: 0.0001
-  max_iterations: 20
+  max_iterations: 20 # try 12
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
 
 experiment_26:
@@ -123,7 +123,7 @@ experiment_26:
   distance: sliced_wass
   transform: true
   min_epsilon: 0.0001
-  max_iterations: 20
+  max_iterations: 20   # try 12
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
 
 experiment_27:
