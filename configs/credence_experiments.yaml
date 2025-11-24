@@ -1,0 +1,29 @@
+expt_0001:
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  treatment_effect_val: flexible
+  treatment_effect_fn: 0
+  effect_rigidity: 0
+  bias_rigidity: 1000
+  kld_rigidity: 0.01
+
+expt_0002:
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  treatment_effect_val: true_ate
+  treatment_effect_fn: true_ate
+  effect_rigidity: 5000
+  bias_rigidity: 1000
+  kld_rigidity: 0.01
+
+expt_0003:
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  treatment_effect_val: incorrect_ate
+  treatment_effect_fn: 10.0
+  effect_rigidity: 5000
+  bias_rigidity: 1000
+  kld_rigidity: 0.01

@@ -1,4 +1,4 @@
-experiment_100: 
+experiment_100:
   dataset_name: lalonde
   dataset_identifier: psid1
   sample_size: None
@@ -20,12 +20,12 @@ experiment_100:
   distance: sliced_wass
   transform: true
   min_epsilon: 0.01
-  max_iterations: 20 
+  max_iterations: 20
   causal_model: location_translation
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
   frugalflows_hp_file: results/frugalflows_models/lalonde_psid1_None_hps.yaml
 
-experiment_101: 
+experiment_101:    # This was done to check whether the correct models were being picked out despite order
   dataset_name: lalonde
   dataset_identifier: psid1
   sample_size: None
@@ -44,6 +44,48 @@ experiment_101:
       distribution: uniform
       loc: -5.0
       scale: 10.0
+  distance: sliced_wass
+  transform: true
+  min_epsilon: 0.01
+  max_iterations: 13
+  causal_model: location_translation
+  realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
+  frugalflows_hp_file: results/frugalflows_models/lalonde_psid1_None_hps.yaml
+
+experiment_102:  # all parameters for both models
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  random_seed: 88
+  realcause_parameters:
+    - te
+    - deg_hetero
+    - overlap
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  frugalflows_parameters:
+    - ate
+    - rho
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    rho:
+      distribution: uniform
+      loc: -1.0
+      scale: 2.0
   distance: sliced_wass
   transform: true
   min_epsilon: 0.01

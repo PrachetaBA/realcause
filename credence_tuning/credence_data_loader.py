@@ -55,8 +55,12 @@ def load_data_credence(dataset_name, dataset_identifier=None, sample_size=None, 
             'outcome_col': outcome_col,
             'treatment_col': treatment_col,
             'covariates_col': covariates_col,
-            'categorical_vars': categorical_vars,
-            'continuous_vars': continuous_vars,
+            'categorical_vars': categorical_vars +
+                                [treatment_col
+                                ],    # Include the treatment column in the categorical variables
+            'continuous_vars': continuous_vars +
+                               [outcome_col
+                               ],    # Include the outcome column in the continuous variables
             'true_ate': true_ate
         }
 

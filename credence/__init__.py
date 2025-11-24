@@ -92,7 +92,8 @@ class Credence:
             use_uniform_encoder=False,
             use_gpu=True,
             treatment_effect_fn=lambda x: 0,    # function to generate treatment effect
-            selection_bias_fn=lambda x, t: 0,    # function to generate selection bias
+            selection_bias_fn=lambda x,
+        t: 0,    # function to generate selection bias
             effect_rigidity=0,    # hyperparameter for treatment effect
             bias_rigidity=0,    # hyperparameter for selection bias
             kld_rigidity=0,    # hyperparameter for KL divergence loss
@@ -250,16 +251,9 @@ class Credence:
                 bias_rigidity=o_hparams['bias_rigidity'],
                 kld_rigidity=o_hparams['kld_rigidity']    #self.kld_rigidity,
             ).to(self.device)
-        self.trainer_post = pl.Trainer(
-            max_epochs=max_epochs,
-        # We do not need checkpointing for hyperparameter tuning
-            callbacks=[
-                pb_bar,
-                TuneReportCallback({
-                    'loss': 'val_loss', 'train_loss': 'train_loss'
-                },
-                                   on='validation_end')
-            ])
+        self.trainer_post = pl.Trainer(max_epochs=max_epochs,
+                                       callbacks=[pb_bar, checkpoint_callback_post],
+                                       logger=tb_logger)
         self.trainer_post.fit(self.m_post, self.m_post.train_loader, self.m_post.val_loader)
         # returning trained generators
         return [self.m_treat, self.m_pre, self.m_post]

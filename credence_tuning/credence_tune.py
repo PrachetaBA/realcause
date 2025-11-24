@@ -6,18 +6,18 @@ produce the best hyperparameters which can then be fed into the script `credence
 """
 
 # Import libraries
+import os
 import yaml
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
 from ray.train import RunConfig, ScalingConfig, CheckpointConfig
 from ray.train.torch import TorchTrainer
 # from ray.tune.search.bayesopt import BayesOptSearch # (Incompatible with tune.choice)
-import yaml
 
 # Import credence
 import credence
 import argparse
-from credence_data_loader import load_data_credence
+from credence_tuning.credence_data_loader import load_data_credence
 
 
 def tune_hyperparameters(credence_model,
@@ -45,7 +45,7 @@ def tune_hyperparameters(credence_model,
     # Define the search space of hyperparameters
     search_space = {
         'latent_dim':
-            tune.choice([1, 2]),
+            tune.choice([1, 2, 3, 4, 5, 6]),
         'hidden_dim':
             tune.choice(
                 [[8, 16, 8], [4, 8, 4], [16, 32, 16], [16, 32, 64, 64, 32, 16],
@@ -61,7 +61,7 @@ def tune_hyperparameters(credence_model,
         'effect_rigidity':
             exp_params['effect_rigidity'] if exp_params != None else tune.loguniform(500, 5000),
         'batch_size':
-            64    #tune.choice([32]),
+            tune.choice([32, 64]),    # 64
     }
     scheduler = ASHAScheduler(max_t=num_epochs, grace_period=1, reduction_factor=2)
 
@@ -83,7 +83,7 @@ def tune_hyperparameters(credence_model,
     run_config = RunConfig(
         storage_path=('/scratch3/workspace/pboddavarama_umass_edu-sbice/realcause/'
                       '/logs/credence_ray_logs'),    # No relative paths
-        name=f'cred_{experiment_identifier}',
+        name=f'{experiment_identifier}',
         checkpoint_config=CheckpointConfig(num_to_keep=2,
                                            checkpoint_score_attribute='val_loss',
                                            checkpoint_score_order='min'),
@@ -128,7 +128,7 @@ def credence_model(dataset_name,
                    covariates_model=False,
                    num_epochs=1000,
                    num_trials=10,
-                   use_gpu=True,
+                   use_gpu=False,
                    use_uniform_autoencoder=False,
                    treatment_effect_fn=None,
                    effect_rigidity=None):
@@ -153,13 +153,14 @@ def credence_model(dataset_name,
     if outcome_model:
         # Define the Credence model
         credence_model = credence.Credence(data=dataset,
-                                           post_treatment_var=dataset_info['outcome_col'],
-                                           treatment_var=dataset_info['treatment_col'],
+                                           post_treatment_var=[dataset_info['outcome_col']],
+                                           treatment_var=[dataset_info['treatment_col']],
                                            categorical_var=dataset_info['categorical_vars'],
                                            numerical_var=dataset_info['continuous_vars'],
                                            treatment_effect_fn=lambda x: treatment_effect,
                                            effect_rigidity=config['effect_rigidity'],
-                                           selection_bias_fn=lambda x, t: 0.0,
+                                           selection_bias_fn=lambda x,
+                                           t: 0.0,
                                            use_uniform_encoder=use_uniform_autoencoder,
                                            use_gpu=use_gpu,
                                            bias_rigidity=config['bias_rigidity'],
@@ -172,11 +173,13 @@ def credence_model(dataset_name,
             experiment_identifier=f'cred_{experiment_identifier}_outcome', exp_params = config)
 
         # Save the best hyperparameters and metrics to a txt file
+        # Create the directory if it does not exist
+        os.makedirs(f'cred_hyperparameter_tuning', exist_ok=True)
         hyp_file = f'cred_hyperparameter_tuning/{dataset_name}_{dataset_identifier}_{sample_size}_expt_{experiment_identifier}'
         if treatment_effect_fn:
             hyp_file += f'_te_{dataset_info["true_ate"]}'
-        #if kld_rigidity:
-        #hyp_file += f'_kld_{kld_rigidity}'
+        # if kld_rigidity:
+        #   hyp_file += f'_kld_{kld_rigidity}'
         hyp_file += '_outcome'
         with open(f'{hyp_file}.txt', 'w', encoding='utf-8') as f:
             f.write(f'Best hyperparameters found were: {best_hyperparameters}\n')
@@ -186,8 +189,8 @@ def credence_model(dataset_name,
     if covariates_model:
         # Define the Credence model
         credence_model = credence.Credence(data=dataset,
-                                           post_treatment_var=dataset_info['outcome_col'],
-                                           treatment_var=dataset_info['treatment_col'],
+                                           post_treatment_var=[dataset_info['outcome_col']],
+                                           treatment_var=[dataset_info['treatment_col']],
                                            categorical_var=dataset_info['categorical_vars'],
                                            numerical_var=dataset_info['continuous_vars'],
                                            generate_covariates=True,
@@ -201,6 +204,9 @@ def credence_model(dataset_name,
             outcome_model=False, covariates_model=True,
             experiment_identifier=f'cred_{experiment_identifier}_covariates', exp_params = config)
 
+        # Create the directory if it does not exist
+        os.makedirs(f'cred_hyperparameter_tuning',
+                    exist_ok=True)    # create the directory if it does not exist
         hyp_file = f'cred_hyperparameter_tuning/{dataset_name}_{dataset_identifier}_{sample_size}_expt_{experiment_identifier}_covariates'
         # Save the best hyperparameters and metrics to a txt file
         with open(f'{hyp_file}.txt', 'w', encoding='utf-8') as f:
@@ -245,7 +251,7 @@ if __name__ == '__main__':
     parser.add_argument('--use_gpu',
                         type=int,
                         help='Variable to indicate whether or not to use gpu',
-                        default=1,
+                        default=0,
                         required=False)
     args = parser.parse_args()
 
@@ -259,8 +265,8 @@ if __name__ == '__main__':
                        covariates_model=args.covariates_model,
                        num_epochs=args.num_epochs,
                        num_trials=args.num_trials,
-                       use_gpu=args.use_gpu,
-                       use_uniform_autoencoder=args.use_uniform_encoder,
+                       use_gpu=bool(args.use_gpu),
+                       use_uniform_autoencoder=bool(args.use_uniform_encoder),
                        treatment_effect_fn=None,
                        effect_rigidity=None)
     else:

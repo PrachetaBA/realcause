@@ -16,7 +16,7 @@ experiment_21:
   max_iterations: 30
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
 
-experiment_22: 
+experiment_22:
   dataset_name: lalonde
   dataset_identifier: psid1
   sample_size: None
@@ -85,9 +85,9 @@ experiment_24:
       loc: 0.0
       scale: 1.0
   distance: sliced_wass
-  transform: true 
-  min_epsilon: 0.0001
-  max_iterations: 20 # try 12
+  transform: true
+  min_epsilon: 0.0005
+  max_iterations: 12
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
 
 experiment_25:
@@ -104,8 +104,8 @@ experiment_25:
       scale: 1.0
   distance: sliced_wass
   transform: true
-  min_epsilon: 0.0001
-  max_iterations: 20 # try 12
+  min_epsilon: 0.0005
+  max_iterations: 12
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
 
 experiment_26:
@@ -122,8 +122,8 @@ experiment_26:
       scale: 1.0
   distance: sliced_wass
   transform: true
-  min_epsilon: 0.0001
-  max_iterations: 20   # try 12
+  min_epsilon: 0.0005
+  max_iterations: 12
   realcause_model_path: results/GenModelCkpts/lalonde/psid1/save
 
 experiment_27:
