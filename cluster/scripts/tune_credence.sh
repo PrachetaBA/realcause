@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=credence-tune
-#SBATCH --mem=4G # Requested Memory
+#SBATCH --mem=8G # Requested Memory
 #SBATCH --partition=cpu # Partition
 #SBATCH -t 2-00:00:00  # Job time limit
 #SBATCH -o ../logs/credence_tune/job-%j.out

@@ -32,4 +32,4 @@ expt_0003:
   confounding_bias_fn: 0
   effect_rigidity: 5000
   bias_rigidity: 1000
-  kld_rigidity: 0.01
+  kld_rigidity: null # Null or specify a value (if null it will be tuned)

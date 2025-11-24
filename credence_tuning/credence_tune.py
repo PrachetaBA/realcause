@@ -55,11 +55,14 @@ def tune_hyperparameters(credence_model,
         'lr':
             tune.loguniform(1e-4, 5e-3),
         'kld_rigidity':
-            exp_params['kld_rigidity'] if exp_params != None else tune.loguniform(0.01, 0.05),
+            exp_params['kld_rigidity'] if exp_params != None and exp_params['kld_rigidity'] != None
+            else tune.loguniform(0.01, 0.05),
         'bias_rigidity':
-            exp_params['bias_rigidity'] if exp_params != None else tune.loguniform(500, 5000),
+            exp_params['bias_rigidity'] if exp_params != None
+            and exp_params['bias_rigidity'] != None else tune.loguniform(500, 5000),
         'effect_rigidity':
-            exp_params['effect_rigidity'] if exp_params != None else tune.loguniform(500, 5000),
+            exp_params['effect_rigidity'] if exp_params != None
+            and exp_params['effect_rigidity'] != None else tune.loguniform(500, 5000),
         'batch_size':
             tune.choice([32, 64]),    # 64
     }
