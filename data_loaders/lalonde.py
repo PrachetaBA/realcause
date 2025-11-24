@@ -54,7 +54,11 @@ LALONDE = 'lalonde'
 PSID = 'psid1'
 
 
-def load_lalonde(rct_version=DEHEJIA_WAHBA, obs_version=PSID, rct=False, data_format=NUMPY, dataroot=None):
+def load_lalonde(rct_version=DEHEJIA_WAHBA,
+                 obs_version=PSID,
+                 rct=False,
+                 data_format=NUMPY,
+                 dataroot=None):
     """
     Load LaLonde dataset: RCT or combined RCT with observational control group
     Options for 2 x 6 = 12 different observational datasets and 2 RCT datasets
@@ -88,13 +92,11 @@ def load_lalonde(rct_version=DEHEJIA_WAHBA, obs_version=PSID, rct=False, data_fo
 def load_lalonde_rct(version=DEHEJIA_WAHBA, dataroot=None):
     if dataroot is None:
         dataroot = REALCAUSE_DATASETS_FOLDER
-    rct_version_to_name = {
-        DEHEJIA_WAHBA: 'nsw_dw.dta',
-        LALONDE: 'nsw.dta'
-    }
+    rct_version_to_name = {DEHEJIA_WAHBA: 'nsw_dw.dta', LALONDE: 'nsw.dta'}
     version = version.lower()
     if version not in rct_version_to_name.keys():
-        raise ValueError('Invalid version {} ... Valid versions: {}'.format(version, rct_version_to_name.keys()))
+        raise ValueError('Invalid version {} ... Valid versions: {}'.format(
+            version, rct_version_to_name.keys()))
     else:
         return pd.read_stata(os.path.join(dataroot, rct_version_to_name[version]))
 
@@ -114,22 +116,24 @@ def load_lalonde_obs(version=PSID, dataroot=None):
     }
     version = version.lower()
     if version not in obs_version_to_name.keys():
-        raise ValueError('Invalid version {} ... Valid versions: {}'.format(version, obs_version_to_name.keys()))
+        raise ValueError('Invalid version {} ... Valid versions: {}'.format(
+            version, obs_version_to_name.keys()))
     else:
         return pd.read_stata(os.path.join(dataroot, obs_version_to_name[version]))
-    
+
+
 if __name__ == '__main__':
     # Test lalonde dataset loading
     w, t, y = load_lalonde(obs_version='psid1', data_format='numpy')
     print(w)
     print(t)
     print(y)
-    
+
     # Test lalonde dataset loading with pandas single
     df = load_lalonde(rct_version='dw', data_format='pandas_single')
     print(df.head())
     print(df.shape)
-    
+
     # Compute the true ATE using only the RCT data
     df = load_lalonde(rct=True, data_format='pandas_single')
     true_ate = df['re78'][df['treat'] == 1].mean() - df['re78'][df['treat'] == 0].mean()
