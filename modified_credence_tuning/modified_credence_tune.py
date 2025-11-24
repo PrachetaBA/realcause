@@ -130,7 +130,8 @@ def mcredence_model(dataset_name,
                     treatment_effect_fn=None,
                     effect_rigidity=None):
 
-    with open('configs/mcredence_experiments.yaml', 'r', encoding='utf-8') as file:
+    with open('configs/credence_experiments.yaml', 'r',
+              encoding='utf-8') as file:    # We use the same experiments as Credence!
         experiment_identifiers = yaml.safe_load(file)
     config = experiment_identifiers[f'expt_{experiment_identifier}']
     dataset_name = config['dataset_name']
