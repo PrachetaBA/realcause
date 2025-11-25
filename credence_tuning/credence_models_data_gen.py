@@ -125,6 +125,8 @@ class DataGenerator:
                     bias_rigidity=config['bias_rigidity'],
                     kld_rigidity=config['kld_rigidity'],
                     use_uniform_encoder=False,
+                    generate_covariates=
+                    True,    # Has to be explicitly set to be faithful to the credence model
                     use_gpu=False)
 
                 # Define the tuned_hyperparameters in a dictionary
