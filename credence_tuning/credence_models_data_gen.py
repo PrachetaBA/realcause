@@ -12,7 +12,7 @@ import credence as credence
 from credence_tuning.credence_data_loader import load_data_credence
 
 
-class DataGen:
+class DataGenerator:
     """
     Class to generate data from the tuned Credence/Modified Credence models.
     """
@@ -111,8 +111,57 @@ class DataGen:
                         index=False)
 
             elif self.gen_model == 'credence':
-                pass    # TODO: Implement the generation of data from the Credence model
+                # Define the Credence model
+                credence_model = credence.Credence(
+                    data=source_dataset,
+                    post_treatment_var=[source_dataset_info['outcome_col']],
+                    treatment_var=[source_dataset_info['treatment_col']],
+                    categorical_var=source_dataset_info['categorical_vars'],
+                    numerical_var=source_dataset_info['continuous_vars'],
+                    treatment_effect_fn=lambda x: treatment_effect,
+                    selection_bias_fn=lambda x,
+                    t: confounding_bias,
+                    effect_rigidity=config['effect_rigidity'],
+                    bias_rigidity=config['bias_rigidity'],
+                    kld_rigidity=config['kld_rigidity'],
+                    use_uniform_encoder=False,
+                    use_gpu=False)
 
+                # Define the tuned_hyperparameters in a dictionary
+                covariate_model_params = {
+                    'latent_dim': self.tuned_hparams['c_latent_dim'],
+                    'batch_size': self.tuned_hparams['c_batch_size'],
+                    'hidden_dim': self.tuned_hparams['c_hidden_dim'],
+                    'lr': self.tuned_hparams['c_lr'],
+                    'kld_rigidity': self.tuned_hparams['c_kld_rigidity'],
+                    'bias_rigidity': self.tuned_hparams['c_bias_rigidity'],
+                    'effect_rigidity': self.tuned_hparams['c_effect_rigidity']
+                }
+                outcome_model_params = {
+                    'latent_dim': self.tuned_hparams['latent_dim'],
+                    'batch_size': self.tuned_hparams['batch_size'],
+                    'hidden_dim': self.tuned_hparams['hidden_dim'],
+                    'lr': self.tuned_hparams['lr'],
+                    'kld_rigidity': self.tuned_hparams['kld_rigidity'],
+                    'bias_rigidity': self.tuned_hparams['bias_rigidity'],
+                    'effect_rigidity': self.tuned_hparams['effect_rigidity']
+                }
+                # Fit the Credence model
+                credence_model.fit(covariate_model_params,
+                                   outcome_model_params,
+                                   max_epochs=self.tuned_hparams['max_epochs'])
+                # Create the directory to store the generated data
+                os.makedirs(f'{self.generation_setting["gen_data_dir"]}', exist_ok=True)
+                # Generate the data
+                for itr in tqdm(range(self.generation_setting['num_samples'])):
+                    gen_data_fname = f'dataset_{itr}'
+                    df_gen, df_gen_prime = credence_model.sample(source_dataset.shape[0],
+                                                                 data=source_dataset)
+                    df_gen.to_csv(f'{self.generation_setting["gen_data_dir"]}/{gen_data_fname}.csv',
+                                  index=False)
+                    df_gen_prime.to_csv(
+                        f'{self.generation_setting["gen_data_dir"]}/{gen_data_fname}_prime.csv',
+                        index=False)
             else:
                 raise ValueError(f'Generation model {self.gen_model} not implemented')
 
@@ -125,13 +174,25 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--gen_model', type=str, required=True)
     parser.add_argument('--experiment_identifier', type=str, required=True)
-    parser.add_argument('--tuned_hparams', type=dict, required=True)
-    parser.add_argument('--generation_setting', type=dict, required=True)
     args = parser.parse_args()
 
+    if args.gen_model == 'credence':
+        gen_data_dir = f'data/generated_datasets/credence/expt_{args.experiment_identifier}'
+        hparam_file = f'results/credence_models/expt_{args.experiment_identifier}.yaml'
+    elif args.gen_model == 'modified_credence':
+        gen_data_dir = f'data/generated_datasets/modified_credence/expt_{args.experiment_identifier}'
+        hparam_file = f'results/mcredence_models/expt_{args.experiment_identifier}.yaml'
+    else:
+        raise ValueError(f'Generation model {args.gen_model} not implemented')
+
+    generation_setting = {'num_samples': 50, 'gen_data_dir': gen_data_dir}
+
+    with open(hparam_file, 'r', encoding='utf-8') as file:
+        tuned_hparams = yaml.safe_load(file)
+
     # Generate the data
-    data_gen = DataGen(gen_model=args.gen_model,
-                       experiment_identifier=args.experiment_identifier,
-                       tuned_hparams=args.tuned_hparams,
-                       generation_setting=args.generation_setting)
+    data_gen = DataGenerator(gen_model=args.gen_model,
+                             experiment_identifier=args.experiment_identifier,
+                             tuned_hparams=tuned_hparams,
+                             generation_setting=generation_setting)
     data_gen.generate_data()

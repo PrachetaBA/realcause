@@ -120,7 +120,6 @@ class MCredence:
             self.categorical_var,
             self.numerical_var,
         )
-
         self.Xnames = [x for x in self.data_processed.columns if x not in self.Ynames + self.Tnames]
 
         #self.generate_covariates = generate_covariates # Flag to generate covariates or not
@@ -388,15 +387,15 @@ class MCredence:
         self, df, post_treatment_var, treatment_var, categorical_var, numerical_var
     ):    # this function preprocesses the categorical variables from objects to numerics
 
+        # Create a copy to avoid modifying the original dataframe
+        df_ = df.copy()
+
         # codifying categorical variables
-        df_cat = (df[categorical_var]).astype('category')
         for col in categorical_var:
-            df_cat[col] = df_cat[col].cat.codes
+            if col in df_.columns:
+                df_[col] = df_[col].astype('category').cat.codes
 
-        # codifying numeric variables
-        df_num = df[numerical_var]
-
-        # joining columns
-        df_ = df_cat.join(df_num)
+        # Numerical variables are already numeric, so no conversion needed
+        # All columns (categorical, numerical, treatment, post_treatment) are preserved
 
         return df_
