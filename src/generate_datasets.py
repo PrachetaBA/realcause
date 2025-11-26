@@ -91,20 +91,22 @@ def generate_rc_data(config, expt_id, num_samples=50):
     generated_data_dir = f'data/generated_datasets/realcause/expt_{expt_id}'
     os.makedirs(generated_data_dir, exist_ok=True)
 
-    for itr in tqdm(range(num_samples)):    # TEMP: range(1)
-        w, t, y = rc_model.sample(covariates_df,
+    for itr in tqdm(range(num_samples)):
+        w, t, (y0, y1) = rc_model.sample(covariates_df,
                                 causal_effect_scale=ate,
                                 overlap=overlap,
                                 deg_hetero=deg_hetero,
-                                ret_counterfactuals=False,
+                                ret_counterfactuals=True,
                                 untransform=untransform)
+        y = y0 * (1 - t) + y1 * t
         # Ensure t and y are column vectors
         t = t.reshape(-1, 1) if t.ndim == 1 else t
         y = y.reshape(-1, 1) if y.ndim == 1 else y
         # Concatenate arrays horizontally
-        generated_data = np.column_stack([y, t, w])
+        generated_data = np.column_stack([y, t, w, y0, y1])
         generated_df = pd.DataFrame(generated_data,
-                                    columns=[outcome_col, treatment_col] + covariates_col)
+                                    columns=[outcome_col, treatment_col] + covariates_col +
+                                    ['y0', 'y1'])
         # Save the generated dataset
         generated_df.to_csv(f'{generated_data_dir}/dataset_{itr}.csv', index=False)
 
