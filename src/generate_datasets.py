@@ -73,7 +73,7 @@ def generate_rc_data(config, expt_id, num_samples=50):
     else:
         untransform = True
 
-    ate_setting = config.get('ate', 'flexible_ate')
+    ate_setting = config.get('ate_setting', 'flexible_ate')
     if ate_setting == 'flexible_ate':
         ate = None
     elif ate_setting == 'true_ate':
