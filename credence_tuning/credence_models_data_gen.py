@@ -1,4 +1,6 @@
-"""Script generates data from the tuned modified credence models."""
+"""Script generates data from the tuned modified credence models.
+
+Conda environment: rc-cred-sbi"""
 
 # Import libraries
 import argparse
@@ -65,8 +67,7 @@ class DataGenerator:
                     categorical_var=source_dataset_info['categorical_vars'],
                     numerical_var=source_dataset_info['continuous_vars'],
                     treatment_effect_fn=lambda x: treatment_effect,
-                    selection_bias_fn=lambda x,
-                    t: confounding_bias,
+                    selection_bias_fn=lambda x, t: confounding_bias,
                     effect_rigidity=config['effect_rigidity'],
                     bias_rigidity=config['bias_rigidity'],
                     kld_rigidity=config['kld_rigidity'],
@@ -119,8 +120,7 @@ class DataGenerator:
                     categorical_var=source_dataset_info['categorical_vars'],
                     numerical_var=source_dataset_info['continuous_vars'],
                     treatment_effect_fn=lambda x: treatment_effect,
-                    selection_bias_fn=lambda x,
-                    t: confounding_bias,
+                    selection_bias_fn=lambda x, t: confounding_bias,
                     effect_rigidity=config['effect_rigidity'],
                     bias_rigidity=config['bias_rigidity'],
                     kld_rigidity=config['kld_rigidity'],

@@ -1,5 +1,8 @@
 """Script to generate data from the FrugalFlows models
-according to the tuned hyperparameters."""
+according to the tuned hyperparameters.
+
+Conda environment: rc-ff-sbi
+"""
 
 # Import libraries
 import os

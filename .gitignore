@@ -236,7 +236,7 @@ ff_hyperparameter_tuning/
 database/
 data/
 logs/
-output/ate_estimates/
+output/
 wandb/
 cred_hyperparameter_tuning/
 mcred_hyperparameter_tuning/

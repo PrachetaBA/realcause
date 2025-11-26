@@ -1,6 +1,8 @@
 # pylint: disable=redefined-outer-name
 """Script to generate data from the Realcause models
-according to the tuned models and specific DGP parameters."""
+according to the tuned models and specific DGP parameters.
+
+Conda environment: rc-ff-sbi"""
 
 # Import libraries
 import os
