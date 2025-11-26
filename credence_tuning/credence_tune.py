@@ -45,18 +45,18 @@ def tune_hyperparameters(credence_model,
     # Define the search space of hyperparameters
     search_space = {
         'latent_dim':
-            tune.choice([1, 2, 3, 4, 5, 6]),
+            tune.choice([1, 2, 3, 4]),    # 5, 6
         'hidden_dim':
-            tune.choice(
-                [[8, 16, 8], [4, 8, 4], [16, 32, 16], [16, 32, 64, 64, 32, 16],
-                 [4, 16, 64, 64, 16,
-                  4], [4, 8, 16, 32, 64, 32, 16, 8, 4]]
-            ),    # [16], [8, 16, 8]]), # tune.choice([[8, 16], [16, 32], [8, 16, 8], [32, 64]]),
+            tune.choice([[8, 32, 8], [16, 32, 16], [4, 8, 4]]
+    # [[8, 16, 8], [4, 8, 4], [16, 32, 16], [16, 32, 64, 64, 32, 16],
+    #  [4, 16, 64, 64, 16,
+    #   4], [4, 8, 16, 32, 64, 32, 16, 8, 4]]
+                       ),    # [16], [8, 16, 8]]), # tune.choice([[8, 16], [16, 32], [8, 16, 8], [32, 64]]),
         'lr':
-            tune.loguniform(1e-4, 5e-3),
+            tune.loguniform(1e-4, 1e-1),    # 5e-3
         'kld_rigidity':
             exp_params['kld_rigidity'] if exp_params != None and exp_params['kld_rigidity'] != None
-            else tune.loguniform(0.01, 0.05),
+            else tune.loguniform(0.001, 0.1),    # 0.01 to 0.05
         'bias_rigidity':
             exp_params['bias_rigidity'] if exp_params != None
             and exp_params['bias_rigidity'] != None else tune.loguniform(500, 5000),
@@ -64,7 +64,7 @@ def tune_hyperparameters(credence_model,
             exp_params['effect_rigidity'] if exp_params != None
             and exp_params['effect_rigidity'] != None else tune.loguniform(500, 5000),
         'batch_size':
-            tune.choice([32, 64]),    # 64
+            tune.choice([8, 16, 32, 64]),    # 64
     }
     scheduler = ASHAScheduler(max_t=num_epochs, grace_period=1, reduction_factor=2)
 
