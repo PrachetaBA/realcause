@@ -1,218 +1,128 @@
 # pylint: disable=redefined-outer-name
-"""Script that is used to generate datasets given the models that have 
-been trained by Pracheta for the NFL paper. We will make this script 
-more general - i.e. it should be able to generate datasets for the ACIC 16,
-ACIC 19 as well as all the newer datasets (Kunzel, Curth, Kennedy)."""
+"""Script to generate data from the Realcause models
+according to the tuned models and specific DGP parameters."""
 
 # Import libraries
-from pathlib import Path
-import pandas as pd
+import os
+import logging
+import yaml
+from tqdm import tqdm
 import argparse
+
 import numpy as np
-from consts import REALCAUSE_DATASETS_FOLDER, N_AGG_SEEDS, N_SAMPLE_SEEDS
+import pandas as pd
 from loading import load_gen
-from data.apo import get_apo_data
-from data.acic2019 import load_low_dim
-from data.kunzel import get_kunzel_data
-from data.lalonde import load_lalonde
-from data.synthetic_linear import get_synthetic_linear_data
+from data_loaders import lalonde as rc_lalonde
 
-def generate_datasets(gen_datasets_folder, best_model_path, data,
-                      **kwargs):
-    """Generates datasets given the best model path."""
-    gen_datasets_folder = Path(gen_datasets_folder)
-    gen_datasets_folder.mkdir(parents=True, exist_ok=True)
+# Defing logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-    # Load the best model after doing a hyperparameter search
-    model, _ = load_gen(saveroot=best_model_path)
-    print(f'Model is {model}')
 
-    # Load the original dataset, so that we can use the same covariates
-    if data == 'osapo_acic_4':
-        outcome_type = kwargs.get('outcome_type', 'linear')
-        if outcome_type == 'nonlinear':
-            d = get_apo_data(identifier='acic',
-                             data_format='pandas',
-                             num_of_biasing_covariates=3)
-            # Find the probability of treatment for this dataset
-            p_t = d['t'].mean()
-            print(f'Probability of treatment is {p_t}')
+def generate_rc_data(config, expt_id, num_samples=50):
+    """Function to generate data from the Realcause models
+    according to the tuned models and specific DGP parameters."""
+    dataset_name = config['dataset_name']
+    dataset_identifier = config['dataset_identifier']
+    sample_size = config['sample_size']
+
+    # Load the observed dataset to be used as the reference dataset
+    if dataset_name == 'lalonde':
+        if dataset_identifier == 'psid1':
+            d = rc_lalonde.load_lalonde(obs_version='psid', data_format='pandas_single')
+            rc_model_path = 'results/GenModelCkpts/lalonde/psid1/save'
+        elif dataset_identifier == 'cps1':
+            d = rc_lalonde.load_lalonde(obs_version='cps', data_format='pandas_single')
+            rc_model_path = 'results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize'
         else:
-            weight = kwargs.get('weight', 1)
-            intercept = kwargs.get('intercept', 0)
-            d = get_apo_data(identifier='acic',
-                         data_format='pandas',
-                         weight=weight,
-                         intercept=intercept,
-                         num_of_biasing_covariates=1)
-    elif data == 'acic2019':
-        d = load_low_dim(dataset_identifier=kwargs.get('outcome_type'),
-                         data_format='pandas')
-    elif data == 'kunzel':
-        d = get_kunzel_data(dataset_id = kwargs.get('dataset_identifier'),
-                            sample_size = kwargs.get('sample_size'),
-                            data_format='pandas',
-                            return_ites=True,
-                            return_counterfactual_outcomes=True)
-    elif data == 'lalonde_dw':
-        d = load_lalonde(rct_version='dw', rct=True, dataroot='datasets', data_format='pandas')
-    elif data == 'lalonde_psid':
-        d = load_lalonde(obs_version="psid", dataroot='datasets', data_format='pandas')
-    elif data == 'synthetic':
-        d = get_synthetic_linear_data(dataset_id = kwargs.get('dataset_identifier'), 
-                                      data_format='pandas')
-                  
-    df_w, _, _ = d['w'], d['t'], d['y']
-    ites = d['ites'] if 'ites' in d else None
-    ate = d['ites'].mean() if 'ites' in d else None
-    w_orig = df_w.to_numpy()
-    print(f'Shape of the original covariates is {w_orig.shape}')
-    print(f'Original ITES: {ites}')
-    print(f'Original ATE: {ate}')
-    
-    dfs = []
-    print(
-        f'Generating {N_SAMPLE_SEEDS} datasets with {N_AGG_SEEDS} seeds for each samples'
-    )
+            raise ValueError(f'Dataset identifier {dataset_identifier} not implemented')
+        d.drop(columns=['data_id'], inplace=True)
+        outcome_col = 're78'
+        treatment_col = 'treat'
+        categorical_vars = ['black', 'hispanic', 'married', 'nodegree']
+        continuous_vars = ['age', 'education', 're75', 're74']
+        # Sort the covariates columns to put the continous first, then the categorical
+        covariates_col = continuous_vars + categorical_vars
+        covariates_df = d[
+            covariates_col].values    # This is the original covariates dataframe (not transformed)
 
-    ate_means = []
-    for sample_i in range(N_SAMPLE_SEEDS):
-        print('Sample:', sample_i)
-        start_seed = sample_i * N_AGG_SEEDS
-        end_seed = start_seed + N_AGG_SEEDS
-        ates = []
-        for seed in range(start_seed, end_seed):
-            if 'te' in kwargs and kwargs['te'] is not None:
-                _, t, (y0, y1) = model.sample(w_orig,
-                                              ret_counterfactuals=True,
-                                              causal_effect_scale=kwargs['te'],
-                                              untransform=False,
-                                              seed=seed)
-            else:
-                _, t, (y0, y1) = model.sample(w_orig,
-                                              ret_counterfactuals=True,
-                                              seed=seed)
-            y = t * y1 + (1 - t) * y0
-            df = df_w
-            df['t'] = t
-            df['y'] = y
-            df['y0'] = y0
-            df['y1'] = y1
-            df['ite'] = y1 - y0
-            ate = (y1 - y0).mean()
-            ates.append(ate)
+    # Load the Realcause model from the specified path (before applying transformations)
+    # We need to use the model's transforms to ensure scales match
+    rc_model, _ = load_gen(saveroot=rc_model_path)
 
-        ate_means.append(np.mean(ates))
-        df.to_csv(gen_datasets_folder / f'dataset_{sample_i}.csv', index=False)
-        dfs.append(df)
+    # Extract the true ATE from the RCT data
+    if dataset_name == 'lalonde':
+        # Find the true ATE using the RCT data in the transformed space
+        lalonde_rct = rc_lalonde.load_lalonde(rct=True, data_format='pandas_single')
+        lalonde_rct.drop(columns=['data_id'], inplace=True)
+        # Transform the RCT data using the same transformations
+        transformed_w_rct = rc_model.w_transform.transform(lalonde_rct[covariates_col].values)
+        for i, col in enumerate[str](covariates_col):
+            lalonde_rct[col] = transformed_w_rct[:, i]
+        # Do the same for the outcome column
+        transformed_y_rct = rc_model.y_transform.transform(lalonde_rct[outcome_col].values.reshape(
+            -1, 1))
+        lalonde_rct[outcome_col] = transformed_y_rct.flatten()
+        true_ate = lalonde_rct[outcome_col][lalonde_rct['treat'] == 1].mean(
+        ) - lalonde_rct[outcome_col][lalonde_rct['treat'] == 0].mean()
 
-    print('ATEs: ', ate_means)
-    print(f'ATE mean mean (min-max) (std): {np.mean(ate_means)} '
-          f'({np.min(ate_means)} - {np.max(ate_means)}) '
-          f'({np.std(ate_means)}')
+    overlap = 1.0
+    deg_hetero = 1.0
+    if config.get('transform', True):
+        untransform = False
+    else:
+        untransform = True
+
+    ate_setting = config.get('ate', 'flexible_ate')
+    if ate_setting == 'flexible_ate':
+        ate = None
+    elif ate_setting == 'true_ate':
+        ate = true_ate
+    elif ate_setting == 'incorrect_ate':
+        ate = config.get('ate_value', 10.0)
+    else:
+        raise ValueError(f'Treatment effect {ate_setting} not implemented')
+    overlap = config.get('overlap', 1.0)
+    deg_hetero = config.get('deg_hetero', 1.0)
+
+    # Create the directory to store the generated data
+    generated_data_dir = f'data/generated_datasets/realcause/expt_{expt_id}'
+    os.makedirs(generated_data_dir, exist_ok=True)
+
+    for itr in tqdm(range(num_samples)):    # TEMP: range(1)
+        w, t, y = rc_model.sample(covariates_df,
+                                causal_effect_scale=ate,
+                                overlap=overlap,
+                                deg_hetero=deg_hetero,
+                                ret_counterfactuals=False,
+                                untransform=untransform)
+        # Ensure t and y are column vectors
+        t = t.reshape(-1, 1) if t.ndim == 1 else t
+        y = y.reshape(-1, 1) if y.ndim == 1 else y
+        # Concatenate arrays horizontally
+        generated_data = np.column_stack([y, t, w])
+        generated_df = pd.DataFrame(generated_data,
+                                    columns=[outcome_col, treatment_col] + covariates_col)
+        # Save the generated dataset
+        generated_df.to_csv(f'{generated_data_dir}/dataset_{itr}.csv', index=False)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='Generate datasets given the best model path.')
-    parser.add_argument('--gen_datasets_folder',
+    parser = argparse.ArgumentParser(description='Generate datasets given the best model path.')
+    parser.add_argument('--config_file',
                         type=str,
-                        help='Folder to save the generated datasets.')
-    parser.add_argument('--best_model_path',
-                        type=str,
-                        help='Path to the best model.')
-    parser.add_argument('--data',
-                        type=str,
-                        choices=['osapo_acic_4', 'acic2019', 'kunzel', 'lalonde_dw', 'lalonde_psid', 'synthetic'],
-                        help='Choice of dataset (osapo_acic_4, acic2019, kunzel, lalonde_dw, lalonde_psid, synthetic)',
+                        help='Path to the configuration file.',
                         default=None)
-
-    # Specific to the kunzel dataset
-    parser.add_argument('--dataset_identifier',
+    parser.add_argument('--experiment_identifier',
                         type=str,
-                        help='Additional identifier for the dataset',
-                        default=None,
-                        required=False)
-    parser.add_argument('--sample_size',
-                        type=int,
-                        help='Sample size for the kunzel dataset',
-                        default=500,
-                        required=False)
-
-    # Specific to the ACIC19 dataset
-    parser.add_argument('--outcome_type',
-                        type=str,
-                        help='Outcome type for the ACIC19 dataset',
-                        default='linear',
-                        required=False)
-    # If outcome type is linear, specify weight and intercept.
-    parser.add_argument('--weight',
-                        type=float,
-                        help='Weight for the covariates.',
-                        default=1,
-                        required=False)
-    parser.add_argument('--intercept',
-                        type=float,
-                        help='Intercept for the covariates.',
-                        default=0,
-                        required=False)
-    # In case the user wants to specify a fixed treatment effect
-    parser.add_argument('--te',
-                        type=float,
-                        help='Fixed Treatment effect.',
-                        default=None,
-                        required=False)
+                        help='Identifier for the experiment.',
+                        default=None)
     args = parser.parse_args()
+    expt_id = args.experiment_identifier
+    # Load the configuration file
+    with open(args.config_file, 'r', encoding='utf-8') as file:
+        all_experiment_configs = yaml.safe_load(file)
+    config = all_experiment_configs[f'expt_{expt_id}']
 
-    gen_datasets_folder = f'{REALCAUSE_DATASETS_FOLDER}/{args.gen_datasets_folder}'
-    best_model_path = f'results/{args.best_model_path}'
-    if args.data == 'osapo_acic_4':
-        if args.outcome_type == 'nonlinear':
-            generate_datasets(gen_datasets_folder,
-                              best_model_path,
-                              data=args.data,
-                              outcome_type='nonlinear')
-        elif args.outcome_type == 'linear':
-            generate_datasets(gen_datasets_folder,
-                          best_model_path,
-                          data=args.data,
-                          weight=args.weight,
-                          intercept=args.intercept,
-                          te=args.te)
-    elif args.data == 'acic2019':
-        generate_datasets(gen_datasets_folder,
-                          best_model_path,
-                          data=args.data,
-                          outcome_type=args.outcome_type)
-    elif args.data == 'kunzel':
-        generate_datasets(gen_datasets_folder,
-                          best_model_path,
-                          data = args.data,
-                          dataset_identifier=args.dataset_identifier,
-                          sample_size=args.sample_size)
-    elif args.data == 'lalonde_dw' or args.data == 'lalonde_psid':
-        if args.te: 
-            gen_datasets_folder = f'{REALCAUSE_DATASETS_FOLDER}/{args.gen_datasets_folder}_te_{args.te}'
-            generate_datasets(gen_datasets_folder,
-                              best_model_path,
-                              data=args.data,
-                              te=args.te)
-        else:
-            generate_datasets(gen_datasets_folder,
-                            best_model_path,
-                            data=args.data)
-    elif args.data == 'synthetic':
-        if args.te: 
-            gen_datasets_folder = f'{REALCAUSE_DATASETS_FOLDER}/{args.gen_datasets_folder}_te_{args.te}'
-            generate_datasets(gen_datasets_folder,
-                              best_model_path,
-                              data=args.data,
-                              dataset_identifier=args.dataset_identifier,
-                              te=args.te)
-        else:
-            generate_datasets(gen_datasets_folder,
-                          best_model_path,
-                          data=args.data,
-                          dataset_identifier=args.dataset_identifier)
-
-    print('Done!')
+    # Generate the datasets
+    generate_rc_data(config, expt_id)

@@ -1,0 +1,21 @@
+expt_0001:
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  transform: True
+  ate_setting: flexible_ate # Flexible treatment effect
+
+expt_0002:
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  transform: True
+  ate_setting: true_ate # True treatment effect
+
+expt_0003:
+  dataset_name: lalonde
+  dataset_identifier: psid1
+  sample_size: None
+  transform: True
+  ate_setting: incorrect_ate # Incorrect treatment effect
+  ate_value: 10.0
