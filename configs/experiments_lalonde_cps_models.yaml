@@ -1,4 +1,4 @@
-experiment_200: 
+experiment_200:  # only ate; distance sliced wass
   dataset_name: lalonde
   dataset_identifier: cps1
   sample_size: None
@@ -20,7 +20,118 @@ experiment_200:
   distance: sliced_wass
   transform: true
   min_epsilon: 0.01
-  max_iterations: 12    
+  max_iterations: 12
+  causal_model: location_translation
+  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
+  frugalflows_hp_file: results/frugalflows_models/lalonde_cps1_None_hps.yaml
+
+experiment_201:   # only ate; distance only t and y
+  dataset_name: lalonde
+  dataset_identifier: cps1
+  sample_size: None
+  random_seed: 40
+  realcause_parameters:
+    - te
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+  frugalflows_parameters:
+    - ate
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+  distance: ty_sliced_wass
+  transform: true
+  min_epsilon: 0.01
+  max_iterations: 12
+  causal_model: location_translation
+  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
+  frugalflows_hp_file: results/frugalflows_models/lalonde_cps1_None_hps.yaml
+
+experiment_202:  # all parameters for both models; distance sliced wass
+  dataset_name: lalonde
+  dataset_identifier: cps1
+  sample_size: None
+  random_seed: 40
+  realcause_parameters:
+    - te
+    - deg_hetero
+    - overlap
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  frugalflows_parameters:
+    - ate
+    - rho
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    rho:
+      distribution: uniform
+      loc: -1.0
+      scale: 2.0
+  distance: sliced_wass
+  transform: true
+  min_epsilon: 0.01
+  max_iterations: 12
+  causal_model: location_translation
+  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
+  frugalflows_hp_file: results/frugalflows_models/lalonde_cps1_None_hps.yaml
+
+experiment_203:  # all parameters for both models; distance only t and y
+  dataset_name: lalonde
+  dataset_identifier: cps1
+  sample_size: None
+  random_seed: 40
+  realcause_parameters:
+    - te
+    - deg_hetero
+    - overlap
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  frugalflows_parameters:
+    - ate
+    - rho
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    rho:
+      distribution: uniform
+      loc: -1.0
+      scale: 2.0
+  distance: ty_sliced_wass
+  transform: true
+  min_epsilon: 0.01
+  max_iterations: 12
   causal_model: location_translation
   realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
   frugalflows_hp_file: results/frugalflows_models/lalonde_cps1_None_hps.yaml

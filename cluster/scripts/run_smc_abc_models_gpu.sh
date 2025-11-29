@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=smc_abc_models_gpu  # Job name
-#SBATCH --mem=4G  # Requested Memory
+#SBATCH --mem=8G  # Requested Memory
 #SBATCH --partition=gpu      # Partition
 #SBATCH --gres=gpu:1
 #SBATCH --constraint=sm_61  # Required for JAX compatibility
@@ -33,4 +33,4 @@ echo "XLA_PYTHON_CLIENT_MEM_FRACTION=$XLA_PYTHON_CLIENT_MEM_FRACTION"
 echo "=================================="
 
 cd /scratch3/workspace/pboddavarama_umass_edu-sbice/realcause/
-python -u -m sbi.smc_abc_models --config configs/experiments_lalonde_cps_models.yaml --expt_num $1 --sampler redis --redis_server $2 --redis_port $3
+python -u -m sbi.smc_abc_models --config configs/experiments_lalonde_psid_models.yaml --expt_num $1 --sampler redis --redis_server $2 --redis_port $3
