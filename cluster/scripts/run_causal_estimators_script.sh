@@ -23,14 +23,14 @@
 
 
 # Comparing multiple generative methods
-sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0002 source
-sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0002 credence
-sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0002 mcredence
-sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0002 realcause
-sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0002 frugalflows
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0002 source
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0002 credence
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0002 mcredence
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0002 realcause
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0002 frugalflows
 
-sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 source
-sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 credence
-sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 mcredence
-sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 realcause
-sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 frugalflows
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 source
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 credence
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 mcredence
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 realcause
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 frugalflows
