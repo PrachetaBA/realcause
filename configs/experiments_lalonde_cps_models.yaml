@@ -21,6 +21,7 @@ experiment_200:  # only ate; distance sliced wass
   transform: true
   min_epsilon: 0.01
   max_iterations: 12
+  acceptance_population: 50
   causal_model: location_translation
   realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
   frugalflows_hp_file: results/frugalflows_models/lalonde_cps1_None_hps.yaml
@@ -48,6 +49,7 @@ experiment_201:   # only ate; distance only t and y
   transform: true
   min_epsilon: 0.01
   max_iterations: 12
+  acceptance_population: 50
   causal_model: location_translation
   realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
   frugalflows_hp_file: results/frugalflows_models/lalonde_cps1_None_hps.yaml
@@ -90,6 +92,7 @@ experiment_202:  # all parameters for both models; distance sliced wass
   transform: true
   min_epsilon: 0.01
   max_iterations: 12
+  acceptance_population: 50
   causal_model: location_translation
   realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
   frugalflows_hp_file: results/frugalflows_models/lalonde_cps1_None_hps.yaml
@@ -132,6 +135,7 @@ experiment_203:  # all parameters for both models; distance only t and y
   transform: true
   min_epsilon: 0.01
   max_iterations: 12
+  acceptance_population: 50
   causal_model: location_translation
   realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
   frugalflows_hp_file: results/frugalflows_models/lalonde_cps1_None_hps.yaml

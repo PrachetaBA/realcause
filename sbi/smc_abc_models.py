@@ -275,12 +275,13 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
     elif sampler == 'redis':
         sampler = redis_sampler
 
+    population_size = abc_config.get('acceptance_population', 35)
     # Initialize the ABC object
     # NOTE: Model order matters! Model 0 = FrugalFlows, Model 1 = Realcause
     abc = pyabc.ABCSMC(models=[ff_simulator_pyabc, rc_simulator_pyabc],
                        parameter_priors=[ff_prior, rc_prior],
                        distance_function=DISTANCE_PARAM,
-                       population_size=35,
+                       population_size=population_size,
                        sampler=sampler,
                        eps=pyabc.MedianEpsilon())
 
