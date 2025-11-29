@@ -13,7 +13,7 @@ conda activate /work/pi_jensen_umass_edu/pboddavarama_umass_edu/pba-conda/envs/r
 cd /scratch3/workspace/pboddavarama_umass_edu-sbice/realcause/
 type_of_run=$1
 if [ "$type_of_run" == "source" ]; then
-    python -u -m sbice.get_ate_estimates_models --dataset_name $2 --dataset_identifier $3 --sample_size $4 --observed_data --set_of_estimators $5 --experiment_number $6 --realcause_model_path $7
+    python -u -m sbice.get_ate_estimates_models --dataset_name $2 --dataset_identifier $3 --sample_size $4 --observed_data --set_of_estimators $5 --experiment_number $6 --realcause_model_path $7 --smc_expt_id $8 --distance_function $9
 elif [ "$type_of_run" == "generated" ]; then
     python -u -m sbice.get_ate_estimates_models --dataset_name $2 --dataset_identifier $3 --sample_size $4 --set_of_estimators $5 --experiment_number $6 --posterior_or_prior $7 --realcause_model_path $8 --smc_expt_id $9 --distance_function ${10}
 else

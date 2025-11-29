@@ -250,7 +250,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_replications', type=int, default=50, required=False)
     parser.add_argument('--set_of_estimators', type=str, default='all', required=False)
     parser.add_argument('--realcause_model_path', type=str, default=None, required=False)
-    parser.add_argument('--smc_expt_id', type=int, default=None, required=True)
+    parser.add_argument('--smc_expt_id', type=int, default=1, required=False)
     # For e.g. python -m sbice.get_ate_estimates --dataset_name lalonde --dataset_identifier psid1
     # --experiment_number 3 --posterior_or_prior posterior --num_replications 1 --set_of_estimators meta
     # --realcause_model_path results/GenModelCkpts/lalonde/psid1/save
@@ -258,17 +258,10 @@ if __name__ == '__main__':
     logger.info(f'Arguments: {args}')
 
     if args.observed_data:
-        source_data_info = load_source_dataset(args.dataset_name,
-                                               dataset_identifier=args.dataset_identifier,
-                                               sample_size=args.sample_size,
-                                               realcause_model_path=args.realcause_model_path)
         # Use the observed data to compute the ATE estimates on the source data
         logger.info(
             f'Running ATE estimators on {args.dataset_name}_{args.dataset_identifier}_{args.sample_size} dataset!'
         )
-        logger.info(f'True ATE (transformed, if applicable): {source_data_info["true_ate"]}')
-        # Use this to extract the true ATE from the source data (after applying the transformations if applicable)
-        source_data_true_ate = source_data_info['true_ate']
         # Load the observed data
         observed_data_info = load_source_dataset(
             dataset_name=args.dataset_name,
@@ -277,9 +270,11 @@ if __name__ == '__main__':
             dataset_path=
             f'data/smc_abc/{args.dataset_name}_{args.dataset_identifier}_{args.sample_size}_dist_{args.distance_function}_expt_{args.experiment_number}/{args.smc_expt_id}',
             realcause_model_path=args.realcause_model_path)
+        source_data_true_ate = observed_data_info['true_ate']
+        logger.info(f'True ATE (transformed, if applicable): {source_data_true_ate}')
         estimated_ate = ate_estimators.bootstrap_ate_inference(
-            outcome=observed_data_info['outcome_col'],
-            treatment=observed_data_info['treatment_col'],
+            outcome=observed_data_info['outcome'],
+            treatment=observed_data_info['treatment'],
             data=observed_data_info['data'],
             dataset_identifier=
             f'{args.dataset_name}_{args.dataset_identifier}_{args.sample_size}_expt_{args.experiment_number}_base',
