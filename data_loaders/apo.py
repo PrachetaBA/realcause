@@ -10,49 +10,38 @@ import numpy as np
 from consts import BASE_DATASETS_FOLDER
 
 sys.path.append(BASE_DATASETS_FOLDER)
-from causaleval import biasing_function   # Use the same biasing function as used by FrugalFlow
+from causaleval import biasing_function    # Use the same biasing function as used by FrugalFlow
 
 # Default biasing arguments for the APO dataset
 DEFAULT_BIASING_ARGS = {
     'acic_4': {
         'nonlinear': {
-            'nl_weight1': 1.0,
-            'nl_weight2': -1.0,
-            'nl_weight3': 1.0,
-            'nl_weight4': 1.0
+            'nl_weight1': 1.0, 'nl_weight2': -1.0, 'nl_weight3': 1.0, 'nl_weight4': 1.0
         }
     },
     'n_acic_4': {
         'linear': {
-            'intercept': -1.0,
-            'weight': 2.0
+            'intercept': -1.0, 'weight': 2.0
         },
         'nonlinear': {
-            'nl_weight1': -2.0,
-            'nl_weight2': 0.5,
-            'nl_weight3': -0.1,
-            'nl_weight4': 0.3
+            'nl_weight1': -2.0, 'nl_weight2': 0.5, 'nl_weight3': -0.1, 'nl_weight4': 0.3
         }
     },
     'jdk': {
         'linear': {
-            'intercept': -1.0,
-            'weight': 2.0
+            'intercept': -1.0, 'weight': 2.0
         }
     },
     'postgres': {
         'linear': {
-            'intercept': -0.5,
-            'weight': -2.0
+            'intercept': -0.5, 'weight': -2.0
         },
         'nonlinear': {
-            'nl_weight1': -2.0,
-            'nl_weight2': 0.5,
-            'nl_weight3': -0.1,
-            'nl_weight4': 0.3
+            'nl_weight1': -2.0, 'nl_weight2': 0.5, 'nl_weight3': -0.1, 'nl_weight4': 0.3
         }
     }
 }
+
 
 def get_apo_data(identifier,
                  data_format='numpy',
@@ -60,25 +49,25 @@ def get_apo_data(identifier,
                  ret_counterfactual_outcomes=False,
                  **kwargs):
     """Function to get an APO dataset that was used in the CausalEval paper.
-    
+
     The possible APO datasets are:
     1. acic_4: ACIC dataset that corresponds to the `apo_acic_4` dataset in the CausalEval paper.
     2. n_acic_4: ACIC dataset that corresponds to the `apo_n_acic_4` dataset in the CausalEval paper (lesser number of covariates)
     3. jdk: APO dataset (corresponding to a real-world experiment)
-    
+
     Keyword arguments:
         - confound_func: Confounding function to be used for the biasing function (default: 'linear').
         if linear:
             - weight: Weight to be used for the biasing function (default: 1).
             - intercept: Intercept to be used for the biasing function (default: 0).
-        if nonlinear: 
+        if nonlinear:
             - nl_weight1: Weight to be used for the first variable in the nonlinear confounder function (default: 1).
             - nl_weight2: Weight to be used for the second variable in the nonlinear confounder function (default: 1).
             - nl_weight3: Weight to be used for the third variable in the nonlinear confounder function (default: 1).
         - sample_size: Desired sample size for the dataset after subsampling (before doing biasing) (default: 3000).
                        (passing all to sample_size will result in the entire dataset being used)
-    
-    Returns: 
+
+    Returns:
     - d: A dictionary containing the following information:
         - w: The covariates
         - t: The treatment
@@ -102,23 +91,23 @@ def get_apo_data(identifier,
             x for x in df.columns.tolist() if x in
             [*cfg['column'].tolist(), 'counterfactual_outcome_1', 'counterfactual_outcome_0']
         ]]
-        
-        # Subsample the dataset such that APO is maintained but the sampling is based on the columns specified as in the 
-        # index in the cfg file. 
+
+        # Subsample the dataset such that APO is maintained but the sampling is based on the columns specified as in the
+        # index in the cfg file.
         sample_size = kwargs['sample_size'] if 'sample_size' in kwargs.keys() else 3000
         if sample_size == 'all':
             pass
-        else: 
+        else:
             sample_size = int(sample_size)
             # Extract the unique values of the column named 'index' in the df
             apo_indices = df['index'].unique()
             # Sample the indices such that the sample size is maintained
             sampled_indices = rng.choice(apo_indices, size=sample_size, replace=False)
             # Subset the dataframe based on the sampled indices
-            df = df[df['index'].isin(sampled_indices)]    
+            df = df[df['index'].isin(sampled_indices)]
         # Drop the index column
         df.drop(columns=['index'], inplace=True)
-        
+
         # Except for the index column, extract all the other columns of type = 'f' in the cfg file
         categorical_var = cfg.loc[cfg['type'] == 'f', 'column'].tolist()
         # Remove the index column from the list
@@ -134,8 +123,10 @@ def get_apo_data(identifier,
         # Create an observational dataset from the APO dataset with the desired parameters
         confound_func = kwargs['confound_func'] if 'confound_func' in kwargs.keys() else 'linear'
         if confound_func == 'linear':
-            intercept = kwargs['intercept'] if 'intercept' in kwargs.keys() else DEFAULT_BIASING_ARGS[identifier]['linear']['intercept']    # pylint: disable=consider-iterating-dictionary
-            weight = kwargs['weight'] if 'weight' in kwargs.keys() else DEFAULT_BIASING_ARGS[identifier]['linear']['weight']    # pylint: disable=consider-iterating-dictionary
+            intercept = kwargs['intercept'] if 'intercept' in kwargs.keys(
+            ) else DEFAULT_BIASING_ARGS[identifier]['linear']['intercept']    # pylint: disable=consider-iterating-dictionary
+            weight = kwargs['weight'] if 'weight' in kwargs.keys(
+            ) else DEFAULT_BIASING_ARGS[identifier]['linear']['weight']    # pylint: disable=consider-iterating-dictionary
             osapo_df = biasing_function.osrct_algorithm(df,
                                                         confound_func_params={
                                                             'para_form': 'linear',
@@ -148,25 +139,36 @@ def get_apo_data(identifier,
             # Extract the top 3 variables from the cfg file which are type 'n'
             top_3_nvars = cfg.loc[cfg['type'] == 'n', 'column'].tolist()[:3]
             if len(top_3_nvars) < 3:
-                raise ValueError(f'Less than 3 nonlinear variables found in the dataset. Found {len(top_3_nvars)} nonlinear variables.')
-            osapo_df = biasing_function.osrct_algorithm(df,
-                                                        confound_func_params={
-                                                            'para_form': 'nonlinear',
-                                                            'nl_weight1': kwargs['nl_weight1'] if 'nl_weight1' in kwargs.keys() else DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight1'],
-                                                            'nl_weight2': kwargs['nl_weight2'] if 'nl_weight2' in kwargs.keys() else DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight2'],
-                                                            'nl_weight3': kwargs['nl_weight3'] if 'nl_weight3' in kwargs.keys() else DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight3'],
-                                                            'nl_weight4': kwargs['nl_weight4'] if 'nl_weight4' in kwargs.keys() else DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight4']
-                                                        },
-                                                        treatment_col='treatment',
-                                                        confounding_vars=top_3_nvars)
+                raise ValueError(
+                    f'Less than 3 nonlinear variables found in the dataset. Found {len(top_3_nvars)} nonlinear variables.'
+                )
+            osapo_df = biasing_function.osrct_algorithm(
+                df,
+                confound_func_params={
+                    'para_form':
+                        'nonlinear',
+                    'nl_weight1':
+                        kwargs['nl_weight1'] if 'nl_weight1' in kwargs.keys() else
+                        DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight1'],
+                    'nl_weight2':
+                        kwargs['nl_weight2'] if 'nl_weight2' in kwargs.keys() else
+                        DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight2'],
+                    'nl_weight3':
+                        kwargs['nl_weight3'] if 'nl_weight3' in kwargs.keys() else
+                        DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight3'],
+                    'nl_weight4':
+                        kwargs['nl_weight4'] if 'nl_weight4' in kwargs.keys() else
+                        DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight4']
+                },
+                treatment_col='treatment',
+                confounding_vars=top_3_nvars)
         else:
             raise ValueError(f'Confounding function {kwargs["confound_func"]} not recognized.')
         # Ensure we have a standalone DataFrame (avoid SettingWithCopyWarning downstream)
         osapo_df = osapo_df.copy()
         # Compute ITE, expected difference between counterfactual outcomes, after subsampling
-        osapo_df.loc[:, 'ite'] = (
-            osapo_df['counterfactual_outcome_1'] - osapo_df['counterfactual_outcome_0']
-        )
+        osapo_df.loc[:, 'ite'] = (osapo_df['counterfactual_outcome_1'] -
+                                  osapo_df['counterfactual_outcome_0'])
         # Compute ATE, mean of the ITE after subsampling
         ate = osapo_df['ite'].mean()
         # Compute the naive ATE
@@ -179,12 +181,22 @@ def get_apo_data(identifier,
             'true_ate': ate,
             'naive_ate': naive_ate,
             'sample_size': osapo_df.shape[0]
-        }  # If requesting additional information
+        }    # If requesting additional information
         if data_format == 'numpy':
             d = {
-                'w': osapo_df.drop(['treatment', 'outcome', 'ite', 'counterfactual_outcome_0', 'counterfactual_outcome_1'], axis='columns').to_numpy(),
-                't': osapo_df['treatment'].to_numpy(),
-                'y': osapo_df['outcome'].to_numpy()
+                'w':
+                    osapo_df.drop([
+                        'treatment',
+                        'outcome',
+                        'ite',
+                        'counterfactual_outcome_0',
+                        'counterfactual_outcome_1'
+                    ],
+                                  axis='columns').to_numpy(),
+                't':
+                    osapo_df['treatment'].to_numpy(),
+                'y':
+                    osapo_df['outcome'].to_numpy()
             }
             if return_ites:
                 d['ite'] = osapo_df['ite'].to_numpy()
@@ -193,9 +205,19 @@ def get_apo_data(identifier,
                 d['y1'] = osapo_df['counterfactual_outcome_1'].to_numpy()
         elif data_format == 'pandas':
             d = {
-                'w': osapo_df.drop(['treatment', 'outcome', 'ite', 'counterfactual_outcome_0', 'counterfactual_outcome_1'], axis='columns'),
-                't': osapo_df['treatment'],
-                'y': osapo_df['outcome']
+                'w':
+                    osapo_df.drop([
+                        'treatment',
+                        'outcome',
+                        'ite',
+                        'counterfactual_outcome_0',
+                        'counterfactual_outcome_1'
+                    ],
+                                  axis='columns'),
+                't':
+                    osapo_df['treatment'],
+                'y':
+                    osapo_df['outcome']
             }
             if return_ites:
                 d['ite'] = osapo_df['ite']
@@ -203,26 +225,24 @@ def get_apo_data(identifier,
                 d['y0'] = osapo_df['counterfactual_outcome_0']
                 d['y1'] = osapo_df['counterfactual_outcome_1']
         else:
-            raise ValueError(f"Data format {data_format} not supported.")
+            raise ValueError(f'Data format {data_format} not supported.')
         return d
     elif identifier in ['jdk', 'postgres']:
-        df = pd.read_csv(f'{BASE_DATASETS_FOLDER}/causaleval/apo_{identifier}_data.csv',index_col=0)
+        df = pd.read_csv(f'{BASE_DATASETS_FOLDER}/causaleval/apo_{identifier}_data.csv',
+                         index_col=0)
         # Read in the config
         cfg = pd.read_csv(f'{BASE_DATASETS_FOLDER}/causaleval/apo_{identifier}_config.txt',
                           sep=' ',
                           index_col=None,
                           names=['column', 'type'])
         # If a column exists in the df.columns, but not in cfg['column'], then drop it
-        df = df[[
-            x for x in df.columns.tolist() if x in
-            [*cfg['column'].tolist()]
-        ]]
+        df = df[[x for x in df.columns.tolist() if x in [*cfg['column'].tolist()]]]
         # First, we remove duplicates of the same index, treatment column pair
         df = df.drop_duplicates(subset=[cfg.iloc[0]['column'], cfg.iloc[1]['column']])
         # Set the first column in the cfg file as the index
         df.set_index(cfg.iloc[0]['column'], inplace=True)
         # Let us not subsample this dataset (it is a small dataset)
-    
+
         # Except for the index column, extract all the other columns of type = 'f' in the cfg file
         categorical_var = cfg.loc[cfg['type'] == 'f', 'column'].tolist()
         # Remove the index column from the list
@@ -231,42 +251,43 @@ def get_apo_data(identifier,
         continuous_vars = cfg.loc[cfg['type'] == 'n', 'column'].tolist()
         # If the following variables are present in categorical_var, then remove them
         one_hot_vars = [
-            x for x in categorical_var if x not in
-            [cfg.iloc[1]['column'], cfg.iloc[2]['column']]  # This removes the treatment and outcome columns
+            x for x in categorical_var
+            if x not in [cfg.iloc[1]['column'], cfg.iloc[2]['column']
+                        ]    # This removes the treatment and outcome columns
         ]
         df = pd.get_dummies(df, columns=one_hot_vars, drop_first=True, dtype=np.float64)
         # Get a list of the updated categorical variables
         updated_categorical_vars = [x for x in df.columns.tolist() if x not in continuous_vars]
         # Get the biasing covariate (assume single biasing covariate for now)
         biasing_covariate = cfg.iloc[3]['column']    # This is the biasing covariate column
-        
+
         # We should normalize the entire dataset (so that the ATE values are comparable and FrugalFlows works properly)
         # Normalize all the continuous variables
         std_vars = df[continuous_vars].std(axis=0)
         mean_vars = df[continuous_vars].mean(axis=0)
         for var in continuous_vars:
             df[var] = (df[var] - mean_vars[var]) / std_vars[var]
-        
+
         index_col = cfg.iloc[0]['column']
         treatment_col = cfg.iloc[1]['column']
-        outcome_col = cfg.iloc[2]['column']        
+        outcome_col = cfg.iloc[2]['column']
         # Ensure that the dataframe is sorted by the index column prior to doing the biasing
         df.sort_values(by=index_col, inplace=True)
-        
+
         if identifier == 'postgres':
             # Let us subsample the dataset to the required sample size
             sample_size = kwargs['sample_size'] if 'sample_size' in kwargs.keys() else 3000
             if sample_size == 'all':
                 pass
-            else: 
+            else:
                 sample_size = int(sample_size)
                 # Extract the unique values of the column named 'index' in the df
                 apo_indices = df.index.unique()
                 # Sample the indices such that the sample size is maintained
                 sampled_indices = rng.choice(apo_indices, size=sample_size, replace=False)
                 # Subset the dataframe based on the sampled indices
-                df = df.loc[sampled_indices] 
-            
+                df = df.loc[sampled_indices]
+
         # Before doing the biasing, compute the ITE for each index as the difference between the outcome_col
         # when the treatment is 1 and the outcome_col when the treatment is 0 for the same index
         dfcopy = df.copy()
@@ -276,12 +297,14 @@ def get_apo_data(identifier,
         # Create the columns 'counterfactual_outcome_0' and 'counterfactual_outcome_1'
         df.loc[:, 'counterfactual_outcome_0'] = dfcopy_unstacked[0]
         df.loc[:, 'counterfactual_outcome_1'] = dfcopy_unstacked[1]
-                    
+
         # Create an observational dataset from the APO dataset with the desired parameters
         confound_func = kwargs['confound_func'] if 'confound_func' in kwargs.keys() else 'linear'
         if confound_func == 'linear':
-            intercept = kwargs['intercept'] if 'intercept' in kwargs.keys() else DEFAULT_BIASING_ARGS[identifier]['linear']['intercept']    # pylint: disable=consider-iterating-dictionary
-            weight = kwargs['weight'] if 'weight' in kwargs.keys() else DEFAULT_BIASING_ARGS[identifier]['linear']['weight']    # pylint: disable=consider-iterating-dictionary
+            intercept = kwargs['intercept'] if 'intercept' in kwargs.keys(
+            ) else DEFAULT_BIASING_ARGS[identifier]['linear']['intercept']    # pylint: disable=consider-iterating-dictionary
+            weight = kwargs['weight'] if 'weight' in kwargs.keys(
+            ) else DEFAULT_BIASING_ARGS[identifier]['linear']['weight']    # pylint: disable=consider-iterating-dictionary
             osapo_df = biasing_function.osrct_algorithm(df,
                                                         confound_func_params={
                                                             'para_form': 'linear',
@@ -294,44 +317,75 @@ def get_apo_data(identifier,
             # Extract the top 3 variables from the cfg file which are type 'n'
             top_3_nvars = cfg.loc[cfg['type'] == 'n', 'column'].tolist()[:3]
             if len(top_3_nvars) < 3:
-                raise ValueError(f'Less than 3 nonlinear variables found in the dataset. Found {len(top_3_nvars)} nonlinear variables.')
-            osapo_df = biasing_function.osrct_algorithm(df,
-                                                        confound_func_params={
-                                                            'para_form': 'nonlinear',
-                                                            'nl_weight1': kwargs['nl_weight1'] if 'nl_weight1' in kwargs.keys() else DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight1'],
-                                                            'nl_weight2': kwargs['nl_weight2'] if 'nl_weight2' in kwargs.keys() else DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight2'],
-                                                            'nl_weight3': kwargs['nl_weight3'] if 'nl_weight3' in kwargs.keys() else DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight3'],
-                                                            'nl_weight4': kwargs['nl_weight4'] if 'nl_weight4' in kwargs.keys() else DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight4']
-                                                        },
-                                                        treatment_col=treatment_col,
-                                                        confounding_vars=top_3_nvars)
+                raise ValueError(
+                    f'Less than 3 nonlinear variables found in the dataset. Found {len(top_3_nvars)} nonlinear variables.'
+                )
+            osapo_df = biasing_function.osrct_algorithm(
+                df,
+                confound_func_params={
+                    'para_form':
+                        'nonlinear',
+                    'nl_weight1':
+                        kwargs['nl_weight1'] if 'nl_weight1' in kwargs.keys() else
+                        DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight1'],
+                    'nl_weight2':
+                        kwargs['nl_weight2'] if 'nl_weight2' in kwargs.keys() else
+                        DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight2'],
+                    'nl_weight3':
+                        kwargs['nl_weight3'] if 'nl_weight3' in kwargs.keys() else
+                        DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight3'],
+                    'nl_weight4':
+                        kwargs['nl_weight4'] if 'nl_weight4' in kwargs.keys() else
+                        DEFAULT_BIASING_ARGS[identifier]['nonlinear']['nl_weight4']
+                },
+                treatment_col=treatment_col,
+                confounding_vars=top_3_nvars)
         else:
             raise ValueError(f'Confounding function {kwargs["confound_func"]} not recognized.')
         # We want to drop the index column and just keep the index as numbers from 0 to n-1
         osapo_df.reset_index(drop=True, inplace=True)
         # Ensure we have a standalone DataFrame (avoid SettingWithCopyWarning downstream)
         osapo_df = osapo_df.copy()
-        osapo_df.loc[:, 'ite'] = (
-            osapo_df['counterfactual_outcome_1'] - osapo_df['counterfactual_outcome_0']
-        )
+        osapo_df.loc[:, 'ite'] = (osapo_df['counterfactual_outcome_1'] -
+                                  osapo_df['counterfactual_outcome_0'])
         # Compute ATE, mean of the ITE after subsampling
         ate = osapo_df['ite'].mean()
         # Compute the naive ATE
         naive_ate = osapo_df.loc[osapo_df[treatment_col] == 1,
                                  outcome_col].mean() - osapo_df.loc[osapo_df[treatment_col] == 0,
-                                                                  outcome_col].mean()
+                                                                    outcome_col].mean()
+        # Remove the treatment and outcome columns from the categorical variables
+        updated_categorical_vars = [
+            x for x in updated_categorical_vars if x not in [treatment_col, outcome_col]
+        ]
+        # Remove the treatment and outcome columns from the continuous variables
+        updated_continuous_vars = [
+            x for x in continuous_vars if x not in [treatment_col, outcome_col]
+        ]
         df_info = {
             'outcome_col': outcome_col,
             'treatment_col': treatment_col,
             'true_ate': ate,
             'naive_ate': naive_ate,
-            'sample_size': osapo_df.shape[0]
-        }  # If requesting additional information
+            'sample_size': osapo_df.shape[0],
+            'categorical_vars': updated_categorical_vars,
+            'continuous_vars': updated_continuous_vars
+        }    # If requesting additional information
         if data_format == 'numpy':
             d = {
-                'w': osapo_df.drop([treatment_col, outcome_col, 'counterfactual_outcome_0', 'counterfactual_outcome_1', 'ite'], axis='columns').to_numpy(),
-                't': osapo_df[treatment_col].to_numpy(),
-                'y': osapo_df[outcome_col].to_numpy()
+                'w':
+                    osapo_df.drop([
+                        treatment_col,
+                        outcome_col,
+                        'counterfactual_outcome_0',
+                        'counterfactual_outcome_1',
+                        'ite'
+                    ],
+                                  axis='columns').to_numpy(),
+                't':
+                    osapo_df[treatment_col].to_numpy(),
+                'y':
+                    osapo_df[outcome_col].to_numpy()
             }
             if return_ites:
                 d['ite'] = osapo_df['ite'].to_numpy()
@@ -340,9 +394,19 @@ def get_apo_data(identifier,
                 d['y1'] = osapo_df['counterfactual_outcome_1'].to_numpy()
         elif data_format == 'pandas':
             d = {
-                'w': osapo_df.drop([treatment_col, outcome_col, 'counterfactual_outcome_0', 'counterfactual_outcome_1', 'ite'], axis='columns'),
-                't': osapo_df[treatment_col],
-                'y': osapo_df[outcome_col]
+                'w':
+                    osapo_df.drop([
+                        treatment_col,
+                        outcome_col,
+                        'counterfactual_outcome_0',
+                        'counterfactual_outcome_1',
+                        'ite'
+                    ],
+                                  axis='columns'),
+                't':
+                    osapo_df[treatment_col],
+                'y':
+                    osapo_df[outcome_col]
             }
             if return_ites:
                 d['ite'] = osapo_df['ite']
@@ -350,9 +414,10 @@ def get_apo_data(identifier,
                 d['y0'] = osapo_df['counterfactual_outcome_0']
                 d['y1'] = osapo_df['counterfactual_outcome_1']
         else:
-            raise ValueError(f"Data format {data_format} not supported.")
-        return d
-    
+            raise ValueError(f'Data format {data_format} not supported.')
+        return d, df_info
+
+
 if __name__ == '__main__':
     # Test Postgres dataset
     # d = get_apo_data(identifier='postgres', data_format='pandas', return_ites=True, ret_counterfactual_outcomes=True, sample_size=3000)
@@ -360,8 +425,7 @@ if __name__ == '__main__':
     # df = pd.concat([d['w'], d['t'], d['y'], d['ite'], d['y0'], d['y1']], axis=1)
     # # Compute the ITE mean
     # print(f'ATE: {df["ite"].mean()}')
-    
-    
+
     # Test JDK dataset
     # d = get_apo_data(identifier='jdk', data_format='pandas', return_ites=True, ret_counterfactual_outcomes=True, sample_size=None)
     # # Combine all columns into a single dataframe
@@ -369,9 +433,13 @@ if __name__ == '__main__':
     # print(df.head())
     # print(df.shape)
     # print(f'ATE: {df["ite"].mean()}')
-    
+
     # Test n_acic_4 dataset
-    d = get_apo_data(identifier='n_acic_4', data_format='pandas', return_ites=True, ret_counterfactual_outcomes=True, sample_size=3000)
+    d = get_apo_data(identifier='n_acic_4',
+                     data_format='pandas',
+                     return_ites=True,
+                     ret_counterfactual_outcomes=True,
+                     sample_size=3000)
     # Combine all columns into a single dataframe
     df = pd.concat([d['w'], d['t'], d['y'], d['ite'], d['y0'], d['y1']], axis=1)
     print(df.columns)

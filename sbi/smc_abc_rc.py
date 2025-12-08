@@ -4,7 +4,7 @@ using the Realcause simulator."""
 # Import libraries
 import argparse
 import logging
-import os 
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,10 +14,9 @@ import yaml
 
 from loading import load_gen
 from data_loaders import apo, lalonde, twins
-from sbi import rc_simulator as simulator 
+from sbi import rc_simulator as simulator
 
-
-# Defing logging 
+# Defing logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -29,11 +28,7 @@ class IdSumStat(pyabc.Sumstat):
         return data['data']
 
 
-def main(abc_config,
-         experiment_number,
-         sampler='redis',
-         redis_server=None,
-         redis_port=6379):
+def main(abc_config, experiment_number, sampler='redis', redis_server=None, redis_port=6379):
     """Function to run the SMC-ABC algorithm using a trained Realcause model as the simulator.
     The dataset is specified by three arguments: dataset_name, dataset_identifier, and sample_size.
 
@@ -48,12 +43,14 @@ def main(abc_config,
     dataset_name = abc_config['dataset_name']
     dataset_identifier = abc_config['dataset_identifier']
     sample_size = abc_config['sample_size']
-    logger.info(f'Starting SMC-ABC algorithm for dataset: {dataset_name} with identifier: {dataset_identifier} and sample size: {sample_size}')
-    
+    logger.info(
+        f'Starting SMC-ABC algorithm for dataset: {dataset_name} with identifier: {dataset_identifier} and sample size: {sample_size}'
+    )
+
     # Load the observed dataset to be used as the reference dataset
     if dataset_name in ['n_acic_4', 'jdk', 'postgres']:
-        d = apo.get_apo_data(identifier=dataset_name, confound_func=dataset_identifier, 
-                             data_format='pandas', return_ites=False, 
+        d, _ = apo.get_apo_data(identifier=dataset_name, confound_func=dataset_identifier,
+                             data_format='pandas', return_ites=False,
                              ret_counterfactual_outcomes=False,
                              sample_size=sample_size)
         # Get a pandas dataframe from the combination of the orig columns
@@ -70,7 +67,8 @@ def main(abc_config,
         covariates_col = d.columns.tolist()
         covariates_col.remove(outcome_col)
         covariates_col.remove(treatment_col)
-        covariates_df = d[covariates_col].values   # This is the original covariates dataframe (not transformed)
+        covariates_df = d[
+            covariates_col].values    # This is the original covariates dataframe (not transformed)
     elif dataset_name == 'twins':
         d = twins.load_twins(data_format='pandas')
         covariates_col = d['w'].columns.tolist()
@@ -79,12 +77,12 @@ def main(abc_config,
         treatment_col = 'T'
         outcome_col = 'yf'
     else:
-        raise ValueError(f"Dataset {dataset_name} not implemented")
-    
+        raise ValueError(f'Dataset {dataset_name} not implemented')
+
     # Load the Realcause model from the specified path (before applying transformations)
     # We need to use the model's transforms to ensure scales match
     rc_model, _ = load_gen(saveroot=abc_config['realcause_model_path'])
-    
+
     # Apply transformations using the model's transforms (if specified in config)
     # This ensures the observed data is normalized using the same parameters as the model
     if dataset_name in ['lalonde', 'twins']:
@@ -97,46 +95,45 @@ def main(abc_config,
             # Assign back to DataFrame columns
             for i, col in enumerate(covariates_col):
                 d[col] = transformed_w[:, i]
-                
+
             # Do the same for the outcome column
             transformed_y = rc_model.y_transform.transform(d[outcome_col].values.reshape(-1, 1))
             d[outcome_col] = transformed_y.flatten()
         # Reorder the columns to put all the covariates first, then treatment, then outcome
         d = d[covariates_col + [treatment_col, outcome_col]]
         observed_data = d
-    
+
     # Numpy dictionary of the observed data
-    observed = {
-        'data': observed_data.values
-    }
+    observed = {'data': observed_data.values}
     # Sample_size observed
-    observed_sample_size = observed_data.shape[0]    
-    
-    # Define priors for the parameters 
+    observed_sample_size = observed_data.shape[0]
+
+    # Define priors for the parameters
     prior_vars = abc_config['parameters']
     prior_distribution_name = {'normal': 'norm', 'uniform': 'uniform'}
     # Build a dictionary of prior distributions for each parameter
     prior_dict = {}
     for param in prior_vars:
-        prior_dict[param] = pyabc.RV(prior_distribution_name[abc_config['prior'][param]['distribution']],
-                                     abc_config['prior'][param]['loc'],
-                                     abc_config['prior'][param]['scale'])
+        prior_dict[param] = pyabc.RV(
+            prior_distribution_name[abc_config['prior'][param]['distribution']],
+            abc_config['prior'][param]['loc'],
+            abc_config['prior'][param]['scale'])
     # Create joint prior distribution from all parameters
     prior = pyabc.Distribution(**prior_dict)
-    logger.info(f'Prior distribution: {abc_config["prior"]}') 
-    
-    # Construct a wrapper around the simulator function 
+    logger.info(f'Prior distribution: {abc_config["prior"]}')
+
+    # Construct a wrapper around the simulator function
     def simulator_pyabc(parameters):
         """Wrapper around the simulator function to be used by PyABC."""
         return simulator.simulate_datasets(parameters=parameters,
                                            covariates_df=covariates_df,
                                            realcause_model=rc_model)
-        
-    # Define the distance metrics for the data (TODO: Add more distance functions later) 
+
+    # Define the distance metrics for the data (TODO: Add more distance functions later)
     DISTANCE_PARAM = pyabc.SlicedWassersteinDistance(metric='sqeuclidean',
-                                            p=2,
-                                            sumstat=IdSumStat(),
-                                            n_proj=50)    # Used to be 10
+                                                     p=2,
+                                                     sumstat=IdSumStat(),
+                                                     n_proj=50)    # Used to be 10
     observed_sum_stat = observed
     logger.info(f'Distance function: {abc_config["distance"]}')
 
@@ -145,7 +142,7 @@ def main(abc_config,
         sampler = pyabc.sampler.SingleCoreSampler()
     elif sampler == 'redis':
         sampler = redis_sampler
-        
+
     # Initialize the ABC object
     abc = pyabc.ABCSMC(models=simulator_pyabc,
                        parameter_priors=prior,
@@ -207,7 +204,6 @@ def main(abc_config,
     prior_var_names = ['prior_' + var for var in prior_vars]
     prior_s = {x: [] for x in prior_var_names}
     post_s = {x: [] for x in post_var_names}
-
 
     for i in range(NUM_SAMPLES):
         prior_parameters = prior.rvs()
@@ -303,7 +299,11 @@ def main(abc_config,
                 history, m=0, t=t)    # Produces a single plot for all parameters
         else:
             # Plot the marginal distribution when there are single parameters
-            pyabc.visualization.plot_kde_1d_highlevel(history, x=prior_vars[0], m=0, t=t, title=f't = {t}')
+            pyabc.visualization.plot_kde_1d_highlevel(history,
+                                                      x=prior_vars[0],
+                                                      m=0,
+                                                      t=t,
+                                                      title=f't = {t}')
 
         plt.savefig(f'plots/smc_abc/{expt_name}/parameterized_{prior_vars[0]}_{t}.png')
 
@@ -314,22 +314,22 @@ def main(abc_config,
                                                 show_kde_max_1d=True)
     plt.savefig(f'plots/smc_abc/{expt_name}/credible_intervals.png')
 
-
     for var in prior_vars:
         pyabc.visualization.plot_kde_1d_highlevel(history,
-                                                x=var,
-                                                m=0,
-                                                t=history.max_t,
-                                                xmin=abc_config['prior'][var]['loc'] - 1.0,
-                                                xmax=abc_config['prior'][var]['loc'] +
-                                                abc_config['prior'][var]['scale'] + 1.0,
-                                                numx=100,
-                                                title=f'KDE of {var}')
+                                                  x=var,
+                                                  m=0,
+                                                  t=history.max_t,
+                                                  xmin=abc_config['prior'][var]['loc'] - 1.0,
+                                                  xmax=abc_config['prior'][var]['loc'] +
+                                                  abc_config['prior'][var]['scale'] + 1.0,
+                                                  numx=100,
+                                                  title=f'KDE of {var}')
         plt.savefig(f'plots/smc_abc/{expt_name}/kde_{var}.png')
 
     # Create the credible interval plot for the last generation
     logger.info('Saved plots for individual posteriors and credible intervals!')
-    
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='SMC-ABC for the SBICE pipeline')
     parser.add_argument('--config',
@@ -362,9 +362,7 @@ if __name__ == '__main__':
 
     # Run the main function using the arguments in the config file
     if args.sampler == 'singlecore':
-        main(configuration,
-             experiment_number=args.expt_num,
-             sampler=args.sampler)
+        main(configuration, experiment_number=args.expt_num, sampler=args.sampler)
     else:
         main(configuration,
              experiment_number=args.expt_num,

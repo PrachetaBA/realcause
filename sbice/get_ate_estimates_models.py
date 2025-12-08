@@ -86,7 +86,7 @@ def load_source_dataset(dataset_name,
     """
     # Load the observed dataset to be used as the reference dataset
     if dataset_name in ['n_acic_4', 'jdk', 'postgres']:
-        d = apo.get_apo_data(identifier=dataset_name,
+        d, _ = apo.get_apo_data(identifier=dataset_name,
                              confound_func=dataset_identifier,
                              data_format='pandas',
                              return_ites=True,

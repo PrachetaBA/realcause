@@ -19,6 +19,7 @@ import helpers
 
 # from utils import get_duplicates
 
+
 def get_data(args):
     """Function to extract the specific data in the format required for Realcause."""
     data_name = args.data.lower()
@@ -26,21 +27,19 @@ def get_data(args):
     ate = None
     ite = None
     if data_name in ['n_acic_4', 'jdk', 'postgres']:
-        d = apo.get_apo_data(identifier=data_name, confound_func=data_id, 
-                         data_format='numpy', return_ites=True, 
+        d, _ = apo.get_apo_data(identifier=data_name, confound_func=data_id,
+                         data_format='numpy', return_ites=True,
                          ret_counterfactual_outcomes=False,
                          sample_size=args.sample_size)
         w, t, y = d['w'], d['t'], d['y']
         ite = d['ite'] if 'ite' in d else None
-        ate = d['ite'].mean() if 'ite' in d else None 
+        ate = d['ite'].mean() if 'ite' in d else None
     else:
-        raise ValueError(f"Dataset {data_name} not implemented")
+        raise ValueError(f'Dataset {data_name} not implemented')
     return w, t, y, ite, ate
 
 
-def get_distribution(dist_name,
-                     dist_args=None,
-                     atoms=None):
+def get_distribution(dist_name, dist_args=None, atoms=None):
     """
     args.dist_args should be a list of keyword:value pairs.
 
@@ -53,7 +52,7 @@ def get_distribution(dist_name,
     kwargs = dict()
     if len(dist_args) > 0:
         for a in dist_args:
-            k, v = a.split("=")
+            k, v = a.split('=')
             if v.isdigit():
                 v = int(v)
             kwargs.update({k: v})
@@ -62,7 +61,7 @@ def get_distribution(dist_name,
         dist = distributions.BaseDistribution.dists[dist_name](**kwargs)
     else:
         raise NotImplementedError(
-            f"Got dist argument `{dist_name}`, not one of {distributions.BaseDistribution.dist_names}"
+            f'Got dist argument `{dist_name}`, not one of {distributions.BaseDistribution.dist_names}'
         )
     if atoms:
         dist = distributions.MixedDistribution(atoms, dist)
@@ -75,10 +74,10 @@ def evaluate(num_univariate_tests, model):
     y_pvals = list()
 
     for _ in range(num_univariate_tests):
-        uni_metrics = model.get_univariate_quant_metrics(dataset="test")
+        uni_metrics = model.get_univariate_quant_metrics(dataset='test')
         all_runs.append(uni_metrics)
-        t_pvals.append(uni_metrics["t_ks_pval"])
-        y_pvals.append(uni_metrics["y_ks_pval"])
+        t_pvals.append(uni_metrics['t_ks_pval'])
+        y_pvals.append(uni_metrics['y_ks_pval'])
 
     summary = OrderedDict()
 
@@ -100,38 +99,38 @@ def evaluate(num_univariate_tests, model):
 
 def main(args, save_args=True, log_=True):
     # create logger
-    helpers.create(*args.saveroot.split("/"))
-    logger = helpers.Logging(args.saveroot, "log.txt", log_)
+    helpers.create(*args.saveroot.split('/'))
+    logger = helpers.Logging(args.saveroot, 'log.txt', log_)
     logger.info(args)
 
     comet_exp_name = f"{args.saveroot.split('/')[-1]}"
 
     # save args
     if save_args:
-        with open(os.path.join(args.saveroot, "args.txt"), "w") as file:
+        with open(os.path.join(args.saveroot, 'args.txt'), 'w') as file:
             file.write(json.dumps(args.__dict__, indent=4))
 
     # dataset
-    logger.info(f"getting data: {args.data}")
-    w, t, y, ite, ate = get_data(args)  
-    
+    logger.info(f'getting data: {args.data}')
+    w, t, y, ite, ate = get_data(args)
+
     # Debugging
     if args.verbose:
         logger.debug(f'w: {w.shape}, t: {t.shape}, y: {y.shape}')
         logger.debug(f'w: {w[:5]}, t: {t[:5]}, y: {y[:5]}')
         logger.debug(f'ITEs: {ite.shape}, ATE: {ate}')
-    
-    # Regardless, print the average treatment effect.    
-    logger.info(f"ate: {ate}")
+
+    # Regardless, print the average treatment effect.
+    logger.info(f'ate: {ate}')
 
     # comet login - initialize the project
-    comet_ml.login(project_name=f"realcause-{comet_exp_name}",
-                   api_key="FZHDy6k24i2GOKtzc85PjAPNY")
-    
+    comet_ml.login(project_name=f'realcause-{comet_exp_name}', api_key='FZHDy6k24i2GOKtzc85PjAPNY')
+
     # Read the hyperparameter file and create the optimizer, if we have only one set of
     # values in the hyperparameter file, then we will treat it as a fixed parameter
     # else, it will be tuned in the optimizer
-    with open(f'hyperparameter_tuning/{args.hyperparameter_file}.yaml', 'r', encoding='utf-8') as file:
+    with open(f'hyperparameter_tuning/{args.hyperparameter_file}.yaml', 'r',
+              encoding='utf-8') as file:
         tuning_config = yaml.safe_load(file)
 
     hps = tuning_config['hps']
@@ -141,51 +140,52 @@ def main(args, save_args=True, log_=True):
     logger.info(f'Hyperparameters: {hps}')
     logger.info(f'Model parameters: {model_parameters}')
     logger.info(f'Spec: {spec}')
-     
+
     optimizer_config = {
-        "algorithm": "bayes",
-        "spec": spec,
-        "parameters": model_parameters,
-        "name": f"BayesOpt_{comet_exp_name}",
-        "trials": 1,
+        'algorithm': 'bayes',
+        'spec': spec,
+        'parameters': model_parameters,
+        'name': f'BayesOpt_{comet_exp_name}',
+        'trials': 1,
     }
-    
-    # For the record, let us print the full set of hyperparameters and fixed parameters that 
-    # are used for training Realcause generator. 
+
+    # For the record, let us print the full set of hyperparameters and fixed parameters that
+    # are used for training Realcause generator.
     logger.info('#' * 80)
-    logger.info('Recording the set of fixed and variable hyperparameters used for training the model.')
+    logger.info(
+        'Recording the set of fixed and variable hyperparameters used for training the model.')
     logger.info(f'Fixed hyperparameters: {hps}')
     logger.info(f'Variable hyperparameters: {model_parameters}')
     logger.info(f'Optimizer specification: {spec}')
     logger.info(f'Optimizer configuration: {optimizer_config}')
     logger.info('#' * 80)
-    
-    # Initialize the optimizer 
+
+    # Initialize the optimizer
     opt = comet_ml.Optimizer(config=optimizer_config)
-    
+
     # Run each experiment
     for experiment in opt.get_experiments():
         experiment.add_tag(args.data)
 
         # distribution of outcome (y)
-        distribution = get_distribution(dist_name = experiment.get_parameter("dist"),
-                                        dist_args = experiment.get_parameter("dist_args"),
-                                        atoms = hps["atoms"])
+        distribution = get_distribution(dist_name=experiment.get_parameter('dist'),
+                                        dist_args=experiment.get_parameter('dist_args'),
+                                        atoms=hps['atoms'])
         logger.info(distribution)
 
         # training params
         training_params = TrainingParams(
-            lr=experiment.get_parameter("lr"),
-            batch_size=experiment.get_parameter("batch_size"),
-            num_epochs=hps["num_epochs"],
+            lr=experiment.get_parameter('lr'),
+            batch_size=experiment.get_parameter('batch_size'),
+            num_epochs=hps['num_epochs'],
         )
         logger.info(training_params.__dict__)
 
         # initializing model
         w_transform = preprocess.Preprocess.preps[hps['w_transform']]
         y_transform = preprocess.Preprocess.preps[hps['y_transform']]
-        outcome_min = 0 if hps['y_transform'] == "Normalize" else None
-        outcome_max = 1 if hps['y_transform'] == "Normalize" else None
+        outcome_min = 0 if hps['y_transform'] == 'Normalize' else None
+        outcome_max = 1 if hps['y_transform'] == 'Normalize' else None
 
         # model type
         additional_args = dict()
@@ -194,9 +194,9 @@ def main(args, save_args=True, log_=True):
 
             logger.info('model type: tarnet')
             mlp_params = MLPParams(
-                # n_hidden_layers=hps['n_hidden_layers'],   # Fixed
-                n_hidden_layers=experiment.get_parameter("n_hidden_layers"),    # Variable
-                dim_h=experiment.get_parameter("dim_h"),
+            # n_hidden_layers=hps['n_hidden_layers'],   # Fixed
+                n_hidden_layers=experiment.get_parameter('n_hidden_layers'),    # Variable
+                dim_h=experiment.get_parameter('dim_h'),
                 activation=getattr(torch.nn, hps['activation'])(),
             )
             logger.info(mlp_params.__dict__)
@@ -235,28 +235,33 @@ def main(args, save_args=True, log_=True):
 
         if args.verbose:
             logger.debug(f'Initialized the network to be {network_params}')
-        
+
         # Create unique savepath for each experiment to avoid loading checkpoints with mismatched hyperparameters
         experiment_savepath = os.path.join(args.saveroot, f'model_{experiment.id}.pt')
-        
-        model = Model(w, t, y,
-                    training_params=training_params,
-                    network_params=network_params,
-                    binary_treatment=True, outcome_distribution=distribution,
-                    outcome_min=outcome_min,
-                    outcome_max=outcome_max,
-                    train_prop=hps['train_prop'],
-                    val_prop=hps['val_prop'],
-                    test_prop=hps['test_prop'],
-                    seed=hps['seed'],
-                    early_stop=hps['early_stop'],
-                    patience=hps['patience'],
-                    ignore_w=hps['ignore_w'],
-                    grad_norm=hps['grad_norm'],
-                    w_transform=w_transform, y_transform=y_transform,  # TODO set more args
-                    savepath=experiment_savepath,
-                    test_size=hps['test_size'],
-                    additional_args=additional_args)
+
+        model = Model(
+            w,
+            t,
+            y,
+            training_params=training_params,
+            network_params=network_params,
+            binary_treatment=True,
+            outcome_distribution=distribution,
+            outcome_min=outcome_min,
+            outcome_max=outcome_max,
+            train_prop=hps['train_prop'],
+            val_prop=hps['val_prop'],
+            test_prop=hps['test_prop'],
+            seed=hps['seed'],
+            early_stop=hps['early_stop'],
+            patience=hps['patience'],
+            ignore_w=hps['ignore_w'],
+            grad_norm=hps['grad_norm'],
+            w_transform=w_transform,
+            y_transform=y_transform,    # TODO set more args
+            savepath=experiment_savepath,
+            test_size=hps['test_size'],
+            additional_args=additional_args)
 
         # TODO: Add GPU support later
         if args.train:
@@ -264,36 +269,41 @@ def main(args, save_args=True, log_=True):
 
         # End the current experiment
         experiment.end()
-    
+
     # After the ideal hyperparameters have been found, run the evaluation
     if args.eval:
-        summary, all_runs = evaluate(hps["num_univariate_tests"], model)
+        summary, all_runs = evaluate(hps['num_univariate_tests'], model)
         logger.info(summary)
-        with open(os.path.join(args.saveroot, "summary.txt"), "w") as file:
+        with open(os.path.join(args.saveroot, 'summary.txt'), 'w') as file:
             file.write(json.dumps(summary, indent=4))
-        with open(os.path.join(args.saveroot, "all_runs.txt"), "w") as file:
+        with open(os.path.join(args.saveroot, 'all_runs.txt'), 'w') as file:
             file.write(json.dumps(all_runs))
 
         model.plot_ty_dists()
 
+
 def get_args():
-    parser = argparse.ArgumentParser(description="causal-gen")
+    parser = argparse.ArgumentParser(description='causal-gen')
 
     # dataset
-    parser.add_argument("--data", type=str, default=None)
-    parser.add_argument("--data_identifier", type=str, default=None, required=False)
-    parser.add_argument("--saveroot", type=str, default="tuned_models")
-    parser.add_argument("--hyperparameter_file", type=str, default=None) # Name of the hyperparameter file to use for tuning
-    parser.add_argument("--train", type=eval, default=True, choices=[True, False])
-    parser.add_argument("--eval", type=eval, default=False, choices=[True, False])
-    parser.add_argument('--overwrite_reload', type=str, default='',
-                        help='secondary folder name of an experiment')  # TODO: for model loading
+    parser.add_argument('--data', type=str, default=None)
+    parser.add_argument('--data_identifier', type=str, default=None, required=False)
+    parser.add_argument('--saveroot', type=str, default='tuned_models')
+    parser.add_argument('--hyperparameter_file', type=str,
+                        default=None)    # Name of the hyperparameter file to use for tuning
+    parser.add_argument('--train', type=eval, default=True, choices=[True, False])
+    parser.add_argument('--eval', type=eval, default=False, choices=[True, False])
+    parser.add_argument('--overwrite_reload',
+                        type=str,
+                        default='',
+                        help='secondary folder name of an experiment')    # TODO: for model loading
     # logging level
-    parser.add_argument("--verbose", type=int, default=0)
-    parser.add_argument('--sample_size', type=str, default=None, required=False) # To pick sample size of dataset
+    parser.add_argument('--verbose', type=int, default=0)
+    parser.add_argument('--sample_size', type=str, default=None,
+                        required=False)    # To pick sample size of dataset
     return parser
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     print(f'Starting to run {__file__} now.')
     main(get_args().parse_args())

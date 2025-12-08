@@ -12,6 +12,7 @@ import helpers
 from collections import OrderedDict
 import json
 
+
 def get_data(args):
     """Function to extract the specific data in the format required for Realcause."""
     data_name = args.data.lower()
@@ -19,23 +20,23 @@ def get_data(args):
     ate = None
     ite = None
     if data_name in ['n_acic_4', 'jdk', 'postgres']:
-        d = apo.get_apo_data(identifier=data_name, confound_func=data_id, 
-                         data_format='numpy', return_ites=True, 
+        d, _ = apo.get_apo_data(identifier=data_name, confound_func=data_id,
+                         data_format='numpy', return_ites=True,
                          ret_counterfactual_outcomes=False,
                          sample_size=args.sample_size)
         w, t, y = d['w'], d['t'], d['y']
         ite = d['ite'] if 'ite' in d else None
-        ate = d['ite'].mean() if 'ite' in d else None 
+        ate = d['ite'].mean() if 'ite' in d else None
     elif data_name == 'lalonde':
         if data_id == 'psid1':
             w, t, y = lalonde.load_lalonde(obs_version='psid')
         elif data_id == 'cps1':
-            w, t, y = lalonde.load_lalonde(obs_version='cps')  
+            w, t, y = lalonde.load_lalonde(obs_version='cps')
     elif data_name == 'twins':
         d = twins.load_twins(data_format='numpy')
         w, t, y = d['w'], d['t'], d['y']
     else:
-        raise ValueError(f"Dataset {data_name} not implemented")
+        raise ValueError(f'Dataset {data_name} not implemented')
     return w, t, y, ite, ate
 
 
@@ -51,7 +52,7 @@ def get_distribution(args):
     kwargs = dict()
     if len(args.dist_args) > 0:
         for a in args.dist_args:
-            k, v = a.split("=")
+            k, v = a.split('=')
             if v.isdigit():
                 v = int(v)
             kwargs.update({k: v})
@@ -60,7 +61,7 @@ def get_distribution(args):
         dist = distributions.BaseDistribution.dists[dist_name](**kwargs)
     else:
         raise NotImplementedError(
-            f"Got dist argument `{dist_name}`, not one of {distributions.BaseDistribution.dist_names}"
+            f'Got dist argument `{dist_name}`, not one of {distributions.BaseDistribution.dist_names}'
         )
     if args.atoms:
         dist = distributions.MixedDistribution(args.atoms, dist)
@@ -73,10 +74,10 @@ def evaluate(args, model):
     y_pvals = list()
 
     for _ in range(args.num_univariate_tests):
-        uni_metrics = model.get_univariate_quant_metrics(dataset="test")
+        uni_metrics = model.get_univariate_quant_metrics(dataset='test')
         all_runs.append(uni_metrics)
-        t_pvals.append(uni_metrics["t_ks_pval"])
-        y_pvals.append(uni_metrics["y_ks_pval"])
+        t_pvals.append(uni_metrics['t_ks_pval'])
+        y_pvals.append(uni_metrics['y_ks_pval'])
 
     summary = OrderedDict()
 
@@ -98,37 +99,37 @@ def evaluate(args, model):
 
 def main(args, save_args=True, log_=True):
     # create logger
-    helpers.create(*args.saveroot.split("/"))
-    logger = helpers.Logging(args.saveroot, "log.txt", log_)
+    helpers.create(*args.saveroot.split('/'))
+    logger = helpers.Logging(args.saveroot, 'log.txt', log_)
     if args.verbose:
         logger.debug(args)
 
     # save args
     if save_args:
-        with open(os.path.join(args.saveroot, "args.txt"), "w") as file:
+        with open(os.path.join(args.saveroot, 'args.txt'), 'w') as file:
             file.write(json.dumps(args.__dict__, indent=4))
 
     # dataset
     if args.verbose:
-        logger.debug(f"getting data: {args.data}")
+        logger.debug(f'getting data: {args.data}')
     w, t, y, ite, ate = get_data(args)
-    
+
     # Debugging
     if args.verbose:
         logger.debug(f'w: {w.shape}, t: {t.shape}, y: {y.shape}')
         logger.debug(f'w: {w[:5]}, t: {t[:5]}, y: {y[:5]}')
         logger.debug(f'ITEs: {ite.shape}, ATE: {ate}')
-        
+
     # comet logging
     if args.comet:
-        exp = Experiment(project_name="causal-benchmark", auto_metric_logging=False)
+        exp = Experiment(project_name='causal-benchmark', auto_metric_logging=False)
         exp.add_tag(args.data)
-        logger.debug(f"comet url: {exp.url}")
+        logger.debug(f'comet url: {exp.url}')
     else:
         exp = None
 
     if args.verbose:
-        logger.debug(f"ate: {ate}")
+        logger.debug(f'ate: {ate}')
 
     # distribution of outcome (y)
     distribution = get_distribution(args)
@@ -136,17 +137,17 @@ def main(args, save_args=True, log_=True):
         logger.debug(distribution)
 
     # training params
-    training_params = TrainingParams(
-        lr=args.lr, batch_size=args.batch_size, num_epochs=args.num_epochs
-    )
+    training_params = TrainingParams(lr=args.lr,
+                                     batch_size=args.batch_size,
+                                     num_epochs=args.num_epochs)
     if args.verbose:
         logger.debug(training_params.__dict__)
 
     # initializing model
     w_transform = preprocess.Preprocess.preps[args.w_transform]
     y_transform = preprocess.Preprocess.preps[args.y_transform]
-    outcome_min = 0 if args.y_transform == "Normalize" else None
-    outcome_max = 1 if args.y_transform == "Normalize" else None
+    outcome_min = 0 if args.y_transform == 'Normalize' else None
+    outcome_max = 1 if args.y_transform == 'Normalize' else None
 
     # model type
     additional_args = dict()
@@ -170,7 +171,7 @@ def main(args, save_args=True, log_=True):
         )
     elif args.model_type == 'linear':
         Model = LinearModel
-        if args.verbose:    
+        if args.verbose:
             logger.debug('model type: linear model')
         network_params = dict()
     elif 'gp' in args.model_type:
@@ -192,7 +193,7 @@ def main(args, save_args=True, log_=True):
         )
         if args.verbose:
             logger.debug(f'gp_t_w: {repr(network_params["gp_t_w"])}'
-                    f'gp_y_tw: {repr(network_params["gp_y_tw"])}')
+                         f'gp_y_tw: {repr(network_params["gp_y_tw"])}')
         additional_args['num_tasks'] = args.num_tasks
     else:
         raise ValueError(f'model type {args.model_type} not implemented')
@@ -202,24 +203,29 @@ def main(args, save_args=True, log_=True):
 
     if args.verbose:
         logger.debug(f'Initialized the network to be {network_params}')
-    model = Model(w, t, y,
-                  training_params=training_params,
-                  network_params=network_params,
-                  binary_treatment=True, outcome_distribution=distribution,
-                  outcome_min=outcome_min,
-                  outcome_max=outcome_max,
-                  train_prop=args.train_prop,
-                  val_prop=args.val_prop,
-                  test_prop=args.test_prop,
-                  seed=args.seed,
-                  early_stop=args.early_stop,
-                  patience=args.patience,
-                  ignore_w=args.ignore_w,
-                  grad_norm=args.grad_norm,
-                  w_transform=w_transform, y_transform=y_transform,  # TODO set more args
-                  savepath=os.path.join(args.saveroot, 'model.pt'),
-                  test_size=args.test_size,
-                  additional_args=additional_args)
+    model = Model(
+        w,
+        t,
+        y,
+        training_params=training_params,
+        network_params=network_params,
+        binary_treatment=True,
+        outcome_distribution=distribution,
+        outcome_min=outcome_min,
+        outcome_max=outcome_max,
+        train_prop=args.train_prop,
+        val_prop=args.val_prop,
+        test_prop=args.test_prop,
+        seed=args.seed,
+        early_stop=args.early_stop,
+        patience=args.patience,
+        ignore_w=args.ignore_w,
+        grad_norm=args.grad_norm,
+        w_transform=w_transform,
+        y_transform=y_transform,    # TODO set more args
+        savepath=os.path.join(args.saveroot, 'model.pt'),
+        test_size=args.test_size,
+        additional_args=additional_args)
 
     # TODO: Add GPU support with Comet later
     if args.train:
@@ -229,9 +235,9 @@ def main(args, save_args=True, log_=True):
     if args.eval:
         summary, all_runs = evaluate(args, model)
         logger.debug(summary)
-        with open(os.path.join(args.saveroot, "summary.txt"), "w") as file:
+        with open(os.path.join(args.saveroot, 'summary.txt'), 'w') as file:
             file.write(json.dumps(summary, indent=4))
-        with open(os.path.join(args.saveroot, "all_runs.txt"), "w") as file:
+        with open(os.path.join(args.saveroot, 'all_runs.txt'), 'w') as file:
             file.write(json.dumps(all_runs))
 
         model.plot_ty_dists()
@@ -240,72 +246,93 @@ def main(args, save_args=True, log_=True):
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description="causal-gen")
+    parser = argparse.ArgumentParser(description='causal-gen')
 
     # dataset
-    parser.add_argument("--data", type=str, default=None)
-    parser.add_argument("--data_identifier", type=str, default=None, required=False)
-    parser.add_argument("--saveroot", type=str, default="results")
-    parser.add_argument("--train", type=eval, default=True, choices=[True, False])
-    parser.add_argument("--eval", type=eval, default=True, choices=[True, False])
-    parser.add_argument('--overwrite_reload', type=str, default='',
-                        help='secondary folder name of an experiment')  # TODO: for model loading
+    parser.add_argument('--data', type=str, default=None)
+    parser.add_argument('--data_identifier', type=str, default=None, required=False)
+    parser.add_argument('--saveroot', type=str, default='results')
+    parser.add_argument('--train', type=eval, default=True, choices=[True, False])
+    parser.add_argument('--eval', type=eval, default=True, choices=[True, False])
+    parser.add_argument('--overwrite_reload',
+                        type=str,
+                        default='',
+                        help='secondary folder name of an experiment')    # TODO: for model loading
 
     # model type
-    parser.add_argument('--model_type', type=str, default='tarnet',
-                        choices=['tarnet', 'linear', 'gp', 'targp'])  # TODO: renaming tarnet to be dragonnet
+    parser.add_argument('--model_type',
+                        type=str,
+                        default='tarnet',
+                        choices=['tarnet', 'linear', 'gp',
+                                 'targp'])    # TODO: renaming tarnet to be dragonnet
 
     # distribution of outcome (y)
-    parser.add_argument('--dist', type=str, default='FactorialGaussian',
+    parser.add_argument('--dist',
+                        type=str,
+                        default='FactorialGaussian',
                         choices=distributions.BaseDistribution.dist_names)
-    parser.add_argument("--dist_args", type=str, default=list(), nargs="+")
-    parser.add_argument("--atoms", type=float, default=list(), nargs="+")
+    parser.add_argument('--dist_args', type=str, default=list(), nargs='+')
+    parser.add_argument('--atoms', type=float, default=list(), nargs='+')
 
     # architecture for tarnet
-    parser.add_argument("--n_hidden_layers", type=int, default=1)
-    parser.add_argument("--dim_h", type=int, default=64)
-    parser.add_argument("--activation", type=str, default="ReLU")
+    parser.add_argument('--n_hidden_layers', type=int, default=1)
+    parser.add_argument('--dim_h', type=int, default=64)
+    parser.add_argument('--activation', type=str, default='ReLU')
 
     # architecture for gp
-    parser.add_argument("--kernel_t", type=str, default="RBFKernel",
+    parser.add_argument('--kernel_t',
+                        type=str,
+                        default='RBFKernel',
                         choices=gpytorch.kernels.__all__)
-    parser.add_argument("--kernel_y", type=str, default="RBFKernel",
+    parser.add_argument('--kernel_y',
+                        type=str,
+                        default='RBFKernel',
                         choices=gpytorch.kernels.__all__)
-    parser.add_argument("--var_dist", type=str, default="MeanFieldVariationalDistribution",
-                        choices=[vd for vd in gpytorch.variational.__all__ if 'VariationalDistribution' in vd])
-    parser.add_argument("--num_tasks", type=int, default=32,
+    parser.add_argument(
+        '--var_dist',
+        type=str,
+        default='MeanFieldVariationalDistribution',
+        choices=[vd for vd in gpytorch.variational.__all__ if 'VariationalDistribution' in vd])
+    parser.add_argument('--num_tasks',
+                        type=int,
+                        default=32,
                         help='number of latent variables for the GP atom softmax classifier')
 
     # training params
-    parser.add_argument("--lr", type=float, default=0.001)
-    parser.add_argument("--batch_size", type=int, default=64)
-    parser.add_argument("--num_epochs", type=int, default=100)
-    parser.add_argument("--early_stop", type=eval, default=True, choices=[True, False])
-    parser.add_argument("--patience", type=int)
+    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--batch_size', type=int, default=64)
+    parser.add_argument('--num_epochs', type=int, default=100)
+    parser.add_argument('--early_stop', type=eval, default=True, choices=[True, False])
+    parser.add_argument('--patience', type=int)
 
-    parser.add_argument("--ignore_w", type=eval, default=False, choices=[True, False])
-    parser.add_argument("--grad_norm", type=float, default=float("inf"))
-    parser.add_argument("--test_size", type=int)
+    parser.add_argument('--ignore_w', type=eval, default=False, choices=[True, False])
+    parser.add_argument('--grad_norm', type=float, default=float('inf'))
+    parser.add_argument('--test_size', type=int)
 
-    parser.add_argument('--w_transform', type=str, default='Standardize',
+    parser.add_argument('--w_transform',
+                        type=str,
+                        default='Standardize',
                         choices=preprocess.Preprocess.prep_names)
-    parser.add_argument('--y_transform', type=str, default='Normalize',
+    parser.add_argument('--y_transform',
+                        type=str,
+                        default='Normalize',
                         choices=preprocess.Preprocess.prep_names)
-    parser.add_argument("--train_prop", type=float, default=0.5)
-    parser.add_argument("--val_prop", type=float, default=0.1)
-    parser.add_argument("--test_prop", type=float, default=0.4)
-    parser.add_argument("--seed", type=int, default=123)
-    parser.add_argument("--comet", type=eval, default=False, choices=[True, False])
+    parser.add_argument('--train_prop', type=float, default=0.5)
+    parser.add_argument('--val_prop', type=float, default=0.1)
+    parser.add_argument('--test_prop', type=float, default=0.4)
+    parser.add_argument('--seed', type=int, default=123)
+    parser.add_argument('--comet', type=eval, default=False, choices=[True, False])
 
     # evaluation
-    parser.add_argument("--num_univariate_tests", type=int, default=100)
-    
+    parser.add_argument('--num_univariate_tests', type=int, default=100)
+
     # logging level
-    parser.add_argument("--verbose", type=int, default=0)
-    parser.add_argument('--sample_size', type=str, default=None, required=False) # To pick sample size of dataset
+    parser.add_argument('--verbose', type=int, default=0)
+    parser.add_argument('--sample_size', type=str, default=None,
+                        required=False)    # To pick sample size of dataset
     return parser
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     print(f'Starting to run {__file__} now.')
     main(get_args().parse_args())
