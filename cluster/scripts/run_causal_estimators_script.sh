@@ -36,14 +36,14 @@
 # sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 frugalflows
 
 # Realcause and Frugalflows SBI Lalonde PSID1
-sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh source lalonde psid1 None all 100 results/GenModelCkpts/lalonde/psid1/save 7 sliced_wass
+# sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh source lalonde psid1 None all 100 results/GenModelCkpts/lalonde/psid1/save 7 sliced_wass
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated lalonde psid1 None all 100 posterior results/GenModelCkpts/lalonde/psid1/save 7 sliced_wass
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated lalonde psid1 None all 100 prior results/GenModelCkpts/lalonde/psid1/save 7 sliced_wass
 
-sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh source lalonde psid1 None all 102 results/GenModelCkpts/lalonde/psid1/save 1 sliced_wass
+# sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh source lalonde psid1 None all 102 results/GenModelCkpts/lalonde/psid1/save 1 sliced_wass
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated lalonde psid1 None all 102 posterior results/GenModelCkpts/lalonde/psid1/save 1 sliced_wass
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated lalonde psid1 None all 102 prior results/GenModelCkpts/lalonde/psid1/save 1 sliced_wass
 
-sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh source lalonde psid1 None all 103 results/GenModelCkpts/lalonde/psid1/save 1 ty_sliced_wass
+# sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh source lalonde psid1 None all 103 results/GenModelCkpts/lalonde/psid1/save 1 ty_sliced_wass
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated lalonde psid1 None all 103 posterior results/GenModelCkpts/lalonde/psid1/save 1 ty_sliced_wass
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated lalonde psid1 None all 103 prior results/GenModelCkpts/lalonde/psid1/save 1 ty_sliced_wass

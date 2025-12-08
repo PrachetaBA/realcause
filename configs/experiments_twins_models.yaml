@@ -1,0 +1,41 @@
+experiment_400:
+  dataset_name: twins
+  dataset_identifier: st
+  sample_size: None
+  random_seed: 748
+  realcause_parameters:
+    - te
+    - deg_hetero
+    - overlap
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  frugalflows_parameters:
+    - ate
+    - rho
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    rho:
+      distribution: uniform
+      loc: -1.0
+      scale: 2.0
+  distance: sliced_wass
+  transform: true
+  min_epsilon: 0.001
+  max_iterations: 13
+  causal_model: location_translation
+  realcause_model_path: results/GenModelCkpts/twins/twins/n_hidden_layers1-dim_h64-lr5e-05-w_transformNormalize
+  frugalflows_hp_file: results/frugalflows_models/twins_st_None_hps.yaml
