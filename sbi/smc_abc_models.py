@@ -24,6 +24,7 @@ jax.config.update('jax_enable_x64', True)
 from loading import load_gen
 from data_loaders import lalonde as rc_lalonde    # Data loaders for Realcause simulator
 from data_loaders import twins as rc_twins    # Data loaders for Twins simulator
+from data_loaders import apo as rc_apo    # Data loaders for APO simulator
 from sbi import rc_simulator    # Realcause simulator
 from sbi import ff_simulator    # FrugalFlows simulator
 from frugal_flows.benchmarking import FrugalFlowModel
@@ -107,22 +108,37 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
             d = rc_twins.load_twins(data_format='pandas')
         covariates_col = d['w'].columns.tolist()
         covariates_df = d['w'].values
-        observed_data = pd.concat([d['w'], d['t'], d['y']], axis=1)
         covariates_df = d['w'].values
         treatment_col = 'T'
         outcome_col = 'yf'
         categorical_vars = covariates_col
         continuous_vars = []
+        d = pd.concat([d['w'], d['t'], d['y']], axis=1)
+        observed_data = d
+    elif dataset_name == 'postgres':
+        d, d_info = rc_apo.get_apo_data(identifier='postgres', confound_func=dataset_identifier, data_format='pandas', return_ites=False, ret_counterfactual_outcomes=False, sample_size=3000)
+        # Compute the true ATE as the mean of the ITEs
+        true_ate = d_info['true_ate']
+        # Get the full dataframe
+        covariates_df = d['w'].values
+        covariates_col = d['w'].columns.tolist()
+        treatment_col = d_info['treatment_col']
+        outcome_col = d_info['outcome_col']
+        categorical_vars = d_info['categorical_vars']    # Excludes T and Y
+        continuous_vars = d_info['continuous_vars']    # Excludes T and Y
+        d = pd.concat([d['w'], d['t'], d['y']], axis=1)
+        observed_data = d
     else:
         raise ValueError(f'Dataset {dataset_name} not implemented')
 
     # Load the Realcause model from the specified path (before applying transformations)
     # We need to use the model's transforms to ensure scales match
     rc_model, _ = load_gen(saveroot=abc_config['realcause_model_path'])
+    logger.info(f'Realcause model loaded successfully from {abc_config["realcause_model_path"]}')
 
     # Apply transformations using the model's transforms (if specified in config)
     # This ensures the observed data is normalized using the same parameters as the model
-    if dataset_name in ['lalonde', 'twins']:
+    if dataset_name in ['lalonde', 'twins', 'postgres']:
         if abc_config['transform'] == True:
             print(f'The covariates columns are: {covariates_col}')
             # The model's w_transform was created from training data
@@ -137,6 +153,7 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
         # This column order is compatible with the FrugalFlows simulator as well
         d = d[[outcome_col, treatment_col] + covariates_col]
         observed_data = d
+        logger.info(f'Transformation successful for the observed data')
 
     # Numpy dictionary of the observed data
     observed = {'data': observed_data.values}
@@ -168,6 +185,7 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
     tuned_hyperparams['hyperparameters']['max_epochs'] = max_epochs
 
     # Train the frugal flow model with the hyperparameters specified in the config
+    logger.info(f'Training the FrugalFlows model with the hyperparameters specified in the config')
     trained_ff_model = FrugalFlowModel(X=X,
                                        Y=Y,
                                        Z_disc=Z_disc,
@@ -506,7 +524,7 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
                 rc_prior_s[var].append(prior_parameters[var[9:]])    # Remove 'rc_prior_' prefix
             logger.info(f'RC Prior parameters: {prior_parameters}')
             prior_samples = pd.DataFrame(rc_simulator_pyabc(prior_parameters)['data'])
-            if dataset_name in ['lalonde', 'twins']:
+            if dataset_name in ['lalonde', 'twins', 'postgres']:
                 prior_samples.columns = [outcome_col, treatment_col] + covariates_col
             prior_samples.to_csv(f'data/smc_abc/{expt_name}/rc_prior_sample_{i}.csv', index=False)
 
@@ -524,7 +542,7 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
                 rc_post_s[var].append(posterior_parameters[var[8:]])
             logger.info(f'RC Posterior parameters: {posterior_parameters}')
             posterior_samples = pd.DataFrame(rc_simulator_pyabc(posterior_parameters)['data'])
-            if dataset_name in ['lalonde', 'twins']:
+            if dataset_name in ['lalonde', 'twins', 'postgres']:
                 posterior_samples.columns = [outcome_col, treatment_col] + covariates_col
             posterior_samples.to_csv(f'data/smc_abc/{expt_name}/rc_posterior_sample_{i}.csv',
                                      index=False)
@@ -541,7 +559,7 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
                 ff_prior_s[var].append(prior_parameters[var[9:]])    # Remove 'ff_prior_' prefix
             logger.info(f'FF Prior parameters: {prior_parameters}')
             prior_samples = pd.DataFrame(ff_simulator_pyabc(prior_parameters)['data'])
-            if dataset_name in ['lalonde', 'twins']:
+            if dataset_name in ['lalonde', 'twins', 'postgres']:
                 prior_samples.columns = [outcome_col, treatment_col] + covariates_col
             prior_samples.to_csv(f'data/smc_abc/{expt_name}/ff_prior_sample_{i}.csv', index=False)
 
@@ -552,7 +570,7 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
                 ff_post_s[var].append(posterior_parameters[var[8:]])    # Remove 'ff_post_' prefix
             logger.info(f'FF Posterior parameters: {posterior_parameters}')
             posterior_samples = pd.DataFrame(ff_simulator_pyabc(posterior_parameters)['data'])
-            if dataset_name in ['lalonde', 'twins']:
+            if dataset_name in ['lalonde', 'twins', 'postgres']:
                 posterior_samples.columns = [outcome_col, treatment_col] + covariates_col
             posterior_samples.to_csv(f'data/smc_abc/{expt_name}/ff_posterior_sample_{i}.csv',
                                      index=False)

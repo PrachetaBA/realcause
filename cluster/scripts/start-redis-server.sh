@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=redis-server-launch
 #SBATCH -p cpu
-#SBATCH --mem=1G
+#SBATCH --mem=4G
 #SBATCH -t 2-00:00:00
 #SBATCH -o ../logs/redis-samplers/server-%j.out
 #SBATCH -e ../logs/redis-samplers/server-%j.err

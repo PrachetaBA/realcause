@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=smc_abc_models_gpu  # Job name
-#SBATCH --mem=8G  # Requested Memory
+#SBATCH --mem=16G  # Requested Memory
 #SBATCH --partition=gpu      # Partition
 #SBATCH --gres=gpu:1
 #SBATCH --constraint=sm_61  # Required for JAX compatibility
@@ -15,7 +15,7 @@ conda activate rc-ff-sbi
 # These MUST be set before JAX is imported
 export XLA_PYTHON_CLIENT_PREALLOCATE=false
 export XLA_PYTHON_CLIENT_ALLOCATOR=platform
-export XLA_PYTHON_CLIENT_MEM_FRACTION=0.5  # Reduced from 0.7 to leave more headroom
+export XLA_PYTHON_CLIENT_MEM_FRACTION=0.3  # Reduced from 0.7 to leave more headroom
 # Note: Slurm automatically sets CUDA_VISIBLE_DEVICES when using --gres=gpu:1
 
 # Optional: Clear GPU memory from previous processes (if nvidia-smi is available)

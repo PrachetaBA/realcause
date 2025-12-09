@@ -1,63 +1,7 @@
-experiment_300:  # only ate; distance sliced wass
-  dataset_name: lalonde
-  dataset_identifier: cps1
-  sample_size: None
-  random_seed: 789
-  realcause_parameters:
-    - te
-  realcause_prior:
-    te:
-      distribution: uniform
-      loc: -5.0
-      scale: 10.0
-  frugalflows_parameters:
-    - ate
-  frugalflows_prior:
-    ate:
-      distribution: uniform
-      loc: -5.0
-      scale: 10.0
-  distance: sliced_wass
-  transform: true
-  min_epsilon: 0.01
-  max_iterations: 12
-  acceptance_population: 50
-  causal_model: location_translation
-  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
-  frugalflows_hp_file: results/frugalflows_models/lalonde_cps1_None_hps.yaml
-
-experiment_301:   # only ate; distance only t and y
-  dataset_name: lalonde
-  dataset_identifier: cps1
-  sample_size: None
-  random_seed: 390
-  realcause_parameters:
-    - te
-  realcause_prior:
-    te:
-      distribution: uniform
-      loc: -5.0
-      scale: 10.0
-  frugalflows_parameters:
-    - ate
-  frugalflows_prior:
-    ate:
-      distribution: uniform
-      loc: -5.0
-      scale: 10.0
-  distance: ty_sliced_wass
-  transform: true
-  min_epsilon: 0.01
-  max_iterations: 12
-  acceptance_population: 50
-  causal_model: location_translation
-  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
-  frugalflows_hp_file: results/frugalflows_models/lalonde_cps1_None_hps.yaml
-
-experiment_302:  # all parameters for both models; distance sliced wass
-  dataset_name: lalonde
-  dataset_identifier: cps1
-  sample_size: None
+experiment_300:  # all parameters for both models; distance sliced wass
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
   random_seed: 403
   realcause_parameters:
     - te
@@ -94,13 +38,13 @@ experiment_302:  # all parameters for both models; distance sliced wass
   max_iterations: 12
   acceptance_population: 50
   causal_model: location_translation
-  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
-  frugalflows_hp_file: results/frugalflows_models/lalonde_cps1_None_hps.yaml
+  realcause_model_path: results/realcause_models/postgres_linear_3000/default
+  frugalflows_hp_file: results/frugalflows_models/postgres_linear_3000_hps.yaml
 
-experiment_303:  # all parameters for both models; distance only t and y
-  dataset_name: lalonde
-  dataset_identifier: cps1
-  sample_size: None
+experiment_301:  # all parameters for both models; distance only t and y
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
   random_seed: 489
   realcause_parameters:
     - te
@@ -137,5 +81,5 @@ experiment_303:  # all parameters for both models; distance only t and y
   max_iterations: 12
   acceptance_population: 50
   causal_model: location_translation
-  realcause_model_path: results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize
-  frugalflows_hp_file: results/frugalflows_models/lalonde_cps1_None_hps.yaml
+  realcause_model_path: results/realcause_models/postgres_linear_3000/default
+  frugalflows_hp_file: results/frugalflows_models/postgres_linear_3000_hps.yaml
