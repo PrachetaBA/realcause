@@ -12,7 +12,7 @@ import torch
 import gpytorch
 import yaml
 
-from data_loaders import apo
+from data_loaders import apo, lalonde
 from models import TarNet, preprocess, TrainingParams, MLPParams, LinearModel, GPModel, TarGPModel, GPParams
 from models import distributions
 import helpers
@@ -34,6 +34,13 @@ def get_data(args):
         w, t, y = d['w'], d['t'], d['y']
         ite = d['ite'] if 'ite' in d else None
         ate = d['ite'].mean() if 'ite' in d else None
+    elif data_name == 'lalonde':
+        if data_id == 'rct':
+            w, t, y = lalonde.load_lalonde(rct=True)
+        elif data_id == 'psid1':
+            w, t, y = lalonde.load_lalonde(obs_version='psid')
+        elif data_id == 'cps1':
+            w, t, y = lalonde.load_lalonde(obs_version='cps')
     else:
         raise ValueError(f'Dataset {data_name} not implemented')
     return w, t, y, ite, ate
@@ -129,7 +136,7 @@ def main(args, save_args=True, log_=True):
     # Read the hyperparameter file and create the optimizer, if we have only one set of
     # values in the hyperparameter file, then we will treat it as a fixed parameter
     # else, it will be tuned in the optimizer
-    with open(f'hyperparameter_tuning/{args.hyperparameter_file}.yaml', 'r',
+    with open(f'rc_hyperparameter_tuning/{args.hyperparameter_file}.yaml', 'r',
               encoding='utf-8') as file:
         tuning_config = yaml.safe_load(file)
 

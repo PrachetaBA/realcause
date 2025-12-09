@@ -124,18 +124,22 @@ def load_lalonde_obs(version=PSID, dataroot=None):
 
 if __name__ == '__main__':
     # Test lalonde dataset loading
-    w, t, y = load_lalonde(obs_version='psid1', data_format='numpy')
-    print(w)
-    print(t)
-    print(y)
+    # w, t, y = load_lalonde(obs_version='psid1', data_format='numpy')
+    # print(w)
+    # print(t)
+    # print(y)
 
     # Test lalonde dataset loading with pandas single
-    df = load_lalonde(rct_version='dw', data_format='pandas_single')
-    print(df.head())
-    print(df.shape)
+    # df = load_lalonde(rct_version='dw', data_format='pandas_single')
+    # print(df.head())
+    # print(df.tail())
+    # print(df.shape)
 
     # Compute the true ATE using only the RCT data
     df = load_lalonde(rct=True, data_format='pandas_single')
     true_ate = df['re78'][df['treat'] == 1].mean() - df['re78'][df['treat'] == 0].mean()
     print(f'True ATE: {true_ate}')
+    print(df.head())
+    print(df.tail())
+    print(df.shape)
     # True ATE = 1794.34

@@ -249,7 +249,6 @@ def plot_bias_squared_error(estimators='class',
     df_prior['Identifier'] = r'$\text{BSE}_{\text{prior}}$'
     # Combine the dataframes
     df = pd.concat([df_post, df_prior], ignore_index=True)
-    print(df.head(25))
     setting_colors = {
         r'$\text{BSE}_{\text{prior}}$': sns.color_palette('muted')[2],
         r'$\text{BSE}_{\text{post}}$': sns.color_palette('muted')[6]
@@ -304,6 +303,8 @@ def plot_bias_squared_error(estimators='class',
         dataset_name = 'Lalonde (PSID)'
     elif ds_name == 'twins':
         dataset_name = 'Twins'
+    elif ds_name == 'postgres':
+        dataset_name = 'Postgres'
     else:
         raise ValueError(f'Dataset {ds_name} not implemented')
 
@@ -317,7 +318,7 @@ def plot_bias_squared_error(estimators='class',
     if ylims[0] is not None:
         plt.ylim(ymin=ylims[0], ymax=ylims[1])
     plt.xticks(np.arange(ticks), short_ticklabels, rotation=45)
-    plt.title(f'Bias Squared Error for {dataset_name}, Experiment {expt_id}')
+    # plt.title(f'Bias Squared Error for {dataset_name}, Experiment {expt_id}')
     plt.savefig(figure_path, bbox_inches='tight', dpi=300)
 
 

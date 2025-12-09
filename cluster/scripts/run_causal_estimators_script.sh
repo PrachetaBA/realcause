@@ -47,3 +47,11 @@
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh source lalonde psid1 None all 103 results/GenModelCkpts/lalonde/psid1/save 1 ty_sliced_wass
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated lalonde psid1 None all 103 posterior results/GenModelCkpts/lalonde/psid1/save 1 ty_sliced_wass
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated lalonde psid1 None all 103 prior results/GenModelCkpts/lalonde/psid1/save 1 ty_sliced_wass
+
+# sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh source postgres linear 3000 all 300 results/realcause_models/postgres_linear_3000/default 2 sliced_wass
+# sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated postgres linear 3000 all 300 posterior results/realcause_models/postgres_linear_3000/default 2 sliced_wass
+# sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated postgres linear 3000 all 300 prior results/realcause_models/postgres_linear_3000/default 2 sliced_wass
+
+# sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh source postgres linear 3000 all 301 results/realcause_models/postgres_linear_3000/default 2 ty_sliced_wass
+# sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated postgres linear 3000 all 301 posterior results/realcause_models/postgres_linear_3000/default 2 ty_sliced_wass
+# sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated postgres linear 3000 all 301 prior results/realcause_models/postgres_linear_3000/default 2 ty_sliced_wass

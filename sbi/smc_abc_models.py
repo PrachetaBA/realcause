@@ -260,7 +260,8 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
         """Wrapper around the simulator function to be used by PyABC."""
         return rc_simulator.simulate_datasets(parameters=parameters,
                                               covariates_df=covariates_df,
-                                              realcause_model=rc_model)
+                                              realcause_model=rc_model,
+                                              untransform=not abc_config['transform'])
 
     def ff_simulator_pyabc(parameters):
         """Wrapper around the FrugalFlows simulator function to be used by PyABC."""

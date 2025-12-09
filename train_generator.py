@@ -32,6 +32,8 @@ def get_data(args):
             w, t, y = lalonde.load_lalonde(obs_version='psid')
         elif data_id == 'cps1':
             w, t, y = lalonde.load_lalonde(obs_version='cps')
+        elif data_id == 'rct':
+            w, t, y = lalonde.load_lalonde(rct=True)
     elif data_name == 'twins':
         d = twins.load_twins(data_format='numpy')
         w, t, y = d['w'], d['t'], d['y']

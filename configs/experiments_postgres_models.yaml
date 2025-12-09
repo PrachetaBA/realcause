@@ -83,3 +83,89 @@ experiment_301:  # all parameters for both models; distance only t and y
   causal_model: location_translation
   realcause_model_path: results/realcause_models/postgres_linear_3000/default
   frugalflows_hp_file: results/frugalflows_models/postgres_linear_3000_hps.yaml
+
+experiment_302:  # all parameters for both models; distance only t and y
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
+  random_seed: 489
+  realcause_parameters:
+    - te
+    - deg_hetero
+    - overlap
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  frugalflows_parameters:
+    - ate
+    - rho
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    rho:
+      distribution: uniform
+      loc: -1.0
+      scale: 2.0
+  distance: sliced_wass
+  transform: false
+  min_epsilon: 0.01
+  max_iterations: 12
+  acceptance_population: 50
+  causal_model: location_translation
+  realcause_model_path: results/realcause_models/postgres_linear_3000/default
+  frugalflows_hp_file: results/frugalflows_models/postgres_linear_3000_hps.yaml
+
+experiment_303:  # all parameters for both models; distance only t and y
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
+  random_seed: 489
+  realcause_parameters:
+    - te
+    - deg_hetero
+    - overlap
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  frugalflows_parameters:
+    - ate
+    - rho
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -5.0
+      scale: 10.0
+    rho:
+      distribution: uniform
+      loc: -1.0
+      scale: 2.0
+  distance: ty_sliced_wass
+  transform: false
+  min_epsilon: 0.01
+  max_iterations: 12
+  acceptance_population: 50
+  causal_model: location_translation
+  realcause_model_path: results/realcause_models/postgres_linear_3000/default
+  frugalflows_hp_file: results/frugalflows_models/postgres_linear_3000_hps.yaml
