@@ -4,9 +4,11 @@
 import jax
 import jax.random as jr
 import jax.numpy as jnp
+
 jax.config.update('jax_enable_x64', True)
 
 SEED = 1
+
 
 def simulate_datasets(parameters,
                       sample_size,
@@ -41,7 +43,7 @@ def simulate_datasets(parameters,
             },
             with_confounding=True)
     # Depending on the dataset identifier, we may have to return specific columns
-    if dataset_identifier in ['cps1','psid1']:
+    if dataset_identifier in ['cps1', 'psid1', 'rct']:
         generated_df.columns = [
             're78',
             'treat',
@@ -54,6 +56,4 @@ def simulate_datasets(parameters,
             'married',
             'nodegree'
         ]
-    return {
-        'data': generated_df.values
-    }
+    return {'data': generated_df.values}

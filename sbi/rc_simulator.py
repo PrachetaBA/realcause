@@ -25,11 +25,23 @@ def simulate_datasets(
         overlap = parameters['overlap']
     if 'deg_hetero' in parameters and parameters['deg_hetero'] is not None:
         deg_hetero = parameters['deg_hetero']
-    w, t, y = realcause_model.sample(covariates_df,overlap=overlap,
-                            causal_effect_scale=causal_effect,
-                            deg_hetero=deg_hetero,
-                            ret_counterfactuals=False,
-                            untransform=untransform)
+    if untransform:
+        w, t, (y0, y1) = realcause_model.sample(covariates_df,overlap=overlap,
+                                causal_effect_scale=causal_effect,
+                                deg_hetero=deg_hetero,
+                                ret_counterfactuals=True,
+                                untransform=untransform)
+        y = y0 * (1 - t) + y1 * t
+        y0 = y0.reshape(-1, 1) if y0.ndim == 1 else y0
+        y1 = y1.reshape(-1, 1) if y1.ndim == 1 else y1
+        generated_data_cf = np.column_stack([y0, y1, t, w])
+    else:
+        w, t, y = realcause_model.sample(covariates_df,overlap=overlap,
+                                causal_effect_scale=causal_effect,
+                                deg_hetero=deg_hetero,
+                                ret_counterfactuals=False,
+                                untransform=untransform)
+        generated_data_cf = None
 
     # Ensure t and y are column vectors
     t = t.reshape(-1, 1) if t.ndim == 1 else t
@@ -38,4 +50,4 @@ def simulate_datasets(
     # Concatenate arrays horizontally
     generated_data = np.column_stack([y, t, w])
 
-    return {'data': generated_data}
+    return {'data': generated_data, 'data_cf': generated_data_cf}

@@ -92,6 +92,8 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
             d = rc_lalonde.load_lalonde(obs_version='psid', data_format='pandas_single')
         elif dataset_identifier == 'cps1':
             d = rc_lalonde.load_lalonde(obs_version='cps', data_format='pandas_single')
+        elif dataset_identifier == 'rct':
+            d = rc_lalonde.load_lalonde(rct=True, data_format='pandas_single')
         else:
             raise ValueError(f'Dataset identifier {dataset_identifier} not implemented')
         d.drop(columns=['data_id'], inplace=True)
@@ -318,12 +320,13 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
     logger.info(f'-' * 50)
     logger.info(f'Configuration: {abc_config}')
     logger.info(f'-' * 50)
-    history = abc.run(min_eps_diff=abc_config['min_epsilon'],
-                      max_nr_populations=abc_config['max_iterations'],
-                      max_walltime=abc_config.get('max_walltime', timedelta(days=1)),
-                      max_total_nr_simulations=abc_config.get(
-                          'max_total_nr_simulations',
-                          1000000))    # Provide default value if not specified in config
+    history = abc.run(
+        min_eps_diff=abc_config['min_epsilon'],
+        max_nr_populations=abc_config['max_iterations'],    # TODO: Change after testing
+        max_walltime=abc_config.get('max_walltime', timedelta(days=1)),
+        max_total_nr_simulations=abc_config.get(
+            'max_total_nr_simulations',
+            1000000))    # Provide default value if not specified in config
     logger.info('Stopping Criteria:')
     logger.info(f'Minimum Epsilon Difference: {abc_config["min_epsilon"]}')
     logger.info(f'Number of Generations: {abc_config["max_iterations"]}')
@@ -524,9 +527,14 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
             for var in rc_prior_var_names:
                 rc_prior_s[var].append(prior_parameters[var[9:]])    # Remove 'rc_prior_' prefix
             logger.info(f'RC Prior parameters: {prior_parameters}')
-            prior_samples = pd.DataFrame(rc_simulator_pyabc(prior_parameters)['data'])
-            if dataset_name in ['lalonde', 'twins', 'postgres']:
-                prior_samples.columns = [outcome_col, treatment_col] + covariates_col
+            if abc_config['transform'] == False:
+                prior_samples = pd.DataFrame(rc_simulator_pyabc(prior_parameters)['data_cf'])
+                if dataset_name in ['lalonde', 'twins', 'postgres']:
+                    prior_samples.columns = ['Y0', 'Y1', treatment_col] + covariates_col
+            else:
+                prior_samples = pd.DataFrame(rc_simulator_pyabc(prior_parameters)['data'])
+                if dataset_name in ['lalonde', 'twins', 'postgres']:
+                    prior_samples.columns = [outcome_col, treatment_col] + covariates_col
             prior_samples.to_csv(f'data/smc_abc/{expt_name}/rc_prior_sample_{i}.csv', index=False)
 
             # Posterior
@@ -542,9 +550,15 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
             for var in rc_post_var_names:
                 rc_post_s[var].append(posterior_parameters[var[8:]])
             logger.info(f'RC Posterior parameters: {posterior_parameters}')
-            posterior_samples = pd.DataFrame(rc_simulator_pyabc(posterior_parameters)['data'])
-            if dataset_name in ['lalonde', 'twins', 'postgres']:
-                posterior_samples.columns = [outcome_col, treatment_col] + covariates_col
+            if abc_config['transform'] == False:
+                posterior_samples = pd.DataFrame(
+                    rc_simulator_pyabc(posterior_parameters)['data_cf'])
+                if dataset_name in ['lalonde', 'twins', 'postgres']:
+                    posterior_samples.columns = ['Y0', 'Y1', treatment_col] + covariates_col
+            else:
+                posterior_samples = pd.DataFrame(rc_simulator_pyabc(posterior_parameters)['data'])
+                if dataset_name in ['lalonde', 'twins', 'postgres']:
+                    posterior_samples.columns = [outcome_col, treatment_col] + covariates_col
             posterior_samples.to_csv(f'data/smc_abc/{expt_name}/rc_posterior_sample_{i}.csv',
                                      index=False)
             sample_counter += 1
