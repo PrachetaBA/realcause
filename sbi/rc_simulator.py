@@ -41,7 +41,8 @@ def simulate_datasets(
                                 deg_hetero=deg_hetero,
                                 ret_counterfactuals=False,
                                 untransform=untransform)
-        generated_data_cf = None
+        generated_data_cf = np.column_stack([y, t, w
+                                            ])    # Same as the generated_data (none does not work)
 
     # Ensure t and y are column vectors
     t = t.reshape(-1, 1) if t.ndim == 1 else t
