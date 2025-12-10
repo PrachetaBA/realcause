@@ -420,11 +420,39 @@ def get_apo_data(identifier,
 
 if __name__ == '__main__':
     # Test Postgres dataset
-    # d = get_apo_data(identifier='postgres', data_format='pandas', return_ites=True, ret_counterfactual_outcomes=True, sample_size=3000)
-    # # Combine all columns into a single dataframe
-    # df = pd.concat([d['w'], d['t'], d['y'], d['ite'], d['y0'], d['y1']], axis=1)
-    # # Compute the ITE mean
-    # print(f'ATE: {df["ite"].mean()}')
+    d, df_info = get_apo_data(identifier='postgres', data_format='pandas', confound_func='linear', return_ites=True, ret_counterfactual_outcomes=True, sample_size=3000)
+    # Combine all columns into a single dataframe
+    df = pd.concat([d['w'], d['t'], d['y'], d['ite'], d['y0'], d['y1']], axis=1)
+    # Compute the ITE mean
+    print(f'ATE before transformation: {df["ite"].mean()}')
+    # True ATE before transformation: 0.2545
+
+    # Compute the ATE after applying the transformation according to the Realcause trained model in the path 'results/realcause_models/postgres_linear_3000/default'
+    from loading import load_gen
+    rc_model, _ = load_gen(saveroot='results/realcause_models/postgres_linear_3000/default')
+    transformed_w = rc_model.w_transform.transform(d['w'].values)
+    transformed_y0 = rc_model.y_transform.transform(d['y0'].values.reshape(-1, 1))
+    transformed_y1 = rc_model.y_transform.transform(d['y1'].values.reshape(-1, 1))
+    d['y0'] = transformed_y0.flatten()
+    d['y1'] = transformed_y1.flatten()
+    transformed_y = rc_model.y_transform.transform(d['y'].values.reshape(-1, 1))
+    d['y'] = transformed_y.flatten()
+    for i, col in enumerate(d['w'].columns):
+        d['w'][col] = transformed_w[:, i]
+    # Combine all columns into a single dataframe
+    d['ite'] = d['y1'] - d['y0']
+    # Convert numpy arrays to Series for concatenation
+    transformed_df = pd.concat([
+        d['w'],
+        pd.Series(d['t'], name='t'),
+        pd.Series(d['y'], name='y'),
+        pd.Series(d['ite'], name='ite'),
+        pd.Series(d['y0'], name='y0'),
+        pd.Series(d['y1'], name='y1')
+    ],
+                               axis=1)
+    print(f'ATE after transformation: {transformed_df["ite"].mean()}')
+    # True ATE after transformation: 0.02475
 
     # Test JDK dataset
     # d = get_apo_data(identifier='jdk', data_format='pandas', return_ites=True, ret_counterfactual_outcomes=True, sample_size=None)
@@ -435,14 +463,14 @@ if __name__ == '__main__':
     # print(f'ATE: {df["ite"].mean()}')
 
     # Test n_acic_4 dataset
-    d = get_apo_data(identifier='n_acic_4',
-                     data_format='pandas',
-                     return_ites=True,
-                     ret_counterfactual_outcomes=True,
-                     sample_size=3000)
-    # Combine all columns into a single dataframe
-    df = pd.concat([d['w'], d['t'], d['y'], d['ite'], d['y0'], d['y1']], axis=1)
-    print(df.columns)
-    print(df.head())
-    print(df.shape)
-    print(f'ATE: {df["ite"].mean()}')
+    # d = get_apo_data(identifier='n_acic_4',
+    #                  data_format='pandas',
+    #                  return_ites=True,
+    #                  ret_counterfactual_outcomes=True,
+    #                  sample_size=3000)
+    # # Combine all columns into a single dataframe
+    # df = pd.concat([d['w'], d['t'], d['y'], d['ite'], d['y0'], d['y1']], axis=1)
+    # print(df.columns)
+    # print(df.head())
+    # print(df.shape)
+    # print(f'ATE: {df["ite"].mean()}')

@@ -138,8 +138,31 @@ if __name__ == '__main__':
     # Compute the true ATE using only the RCT data
     df = load_lalonde(rct=True, data_format='pandas_single')
     true_ate = df['re78'][df['treat'] == 1].mean() - df['re78'][df['treat'] == 0].mean()
-    print(f'True ATE: {true_ate}')
+    print(f'True ATE before transformation: {true_ate}')
     print(df.head())
     print(df.tail())
     print(df.shape)
     # True ATE = 1794.34
+
+    # Compute the true ATE for the transformed data using the Realcause model in the path 'results/realcause_models/lalonde_rct_None'
+    from loading import load_gen
+    # Drop the data_id column
+    df.drop(columns=['data_id'], inplace=True)
+    covariates_col = df.columns.tolist()
+    covariates_col.remove('re78')
+    covariates_col.remove('treat')
+    outcome_col = 're78'
+    treatment_col = 'treat'
+    rc_model, _ = load_gen(saveroot='results/realcause_models/lalonde_rct_None')
+    transformed_w = rc_model.w_transform.transform(df[covariates_col].values)
+    transformed_y = rc_model.y_transform.transform(df[outcome_col].values.reshape(-1, 1))
+    df[outcome_col] = transformed_y.flatten()
+    for i, col in enumerate(covariates_col):
+        df[col] = transformed_w[:, i]
+    true_ate = df[outcome_col][df['treat'] == 1].mean() - df[outcome_col][df['treat'] == 0].mean()
+    print(f'True ATE for transformed data: {true_ate}')
+    transformed_df = df[[outcome_col, treatment_col] + covariates_col]
+    print(transformed_df.head())
+    print(transformed_df.tail())
+    print(transformed_df.shape)
+    # True ATE for the transformed data is 0.029753006994724274 (following the transformations for the Realcause trained model)
