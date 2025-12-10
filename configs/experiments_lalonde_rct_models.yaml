@@ -1,0 +1,171 @@
+experiment_500:  # all parameters for both models; distance sliced wass
+  dataset_name: lalonde
+  dataset_identifier: rct
+  sample_size: None
+  random_seed: 28
+  realcause_parameters:
+    - te
+    - deg_hetero
+    - overlap
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -1.0  # Narrow prior
+      scale: 2.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  frugalflows_parameters:
+    - ate
+    - rho
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -1.0  # Narrow prior
+      scale: 2.0
+    rho:
+      distribution: uniform
+      loc: -1.0
+      scale: 2.0
+  distance: sliced_wass
+  transform: true
+  min_epsilon: 0.01
+  max_iterations: 12
+  acceptance_population: 50
+  causal_model: location_translation
+  realcause_model_path: results/realcause_models/lalonde_rct_None
+  frugalflows_hp_file: results/frugalflows_models/lalonde_rct_None_hps.yaml
+
+experiment_501:  # all parameters for both models; distance only t and y
+  dataset_name: lalonde
+  dataset_identifier: rct
+  sample_size: None
+  random_seed: 28
+  realcause_parameters:
+    - te
+    - deg_hetero
+    - overlap
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -1.0  # Narrow prior
+      scale: 2.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  frugalflows_parameters:
+    - ate
+    - rho
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -1.0  # Narrow prior
+      scale: 2.0
+    rho:
+      distribution: uniform
+      loc: -1.0
+      scale: 2.0
+  distance: ty_sliced_wass
+  transform: true
+  min_epsilon: 0.01
+  max_iterations: 12
+  acceptance_population: 50
+  causal_model: location_translation
+  realcause_model_path: results/realcause_models/lalonde_rct_None
+  frugalflows_hp_file: results/frugalflows_models/lalonde_rct_None_hps.yaml
+
+experiment_502:  # all parameters for both models; distance all; no transform
+  dataset_name: lalonde
+  dataset_identifier: rct
+  sample_size: None
+  random_seed: 28
+  realcause_parameters:
+    - te
+    - deg_hetero
+    - overlap
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -2000.0
+      scale: 6000.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  frugalflows_parameters:
+    - ate
+    - rho
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -2000.0
+      scale: 6000.0
+    rho:
+      distribution: uniform
+      loc: -1.0
+      scale: 2.0
+  distance: sliced_wass
+  transform: false
+  min_epsilon: 0.01
+  max_iterations: 12
+  acceptance_population: 50
+  causal_model: location_translation
+  realcause_model_path: results/realcause_models/lalonde_rct_None
+  frugalflows_hp_file: results/frugalflows_models/lalonde_rct_None_hps.yaml
+
+experiment_503:  # all parameters for both models; distance only t and y; no transform
+  dataset_name: lalonde
+  dataset_identifier: rct
+  sample_size: None
+  random_seed: 28
+  realcause_parameters:
+    - te
+    - deg_hetero
+    - overlap
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -2000.0
+      scale: 6000.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+    overlap:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  frugalflows_parameters:
+    - ate
+    - rho
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -2000.0
+      scale: 6000.0
+    rho:
+      distribution: uniform
+      loc: -1.0
+      scale: 2.0
+  distance: ty_sliced_wass
+  transform: false
+  min_epsilon: 0.01
+  max_iterations: 12
+  acceptance_population: 50
+  causal_model: location_translation
+  realcause_model_path: results/realcause_models/lalonde_rct_None
+  frugalflows_hp_file: results/frugalflows_models/lalonde_rct_None_hps.yaml
