@@ -43,132 +43,136 @@ class DataGenerator:
             else:
                 raise ValueError(f'Dataset identifier {dataset_identifier} not implemented')
             source_dataset, source_dataset_info = load_data_credence(dataset_name, dataset_identifier, sample_size, rc_model_path)
-
-            # Extract the value of generative model settings
-            # We have a strong belief that there is no confounding bias
-            if config['treatment_effect_val'] == 'true_ate':
-                treatment_effect = source_dataset_info['true_ate']
-            elif config['treatment_effect_val'] == 'incorrect_ate':
-                treatment_effect = config['treatment_effect_fn']
-            elif config['treatment_effect_val'] == 'flexible':
-                treatment_effect = 0.0    # Default value is 0.0
-
-            if config['confounding_bias_val'] == 'flexible':
-                confounding_bias = 0.0    # Default value is 0.0
-            elif config['confounding_bias_val'] == 'fixed_cb':
-                confounding_bias = config['confounding_bias_fn']
-
-            if self.gen_model == 'modified_credence':
-                # Define the Modified Credence model
-                modified_credence_model = mcredence.MCredence(
-                    data=source_dataset,
-                    post_treatment_var=[source_dataset_info['outcome_col']],
-                    treatment_var=[source_dataset_info['treatment_col']],
-                    categorical_var=source_dataset_info['categorical_vars'],
-                    numerical_var=source_dataset_info['continuous_vars'],
-                    treatment_effect_fn=lambda x: treatment_effect,
-                    selection_bias_fn=lambda x, t: confounding_bias,
-                    effect_rigidity=config['effect_rigidity'],
-                    bias_rigidity=config['bias_rigidity'],
-                    kld_rigidity=config['kld_rigidity'],
-                    use_uniform_encoder=False,
-                    use_gpu=False,
-                )
-
-                # Define the tuned_hyperparameters in a dictionary
-                treatment_model_params = {
-                    'latent_dim': self.tuned_hparams['t_latent_dim'],
-                    'batch_size': self.tuned_hparams['t_batch_size'],
-                    'hidden_dim': self.tuned_hparams['t_hidden_dim'],
-                    'lr': self.tuned_hparams['t_lr'],
-                    'kld_rigidity': self.tuned_hparams['t_kld_rigidity'],
-                    'bias_rigidity': self.tuned_hparams['t_bias_rigidity'],
-                    'effect_rigidity': self.tuned_hparams['t_effect_rigidity']
-                }
-                outcome_model_params = {
-                    'latent_dim': self.tuned_hparams['latent_dim'],
-                    'batch_size': self.tuned_hparams['batch_size'],
-                    'hidden_dim': self.tuned_hparams['hidden_dim'],
-                    'lr': self.tuned_hparams['lr'],
-                    'kld_rigidity': self.tuned_hparams['kld_rigidity'],
-                    'bias_rigidity': self.tuned_hparams['bias_rigidity'],
-                    'effect_rigidity': self.tuned_hparams['effect_rigidity']
-                }
-                # Fit the modified credence model
-                modified_credence_model.fit(treatment_model_params,
-                                            outcome_model_params,
-                                            max_epochs=self.tuned_hparams['max_epochs'])
-                # Create the directory to store the generated data
-                os.makedirs(f'{self.generation_setting["gen_data_dir"]}', exist_ok=True)
-                # Generate the data
-                for itr in tqdm(range(self.generation_setting['num_samples'])):
-                    gen_data_fname = f'dataset_{itr}'
-                    df_gen, df_gen_prime = modified_credence_model.sample(source_dataset.shape[0],
-                                                                          data=source_dataset)
-                    df_gen.to_csv(f'{self.generation_setting["gen_data_dir"]}/{gen_data_fname}.csv',
-                                  index=False)
-                    df_gen_prime.to_csv(
-                        f'{self.generation_setting["gen_data_dir"]}/{gen_data_fname}_prime.csv',
-                        index=False)
-
-            elif self.gen_model == 'credence':
-                # Define the Credence model
-                credence_model = credence.Credence(
-                    data=source_dataset,
-                    post_treatment_var=[source_dataset_info['outcome_col']],
-                    treatment_var=[source_dataset_info['treatment_col']],
-                    categorical_var=source_dataset_info['categorical_vars'],
-                    numerical_var=source_dataset_info['continuous_vars'],
-                    treatment_effect_fn=lambda x: treatment_effect,
-                    selection_bias_fn=lambda x, t: confounding_bias,
-                    effect_rigidity=config['effect_rigidity'],
-                    bias_rigidity=config['bias_rigidity'],
-                    kld_rigidity=config['kld_rigidity'],
-                    use_uniform_encoder=False,
-                    generate_covariates=
-                    True,    # Has to be explicitly set to be faithful to the credence model
-                    use_gpu=False)
-
-                # Define the tuned_hyperparameters in a dictionary
-                covariate_model_params = {
-                    'latent_dim': self.tuned_hparams['c_latent_dim'],
-                    'batch_size': self.tuned_hparams['c_batch_size'],
-                    'hidden_dim': self.tuned_hparams['c_hidden_dim'],
-                    'lr': self.tuned_hparams['c_lr'],
-                    'kld_rigidity': self.tuned_hparams['c_kld_rigidity'],
-                    'bias_rigidity': self.tuned_hparams['c_bias_rigidity'],
-                    'effect_rigidity': self.tuned_hparams['c_effect_rigidity']
-                }
-                outcome_model_params = {
-                    'latent_dim': self.tuned_hparams['latent_dim'],
-                    'batch_size': self.tuned_hparams['batch_size'],
-                    'hidden_dim': self.tuned_hparams['hidden_dim'],
-                    'lr': self.tuned_hparams['lr'],
-                    'kld_rigidity': self.tuned_hparams['kld_rigidity'],
-                    'bias_rigidity': self.tuned_hparams['bias_rigidity'],
-                    'effect_rigidity': self.tuned_hparams['effect_rigidity']
-                }
-                # Fit the Credence model
-                credence_model.fit(covariate_model_params,
-                                   outcome_model_params,
-                                   max_epochs=self.tuned_hparams['max_epochs'])
-                # Create the directory to store the generated data
-                os.makedirs(f'{self.generation_setting["gen_data_dir"]}', exist_ok=True)
-                # Generate the data
-                for itr in tqdm(range(self.generation_setting['num_samples'])):
-                    gen_data_fname = f'dataset_{itr}'
-                    df_gen, df_gen_prime = credence_model.sample(source_dataset.shape[0],
-                                                                 data=source_dataset)
-                    df_gen.to_csv(f'{self.generation_setting["gen_data_dir"]}/{gen_data_fname}.csv',
-                                  index=False)
-                    df_gen_prime.to_csv(
-                        f'{self.generation_setting["gen_data_dir"]}/{gen_data_fname}_prime.csv',
-                        index=False)
-            else:
-                raise ValueError(f'Generation model {self.gen_model} not implemented')
-
+        elif dataset_name == 'postgres':
+            rc_model_path = 'results/realcause_models/postgres_linear_3000/default'
+            source_dataset, source_dataset_info = load_data_credence(dataset_name, dataset_identifier, sample_size, rc_model_path)
         else:
             raise ValueError(f'Dataset {dataset_name} not implemented')
+
+        # Extract the value of generative model settings
+        # We have a strong belief that there is no confounding bias
+        if config['treatment_effect_val'] == 'true_ate':
+            treatment_effect = source_dataset_info['true_ate']
+        elif config['treatment_effect_val'] == 'incorrect_ate':
+            treatment_effect = config['treatment_effect_fn']
+        elif config['treatment_effect_val'] == 'flexible':
+            treatment_effect = 0.0    # Default value is 0.0
+
+        if config['confounding_bias_val'] == 'flexible':
+            confounding_bias = 0.0    # Default value is 0.0
+        elif config['confounding_bias_val'] == 'fixed_cb':
+            confounding_bias = config['confounding_bias_fn']
+
+        if self.gen_model == 'modified_credence':
+            # Define the Modified Credence model
+            modified_credence_model = mcredence.MCredence(
+                data=source_dataset,
+                post_treatment_var=[source_dataset_info['outcome_col']],
+                treatment_var=[source_dataset_info['treatment_col']],
+                categorical_var=source_dataset_info['categorical_vars'],
+                numerical_var=source_dataset_info['continuous_vars'],
+                treatment_effect_fn=lambda x: treatment_effect,
+                selection_bias_fn=lambda x,
+                t: confounding_bias,
+                effect_rigidity=config['effect_rigidity'],
+                bias_rigidity=config['bias_rigidity'],
+                kld_rigidity=config['kld_rigidity'],
+                use_uniform_encoder=False,
+                use_gpu=False,
+            )
+
+            # Define the tuned_hyperparameters in a dictionary
+            treatment_model_params = {
+                'latent_dim': self.tuned_hparams['t_latent_dim'],
+                'batch_size': self.tuned_hparams['t_batch_size'],
+                'hidden_dim': self.tuned_hparams['t_hidden_dim'],
+                'lr': self.tuned_hparams['t_lr'],
+                'kld_rigidity': self.tuned_hparams['t_kld_rigidity'],
+                'bias_rigidity': self.tuned_hparams['t_bias_rigidity'],
+                'effect_rigidity': self.tuned_hparams['t_effect_rigidity']
+            }
+            outcome_model_params = {
+                'latent_dim': self.tuned_hparams['latent_dim'],
+                'batch_size': self.tuned_hparams['batch_size'],
+                'hidden_dim': self.tuned_hparams['hidden_dim'],
+                'lr': self.tuned_hparams['lr'],
+                'kld_rigidity': self.tuned_hparams['kld_rigidity'],
+                'bias_rigidity': self.tuned_hparams['bias_rigidity'],
+                'effect_rigidity': self.tuned_hparams['effect_rigidity']
+            }
+            # Fit the modified credence model
+            modified_credence_model.fit(treatment_model_params,
+                                        outcome_model_params,
+                                        max_epochs=self.tuned_hparams['max_epochs'])
+            # Create the directory to store the generated data
+            os.makedirs(f'{self.generation_setting["gen_data_dir"]}', exist_ok=True)
+            # Generate the data
+            for itr in tqdm(range(self.generation_setting['num_samples'])):
+                gen_data_fname = f'dataset_{itr}'
+                df_gen, df_gen_prime = modified_credence_model.sample(source_dataset.shape[0],
+                                                                        data=source_dataset)
+                df_gen.to_csv(f'{self.generation_setting["gen_data_dir"]}/{gen_data_fname}.csv',
+                              index=False)
+                df_gen_prime.to_csv(
+                    f'{self.generation_setting["gen_data_dir"]}/{gen_data_fname}_prime.csv',
+                    index=False)
+
+        elif self.gen_model == 'credence':
+            # Define the Credence model
+            credence_model = credence.Credence(
+                data=source_dataset,
+                post_treatment_var=[source_dataset_info['outcome_col']],
+                treatment_var=[source_dataset_info['treatment_col']],
+                categorical_var=source_dataset_info['categorical_vars'],
+                numerical_var=source_dataset_info['continuous_vars'],
+                treatment_effect_fn=lambda x: treatment_effect,
+                selection_bias_fn=lambda x,
+                t: confounding_bias,
+                effect_rigidity=config['effect_rigidity'],
+                bias_rigidity=config['bias_rigidity'],
+                kld_rigidity=config['kld_rigidity'],
+                use_uniform_encoder=False,
+                generate_covariates=
+                True,    # Has to be explicitly set to be faithful to the credence model
+                use_gpu=False)
+
+            # Define the tuned_hyperparameters in a dictionary
+            covariate_model_params = {
+                'latent_dim': self.tuned_hparams['c_latent_dim'],
+                'batch_size': self.tuned_hparams['c_batch_size'],
+                'hidden_dim': self.tuned_hparams['c_hidden_dim'],
+                'lr': self.tuned_hparams['c_lr'],
+                'kld_rigidity': self.tuned_hparams['c_kld_rigidity'],
+                'bias_rigidity': self.tuned_hparams['c_bias_rigidity'],
+                'effect_rigidity': self.tuned_hparams['c_effect_rigidity']
+            }
+            outcome_model_params = {
+                'latent_dim': self.tuned_hparams['latent_dim'],
+                'batch_size': self.tuned_hparams['batch_size'],
+                'hidden_dim': self.tuned_hparams['hidden_dim'],
+                'lr': self.tuned_hparams['lr'],
+                'kld_rigidity': self.tuned_hparams['kld_rigidity'],
+                'bias_rigidity': self.tuned_hparams['bias_rigidity'],
+                'effect_rigidity': self.tuned_hparams['effect_rigidity']
+            }
+            # Fit the Credence model
+            credence_model.fit(covariate_model_params,
+                               outcome_model_params,
+                               max_epochs=self.tuned_hparams['max_epochs'])
+            # Create the directory to store the generated data
+            os.makedirs(f'{self.generation_setting["gen_data_dir"]}', exist_ok=True)
+            # Generate the data
+            for itr in tqdm(range(self.generation_setting['num_samples'])):
+                gen_data_fname = f'dataset_{itr}'
+                df_gen, df_gen_prime = credence_model.sample(source_dataset.shape[0],
+                                                                data=source_dataset)
+                df_gen.to_csv(f'{self.generation_setting["gen_data_dir"]}/{gen_data_fname}.csv',
+                              index=False)
+                df_gen_prime.to_csv(
+                    f'{self.generation_setting["gen_data_dir"]}/{gen_data_fname}_prime.csv',
+                    index=False)
+        else:
+            raise ValueError(f'Generation model {self.gen_model} not implemented')
 
 
 if __name__ == '__main__':

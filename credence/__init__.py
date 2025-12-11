@@ -130,6 +130,7 @@ class Credence:
         self.device = torch.device('cpu')
         if use_gpu:
             self.device = torch.device('cuda')
+        print(f'Loaded Credence model with device: {self.device}')
 
     # train generator; we use different hyperparameters
     # for the outcome and covariates model.

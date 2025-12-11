@@ -282,6 +282,20 @@ if __name__ == '__main__':
                         use_uniform_autoencoder=bool(args.use_uniform_encoder),
                         treatment_effect_fn=None,
                         effect_rigidity=None)
+    elif args.dataset_name == 'postgres':    # No change from lalonde at this moment
+        mcredence_model(dataset_name=args.dataset_name,
+                        dataset_identifier=args.dataset_identifier,
+                        sample_size=args.sample_size,
+                        experiment_identifier=args.experiment_identifier,
+                        rc_model_path=args.rc_model_path,
+                        outcome_model=args.outcome_model,
+                        treatment_model=args.treatment_model,
+                        num_epochs=args.num_epochs,
+                        num_trials=args.num_trials,
+                        use_gpu=bool(args.use_gpu),
+                        use_uniform_autoencoder=bool(args.use_uniform_encoder),
+                        treatment_effect_fn=None,
+                        effect_rigidity=None)
     else:
         print('Invalid dataset name passed!')
         SystemExit()

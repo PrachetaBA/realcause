@@ -33,3 +33,39 @@ expt_0003:
   effect_rigidity: 5000
   bias_rigidity: 1000
   kld_rigidity: null # Null or specify a value (if null it will be tuned)
+
+expt_0004:
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
+  treatment_effect_val: flexible
+  treatment_effect_fn: 0
+  confounding_bias_val: flexible
+  confounding_bias_fn: 0
+  effect_rigidity: 0
+  bias_rigidity: 1000
+  kld_rigidity: null
+
+expt_0005:
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
+  treatment_effect_val: true_ate
+  treatment_effect_fn: true_ate
+  confounding_bias_val: flexible
+  confounding_bias_fn: 0
+  effect_rigidity: 5000
+  bias_rigidity: 1000
+  kld_rigidity: null
+
+expt_0006:
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
+  treatment_effect_val: incorrect_ate
+  treatment_effect_fn: 5.0
+  confounding_bias_val: flexible
+  confounding_bias_fn: 0
+  effect_rigidity: 5000
+  bias_rigidity: 1000
+  kld_rigidity: null

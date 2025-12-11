@@ -3,7 +3,9 @@ realcause model so that we can normalize the data in the same way."""
 
 # Import libraries
 from loading import load_gen
+import pandas as pd
 from data_loaders import lalonde as rc_lalonde
+from data_loaders import apo as rc_apo
 
 
 def load_data_credence(dataset_name, dataset_identifier=None, sample_size=None, rc_model_path=None):
@@ -63,5 +65,33 @@ def load_data_credence(dataset_name, dataset_identifier=None, sample_size=None, 
                                ],    # Include the outcome column in the continuous variables
             'true_ate': true_ate
         }
+    elif dataset_name == 'postgres':
+        d, df_info = rc_apo.get_apo_data(identifier='postgres', confound_func=dataset_identifier, data_format='pandas', return_ites=False, ret_counterfactual_outcomes=False, sample_size=sample_size)
+        d = pd.concat([d['w'], d['t'], d['y']], axis=1)
+        outcome_col = df_info['outcome_col']
+        treatment_col = df_info['treatment_col']
+        covariates_col = df_info['categorical_vars'] + df_info['continuous_vars']
+        updated_categorical_vars = df_info['categorical_vars'] + [
+            treatment_col
+        ]    # Include the treatment column in the categorical variables
+        updated_continuous_vars = df_info['continuous_vars'] + [
+            outcome_col
+        ]    # Include the outcome column in the continuous variables
+        true_ate = df_info['true_ate']
+        dataset_info = {
+            'outcome_col': outcome_col,
+            'treatment_col': treatment_col,
+            'covariates_col': covariates_col,
+            'categorical_vars': updated_categorical_vars,
+            'continuous_vars': updated_continuous_vars,
+            'true_ate': true_ate
+        }
 
     return d, dataset_info
+
+
+# Test the data_loader for credence for the postgres dataset
+if __name__ == '__main__':
+    d, dataset_info = load_data_credence(dataset_name='postgres', dataset_identifier='linear', sample_size=3000, rc_model_path='results/realcause_models/postgres_linear_3000/default')
+    print(d.head())
+    print(dataset_info)

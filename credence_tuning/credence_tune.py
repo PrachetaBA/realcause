@@ -68,15 +68,19 @@ def tune_hyperparameters(credence_model,
     }
     scheduler = ASHAScheduler(max_t=num_epochs, grace_period=1, reduction_factor=2)
 
+    print(f'Running hyperparmeter search for the {experiment_identifier} experiment')
     # Run the hyperparameter search
     if outcome_model:
+        print(f'Training the outcome model')
         train_func = tune.with_parameters(credence_model.tune_outcome, max_epochs=num_epochs)
     if covariates_model:
+        print(f'Training the covariates model')
         train_func = tune.with_parameters(
             credence_model.tune_covariates,
             max_epochs=num_epochs,
         )
     if treatment_model:
+        print(f'Training the treatment model')
         train_func = tune.with_parameters(credence_model.tune_treatment, max_epochs=num_epochs)
     scaling_config = ScalingConfig(num_workers=1,
                                    use_gpu=use_gpu,
@@ -268,6 +272,20 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.dataset_name == 'lalonde':
+        credence_model(dataset_name=args.dataset_name,
+                       dataset_identifier=args.dataset_identifier,
+                       sample_size=args.sample_size,
+                       experiment_identifier=args.experiment_identifier,
+                       rc_model_path=args.rc_model_path,
+                       outcome_model=args.outcome_model,
+                       covariates_model=args.covariates_model,
+                       num_epochs=args.num_epochs,
+                       num_trials=args.num_trials,
+                       use_gpu=bool(args.use_gpu),
+                       use_uniform_autoencoder=bool(args.use_uniform_encoder),
+                       treatment_effect_fn=None,
+                       effect_rigidity=None)
+    elif args.dataset_name == 'postgres':    # No change from lalonde at this moment
         credence_model(dataset_name=args.dataset_name,
                        dataset_identifier=args.dataset_identifier,
                        sample_size=args.sample_size,
