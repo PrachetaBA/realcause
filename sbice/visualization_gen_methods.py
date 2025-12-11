@@ -347,6 +347,14 @@ def plot_bias_estimators(ds_name,
                 dataset_plot_name = 'lalonde-cps'
             else:
                 raise ValueError(f'Dataset identifier {ds_id} not implemented')
+        elif ds_name == 'postgres':
+            if ds_id == 'linear':
+                dataset_name = 'Postgres (Linear)'
+                dataset_plot_name = 'postgres-linear'
+            else:
+                raise ValueError(f'Dataset identifier {ds_id} not implemented')
+        else:
+            raise ValueError(f'Dataset name {ds_name} not implemented')
 
         if expt_id == '0001':
             setting_name = 'Learned ATE'
@@ -357,6 +365,9 @@ def plot_bias_estimators(ds_name,
         elif expt_id == '0003':
             setting_name = 'Incorrect ATE'
             setting_plot_name = 'incorrect'
+        elif expt_id == '0004':
+            setting_name = 'Flexible ATE'
+            setting_plot_name = 'flexible'
         title = f'Dataset: {dataset_name} \n {setting_name}'
         # plt.title(title)
 
@@ -385,13 +396,29 @@ def plot_bias_estimators(ds_name,
 def load_credence_generated(ds_name, ds_id, sample_size, expt_id, dataset_num):
     credence_df = pd.read_csv(
         f'data/generated_datasets/credence/expt_{expt_id}/dataset_{dataset_num}_prime.csv')
+    if ds_name == 'lalonde':
+        outcome_col = 're78'
+        treatment_col = 'treat'
+    elif ds_name == 'postgres':
+        outcome_col = 'runtime'
+        treatment_col = 'index_level'
     credence_df['method'] = 'Credence'
-    credence_df['outcome'] = credence_df['treat'] * credence_df['Y1'] + (
-        1 - credence_df['treat']) * credence_df['Y0']
-    credence_df['counterfactual_outcome'] = credence_df['treat'] * credence_df['Yprime0'] + (
-        1 - credence_df['treat']) * credence_df['Yprime1']
-    # Rename t to treatment
-    credence_df.rename(columns={'treat': 'treatment'}, inplace=True)
+
+    # After this block, the columns 'outcome', 'counterfactual_outcome', and 'treatment' will be present in the dataframe
+    if ds_name == 'lalonde':
+        credence_df['outcome'] = credence_df['treat'] * credence_df['Y1'] + (
+            1 - credence_df['treat']) * credence_df['Y0']
+        credence_df['counterfactual_outcome'] = credence_df['treat'] * credence_df['Yprime0'] + (
+            1 - credence_df['treat']) * credence_df['Yprime1']
+        # Rename t to treatment
+        credence_df.rename(columns={'treat': 'treatment'}, inplace=True)
+    elif ds_name == 'postgres':
+        credence_df['outcome'] = credence_df[treatment_col] * credence_df['Y1'] + (
+            1 - credence_df[treatment_col]) * credence_df['Y0']
+        credence_df['counterfactual_outcome'] = credence_df[treatment_col] * credence_df[
+            'Yprime0'] + (1 - credence_df[treatment_col]) * credence_df['Yprime1']
+        # Rename t to treatment
+        credence_df.rename(columns={treatment_col: 'treatment'}, inplace=True)
     # Compute the ITE for each unit. The ITE is the Y1 - Yprime1 if treatment is 1, and Y0 - Yprime0 if treatment is 0
     credence_df['ite'] = credence_df['Y1'] - credence_df['Y0']
     credence_df['ate'] = credence_df['ite'].mean()
@@ -434,6 +461,31 @@ def load_credence_generated(ds_name, ds_id, sample_size, expt_id, dataset_num):
                 'ite',
                 'selection_bias'
             ]]
+    elif ds_name == 'postgres':
+        if ds_id == 'linear':
+            if expt_id == '0004':
+                setting = 'flexible_ate'
+            credence_df['setting'] = setting
+            credence_df = credence_df[[
+                'method',
+                'setting',
+                'dataset_num',
+                'rows',
+                'creation_year',
+                'num_ref_tables',
+                'num_joins',
+                'num_group_by',
+                'queries_by_user',
+                'length_chars',
+                'total_ref_rows',
+                'treatment',
+                'outcome',
+                'ate',
+                'p_t',
+                'counterfactual_outcome',
+                'ite',
+                'selection_bias'
+            ]]
     else:
         raise ValueError(f'Dataset {ds_name} not implemented')
     return credence_df
@@ -443,12 +495,18 @@ def load_mcredence_generated(ds_name, ds_id, sample_size, expt_id, dataset_num):
     mcredence_df = pd.read_csv(
         f'data/generated_datasets/modified_credence/expt_{expt_id}/dataset_{dataset_num}_prime.csv')
     mcredence_df['method'] = 'modCredence'
-    mcredence_df['outcome'] = mcredence_df['treat'] * mcredence_df['Y1'] + (
-        1 - mcredence_df['treat']) * mcredence_df['Y0']
-    mcredence_df['counterfactual_outcome'] = mcredence_df['treat'] * mcredence_df['Yprime0'] + (
-        1 - mcredence_df['treat']) * mcredence_df['Yprime1']
+    if ds_name == 'lalonde':
+        outcome_col = 're78'
+        treatment_col = 'treat'
+    elif ds_name == 'postgres':
+        outcome_col = 'runtime'
+        treatment_col = 'index_level'
+    mcredence_df['outcome'] = mcredence_df[treatment_col] * mcredence_df['Y1'] + (
+        1 - mcredence_df[treatment_col]) * mcredence_df['Y0']
+    mcredence_df['counterfactual_outcome'] = mcredence_df[treatment_col] * mcredence_df[
+        'Yprime0'] + (1 - mcredence_df[treatment_col]) * mcredence_df['Yprime1']
     # Rename t to treatment
-    mcredence_df.rename(columns={'treat': 'treatment'}, inplace=True)
+    mcredence_df.rename(columns={treatment_col: 'treatment'}, inplace=True)
     # Compute the ITE for each unit. The ITE is the Y1 - Yprime1 if treatment is 1, and Y0 - Yprime0 if treatment is 0
     mcredence_df['ite'] = mcredence_df['Y1'] - mcredence_df['Y0']
     mcredence_df['ate'] = mcredence_df['ite'].mean()
@@ -491,6 +549,31 @@ def load_mcredence_generated(ds_name, ds_id, sample_size, expt_id, dataset_num):
                 'ite',
                 'selection_bias'
             ]]
+    elif ds_name == 'postgres':
+        if ds_id == 'linear':
+            if expt_id == '0004':
+                setting = 'flexible_ate'
+            mcredence_df['setting'] = setting
+            mcredence_df = mcredence_df[[
+                'method',
+                'setting',
+                'dataset_num',
+                'rows',
+                'creation_year',
+                'num_ref_tables',
+                'num_joins',
+                'num_group_by',
+                'queries_by_user',
+                'length_chars',
+                'total_ref_rows',
+                'treatment',
+                'outcome',
+                'ate',
+                'p_t',
+                'counterfactual_outcome',
+                'ite',
+                'selection_bias'
+            ]]
     else:
         raise ValueError(f'Dataset {ds_name} not implemented')
     return mcredence_df
@@ -500,10 +583,16 @@ def load_realcause_generated(ds_name, ds_id, sample_size, expt_id, dataset_num):
     realcause_df = pd.read_csv(
         f'data/generated_datasets/realcause/expt_{expt_id}/dataset_{dataset_num}.csv')
     realcause_df['method'] = 'Realcause'
+    if ds_name == 'lalonde':
+        outcome_col = 're78'
+        treatment_col = 'treat'
+    elif ds_name == 'postgres':
+        outcome_col = 'runtime'
+        treatment_col = 'index_level'
     realcause_df['ite'] = realcause_df['y1'] - realcause_df['y0']
     realcause_df['ate'] = realcause_df['ite'].mean()
-    # Rename treat to treatment
-    realcause_df.rename(columns={'treat': 'treatment'}, inplace=True)
+    # Rename treatment_col to treatment
+    realcause_df.rename(columns={treatment_col: 'treatment'}, inplace=True)
     # Compute the propensity score, which is the probability of treatment == 1
     realcause_df['p_t'] = realcause_df['treatment'].mean()
     # Drop the unnecessary columns
@@ -540,6 +629,31 @@ def load_realcause_generated(ds_name, ds_id, sample_size, expt_id, dataset_num):
                 'p_t',
                 'ite'
             ]]
+    elif ds_name == 'postgres':
+        if ds_id == 'linear':
+            if expt_id == '0004':
+                setting = 'flexible_ate'
+            # Rename the 'runtime' column to 'outcome'
+            realcause_df.rename(columns={outcome_col: 'outcome'}, inplace=True)
+            realcause_df['setting'] = setting
+            realcause_df = realcause_df[[
+                'method',
+                'setting',
+                'dataset_num',
+                'rows',
+                'creation_year',
+                'num_ref_tables',
+                'num_joins',
+                'num_group_by',
+                'queries_by_user',
+                'length_chars',
+                'total_ref_rows',
+                'treatment',
+                'outcome',
+                'ate',
+                'p_t',
+                'ite'
+            ]]
     else:
         raise ValueError(f'Dataset {ds_name} not implemented')
     return realcause_df
@@ -549,8 +663,17 @@ def load_frugalflows_generated(ds_name, ds_id, sample_size, expt_id, dataset_num
     frugalflows_df = pd.read_csv(
         f'data/generated_datasets/frugalflows/expt_{expt_id}/dataset_{dataset_num}.csv')
     frugalflows_df['method'] = 'Frugalflows'
-    # Rename treat to treatment
-    frugalflows_df.rename(columns={'treat': 'treatment', 're78': 'outcome'}, inplace=True)
+    if ds_name == 'lalonde':
+        outcome_col = 're78'
+        treatment_col = 'treat'
+    elif ds_name == 'postgres':
+        outcome_col = 'runtime'
+        treatment_col = 'index_level'
+    # Rename treatment_col to treatment
+    frugalflows_df.rename(columns={
+        treatment_col: 'treatment', outcome_col: 'outcome'
+    },
+                          inplace=True)
     # Compute the propensity score, which is the probability of treatment == 1
     frugalflows_df['p_t'] = frugalflows_df['treatment'].mean()
     # Add in the dataset number
@@ -581,6 +704,27 @@ def load_frugalflows_generated(ds_name, ds_id, sample_size, expt_id, dataset_num
                 'outcome',
                 'p_t'
             ]]
+    elif ds_name == 'postgres':
+        if ds_id == 'linear':
+            if expt_id == '0004':
+                setting = 'flexible_ate'
+            frugalflows_df['setting'] = setting
+            frugalflows_df = frugalflows_df[[
+                'method',
+                'setting',
+                'dataset_num',
+                'rows',
+                'creation_year',
+                'num_ref_tables',
+                'num_joins',
+                'num_group_by',
+                'queries_by_user',
+                'length_chars',
+                'total_ref_rows',
+                'treatment',
+                'outcome',
+                'p_t'
+            ]]
     else:
         raise ValueError(f'Dataset {ds_name} not implemented')
     return frugalflows_df
@@ -607,6 +751,15 @@ def load_source_df(ds_name, ds_id, sample_size, rc_model_path):
         # Do the same for the outcome column
         transformed_y = rc_model.y_transform.transform(d[outcome_col].values.reshape(-1, 1))
         d[outcome_col] = transformed_y.flatten()
+    elif ds_name == 'postgres':
+        d, d_info = apo.get_apo_data(identifier='postgres', confound_func=dataset_identifier, data_format='pandas', return_ites=False, ret_counterfactual_outcomes=False, sample_size=sample_size)
+        true_ate = d_info['true_ate']
+        treatment_col = d_info['treatment_col']
+        outcome_col = d_info['outcome_col']
+        # Concatenate the covariates, treatment and outcome columns
+        d = pd.concat([d['w'], d['t'], d['y']], axis=1)
+        # Rename treatment_col to treatment and outcome_col to outcome
+        d.rename(columns={treatment_col: 'treatment', outcome_col: 'outcome'}, inplace=True)
     else:
         raise ValueError(f'Dataset {ds_name} not implemented')
     d['setting'] = 'source'
@@ -639,6 +792,8 @@ def plot_outcome_distribution(ds_name, ds_id, sample_size):
         ff_flexible = load_frugalflows_generated('lalonde', 'psid1', None, '0001', i)
         ff_true = load_frugalflows_generated('lalonde', 'psid1', None, '0002', i)
         ff_incorrect = load_frugalflows_generated('lalonde', 'psid1', None, '0003', i)
+    elif ds_name == 'postgres':
+        pass    # TODO: Implement this
     # Concatenate all the dataframes together
     df = pd.concat([
         source_df,
@@ -648,12 +803,12 @@ def plot_outcome_distribution(ds_name, ds_id, sample_size):
         mcred_flexible,
         mcred_true,
         mcred_incorrect,
-        rc_flexible,
-        rc_true,
-        rc_incorrect,
         ff_flexible,
         ff_true,
-        ff_incorrect
+        ff_incorrect,
+        rc_flexible,
+        rc_true,
+        rc_incorrect
     ],
                    axis=0)
     df.reset_index(drop=True, inplace=True)

@@ -23,17 +23,23 @@
 
 
 # Comparing multiple generative methods
-# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0002 source
-# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0002 credence
-# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0002 mcredence
-# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0002 realcause
-# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0002 frugalflows
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 None 0002 source
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 None  0002 credence
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 None 0002 mcredence
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 None 0002 realcause
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 None 0002 frugalflows
 
-# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 source
-# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 credence
-# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 mcredence
-# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 realcause
-# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 0003 frugalflows
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 None 0003 source
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 None 0003 credence
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 None 0003 mcredence
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 None 0003 realcause
+# sbatch run_causal_estimators_gen_methods.sh lalonde psid1 None 0003 frugalflows
+
+# sbatch run_causal_estimators_gen_methods.sh postgres linear 3000 0004 source
+# sbatch run_causal_estimators_gen_methods.sh postgres linear 3000 0004 credence
+# sbatch run_causal_estimators_gen_methods.sh postgres linear 3000 0004 mcredence
+# sbatch run_causal_estimators_gen_methods.sh postgres linear 3000 0004 realcause
+# sbatch run_causal_estimators_gen_methods.sh postgres linear 3000 0004 frugalflows
 
 # Realcause and Frugalflows SBI Lalonde PSID1
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh source lalonde psid1 None all 100 results/GenModelCkpts/lalonde/psid1/save 7 sliced_wass

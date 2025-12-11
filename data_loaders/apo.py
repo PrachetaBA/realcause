@@ -421,6 +421,10 @@ def get_apo_data(identifier,
 if __name__ == '__main__':
     # Test Postgres dataset
     d, df_info = get_apo_data(identifier='postgres', data_format='pandas', confound_func='linear', return_ites=True, ret_counterfactual_outcomes=True, sample_size=3000)
+    # Print the treatment and outcome columns
+    print(f'Treatment column: {df_info["treatment_col"]}')
+    print(f'Outcome column: {df_info["outcome_col"]}')
+    """
     # Combine all columns into a single dataframe
     df = pd.concat([d['w'], d['t'], d['y'], d['ite'], d['y0'], d['y1']], axis=1)
     # Compute the ITE mean
@@ -474,3 +478,4 @@ if __name__ == '__main__':
     # print(df.head())
     # print(df.shape)
     # print(f'ATE: {df["ite"].mean()}')
+    """
