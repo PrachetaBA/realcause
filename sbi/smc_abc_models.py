@@ -118,7 +118,7 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
         d = pd.concat([d['w'], d['t'], d['y']], axis=1)
         observed_data = d
     elif dataset_name == 'postgres':
-        d, d_info = rc_apo.get_apo_data(identifier='postgres', confound_func=dataset_identifier, data_format='pandas', return_ites=False, ret_counterfactual_outcomes=False, sample_size=3000)
+        d, d_info = rc_apo.get_apo_data(identifier='postgres', confound_func=dataset_identifier, data_format='pandas', return_ites=False, ret_counterfactual_outcomes=False, sample_size=sample_size)
         # Compute the true ATE as the mean of the ITEs
         true_ate = d_info['true_ate']
         # Get the full dataframe

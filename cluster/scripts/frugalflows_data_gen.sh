@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=ff-data-gen  # Job name
-#SBATCH --mem=8G  # Requested Memory
+#SBATCH --mem=16G  # Requested Memory
 #SBATCH --partition=gpu      # Partition
 #SBATCH --gres=gpu:1
 #SBATCH --constraint=sm_61  # Required for JAX compatibility

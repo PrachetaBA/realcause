@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 from loading import load_gen
 from data_loaders import lalonde as rc_lalonde
+from data_loaders import apo as rc_apo
 
 # Defing logging
 logging.basicConfig(level=logging.INFO)
@@ -47,6 +48,15 @@ def generate_rc_data(config, expt_id, num_samples=50):
         covariates_col = continuous_vars + categorical_vars
         covariates_df = d[
             covariates_col].values    # This is the original covariates dataframe (not transformed)
+    elif dataset_name == 'postgres':
+        d, d_info = rc_apo.get_apo_data(identifier='postgres', confound_func=dataset_identifier, data_format='pandas', return_ites=False, ret_counterfactual_outcomes=False, sample_size=sample_size)
+        d = pd.concat([d['w'], d['t'], d['y']], axis=1)
+        outcome_col = d_info['outcome_col']
+        treatment_col = d_info['treatment_col']
+        covariates_col = d_info['categorical_vars'] + d_info['continuous_vars']
+        covariates_df = d[covariates_col].values    # Use this to generate the data
+        rc_model_path = 'results/realcause_models/postgres_linear_3000/default'
+        true_ate = d_info['true_ate']
 
     # Load the Realcause model from the specified path (before applying transformations)
     # We need to use the model's transforms to ensure scales match

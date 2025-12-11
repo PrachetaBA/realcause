@@ -19,3 +19,10 @@ expt_0003:
   transform: True
   ate_setting: incorrect_ate # Incorrect treatment effect
   ate_value: 10.0
+
+expt_0004:
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
+  transform: False
+  ate_setting: flexible_ate # Flexible treatment effect

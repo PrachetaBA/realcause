@@ -8,6 +8,7 @@ Conda environment: rc-ff-sbi
 import os
 import argparse
 import logging
+import pandas as pd
 import yaml
 from tqdm import tqdm
 
@@ -20,6 +21,7 @@ jax.config.update('jax_enable_x64', True)
 # Import dataloader
 from loading import load_gen
 from data_loaders import lalonde as rc_lalonde    # Data loaders for Realcause simulator
+from data_loaders import apo as rc_apo    # Data loaders for APO simulator
 from frugal_flows.benchmarking import FrugalFlowModel
 
 # Defing logging
@@ -54,6 +56,17 @@ def generate_ff_data(config, expt_id, num_samples=50):
         covariates_col = continuous_vars + categorical_vars
         covariates_df = d[
             covariates_col].values    # This is the original covariates dataframe (not transformed)
+    elif dataset_name == 'postgres':
+        rc_model_path = 'results/realcause_models/postgres_linear_3000/default'
+        d, d_info = rc_apo.get_apo_data(identifier='postgres', confound_func=dataset_identifier, data_format='pandas', return_ites=False, ret_counterfactual_outcomes=False, sample_size=sample_size)
+        outcome_col = d_info['outcome_col']
+        treatment_col = d_info['treatment_col']
+        categorical_vars = d_info['categorical_vars']    # Excludes T and Y
+        continuous_vars = d_info['continuous_vars']    # Excludes T and Y
+        covariates_col = continuous_vars + categorical_vars
+        covariates_df = d[
+            'w'].values    # This is the original covariates dataframe (not transformed)
+        d = pd.concat([d['w'], d['t'], d['y']], axis=1)
     else:
         raise ValueError(f'Dataset {dataset_name} not implemented')
 
@@ -214,6 +227,8 @@ def generate_ff_data(config, expt_id, num_samples=50):
                 'married',
                 'nodegree'
             ]
+        elif dataset_name == 'postgres':
+            generated_df.columns = [outcome_col, treatment_col, *covariates_col]
         # Save the generated dataset
         generated_df.to_csv(f'{generated_data_dir}/dataset_{itr}.csv', index=False)
 
@@ -232,4 +247,4 @@ if __name__ == '__main__':
     config = all_experiment_configs[f'expt_{expt_id}']
 
     # Generate the data according to the specific experiment
-    generate_ff_data(config, expt_id)
+    generate_ff_data(config, expt_id, num_samples=50)
