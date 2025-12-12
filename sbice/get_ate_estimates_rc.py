@@ -118,7 +118,7 @@ def load_source_dataset(dataset_name,
             -1, 1))
         true_ate = rct_data['re78'][rct_data['treat'] == 1].mean() - rct_data['re78'][
             rct_data['treat'] == 0].mean()
-    elif dataset_name == 'twins':
+    elif dataset_name == 'twins':    # Need to find the true ATE for the transformed scale
         d = twins.load_twins(data_format='pandas', return_sketchy_ites=True)
         source_data = pd.concat([d['w'], d['t'], d['y'], d['ites']], axis=1)
         treatment_col = 'T'

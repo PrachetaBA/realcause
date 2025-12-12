@@ -61,3 +61,12 @@
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh source postgres linear 3000 all 301 results/realcause_models/postgres_linear_3000/default 2 ty_sliced_wass
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated postgres linear 3000 all 301 posterior results/realcause_models/postgres_linear_3000/default 2 ty_sliced_wass
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated postgres linear 3000 all 301 prior results/realcause_models/postgres_linear_3000/default 2 ty_sliced_wass
+
+sbatch run_causal_estimators.sh generated configs/experiments_postgres_models.yaml 300 posterior all 2
+sbatch run_causal_estimators.sh generated configs/experiments_postgres_models.yaml 300 prior all 2
+sbatch run_causal_estimators.sh generated configs/experiments_postgres_models.yaml 301 posterior all 2
+sbatch run_causal_estimators.sh generated configs/experiments_postgres_models.yaml 301 prior all 2
+sbatch run_causal_estimators.sh generated configs/experiments_postgres_models.yaml 302 posterior all 3
+sbatch run_causal_estimators.sh generated configs/experiments_postgres_models.yaml 302 prior all 3
+sbatch run_causal_estimators.sh generated configs/experiments_postgres_models.yaml 303 posterior all 1
+sbatch run_causal_estimators.sh generated configs/experiments_postgres_models.yaml 303 prior all 1
