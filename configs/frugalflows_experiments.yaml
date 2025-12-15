@@ -46,3 +46,65 @@ expt_0004:
   max_epochs: 5000
   rho: 0.0  # No unobserved confounding
   ate: flexible_ate  # Flexible treatment effect
+
+expt_0005:
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
+  causal_model: location_translation
+  transform: False
+  frugalflows_hp_file: results/frugalflows_models/postgres_linear_3000_hps.yaml
+  max_patience: 200
+  max_epochs: 5000
+  rho: 0.0  # No unobserved confounding
+  ate: true_ate  # True treatment effect
+
+expt_0006:
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
+  causal_model: location_translation
+  transform: False
+  frugalflows_hp_file: results/frugalflows_models/postgres_linear_3000_hps.yaml
+  max_patience: 200
+  max_epochs: 5000
+  rho: 0.0  # No unobserved confounding
+  ate: incorrect_ate  # Incorrect treatment effect
+  ate_value: 5.0
+
+expt_0007:
+  dataset_name: lalonde
+  dataset_identifier: rct
+  sample_size: None
+  causal_model: location_translation
+  transform: True
+  frugalflows_hp_file: results/frugalflows_models/lalonde_rct_None_hps.yaml
+  max_patience: 200
+  max_epochs: 5000
+  rho: 0.0  # No unobserved confounding
+  ate: flexible_ate  # Flexible treatment effect
+
+expt_0008:
+  dataset_name: lalonde
+  dataset_identifier: rct
+  sample_size: None
+  causal_model: location_translation
+  transform: True
+  frugalflows_hp_file: results/frugalflows_models/lalonde_rct_None_hps.yaml
+  max_patience: 200
+  max_epochs: 5000
+  rho: 0.0  # No unobserved confounding
+  ate: true_ate  # True treatment effect
+
+expt_0009:
+  dataset_name: lalonde
+  dataset_identifier: rct
+  sample_size: None
+  causal_model: location_translation
+  transform: True
+  frugalflows_hp_file: results/frugalflows_models/lalonde_rct_None_hps.yaml
+  max_patience: 200
+  max_epochs: 5000
+  rho: 0.0  # No unobserved confounding
+  ate: incorrect_ate  # Incorrect treatment effect
+  ate_value: 10.0

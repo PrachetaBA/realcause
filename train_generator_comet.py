@@ -12,7 +12,7 @@ import torch
 import gpytorch
 import yaml
 
-from data_loaders import apo, lalonde
+from data_loaders import apo, lalonde, frugal_param
 from models import TarNet, preprocess, TrainingParams, MLPParams, LinearModel, GPModel, TarGPModel, GPParams
 from models import distributions
 import helpers
@@ -41,6 +41,9 @@ def get_data(args):
             w, t, y = lalonde.load_lalonde(obs_version='psid')
         elif data_id == 'cps1':
             w, t, y = lalonde.load_lalonde(obs_version='cps')
+    elif data_name == 'frugalparam':
+        d, _ = frugal_param.load_frugal_dgp(identifier=data_id, data_format='numpy')
+        w, t, y = d['w'], d['t'], d['y']
     else:
         raise ValueError(f'Dataset {data_name} not implemented')
     return w, t, y, ite, ate

@@ -296,7 +296,7 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
     elif sampler == 'redis':
         sampler = redis_sampler
 
-    population_size = abc_config.get('acceptance_population', 35)
+    population_size = abc_config.get('acceptance_population', 50)
     # Initialize the ABC object
     # NOTE: Model order matters! Model 0 = FrugalFlows, Model 1 = Realcause
     abc = pyabc.ABCSMC(models=[ff_simulator_pyabc, rc_simulator_pyabc],

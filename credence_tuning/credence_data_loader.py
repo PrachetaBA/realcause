@@ -19,6 +19,9 @@ def load_data_credence(dataset_name, dataset_identifier=None, sample_size=None, 
         elif dataset_identifier == 'cps1':
             d = rc_lalonde.load_lalonde(obs_version='cps', data_format='pandas_single')
             rc_model_path = 'results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize'
+        elif dataset_identifier == 'rct':
+            d = rc_lalonde.load_lalonde(rct=True, data_format='pandas_single')
+            rc_model_path = 'results/realcause_models/lalonde_rct_None'
         else:
             raise ValueError(f'Dataset identifier {dataset_identifier} not implemented')
         d.drop(columns=['data_id'], inplace=True)

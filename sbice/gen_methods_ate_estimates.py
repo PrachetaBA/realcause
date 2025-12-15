@@ -69,6 +69,9 @@ def source_data_ate(dataset_name,
         elif dataset_identifier == 'cps1':
             d = lalonde.load_lalonde(obs_version='cps', data_format='pandas_single')
             realcause_model_path = 'results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize'
+        elif dataset_identifier == 'rct':
+            d = lalonde.load_lalonde(rct=True, data_format='pandas_single')
+            realcause_model_path = 'results/realcause_models/lalonde_rct_None'
         else:
             raise ValueError(f'Dataset identifier {dataset_identifier} not implemented')
         d.drop(columns=['data_id'], inplace=True)
@@ -277,7 +280,17 @@ def frugalflows_data_ate(config_file,
     elif experiment_identifier == '0003':
         true_ate = 10.0
     elif experiment_identifier == '0004':
-        true_ate = -0.494372492680495
+        true_ate = -0.494372492680495    # Flexible
+    elif experiment_identifier == '0005':
+        true_ate = 0.25458168982552337    # true ATE
+    elif experiment_identifier == '0006':
+        true_ate = 5.0
+    elif experiment_identifier == '0007':
+        true_ate = -0.013378981365253218
+    elif experiment_identifier == '0008':
+        true_ate = 0.029753006994724274
+    elif experiment_identifier == '0009':
+        true_ate = 10.0
     else:
         raise ValueError(f'Experiment identifier {experiment_identifier} not implemented')
 

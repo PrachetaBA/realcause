@@ -345,6 +345,9 @@ def plot_bias_estimators(ds_name,
             elif ds_id == 'cps1':
                 dataset_name = 'Lalonde (CPS)'
                 dataset_plot_name = 'lalonde-cps'
+            elif ds_id == 'rct':
+                dataset_name = 'Lalonde (RCT)'
+                dataset_plot_name = 'lalonde-rct'
             else:
                 raise ValueError(f'Dataset identifier {ds_id} not implemented')
         elif ds_name == 'postgres':
@@ -367,7 +370,23 @@ def plot_bias_estimators(ds_name,
             setting_plot_name = 'incorrect'
         elif expt_id == '0004':
             setting_name = 'Flexible ATE'
+        elif expt_id == '0005':
+            setting_name = 'True ATE'
+            setting_plot_name = 'true'
+        elif expt_id == '0006':
+            setting_name = 'Incorrect ATE'
+            setting_plot_name = 'incorrect'
+        elif expt_id == '0007':
+            setting_name = 'Flexible ATE'
             setting_plot_name = 'flexible'
+        elif expt_id == '0008':
+            setting_name = 'True ATE'
+            setting_plot_name = 'true'
+        elif expt_id == '0009':
+            setting_name = 'Incorrect ATE'
+            setting_plot_name = 'incorrect'
+        else:
+            raise ValueError(f'Experiment identifier {expt_id} not implemented')
         title = f'Dataset: {dataset_name} \n {setting_name}'
         # plt.title(title)
 
@@ -549,10 +568,42 @@ def load_mcredence_generated(ds_name, ds_id, sample_size, expt_id, dataset_num):
                 'ite',
                 'selection_bias'
             ]]
+        elif ds_id == 'rct':
+            if expt_id == '0007':
+                setting = 'flexible_ate'
+            elif expt_id == '0008':
+                setting = 'true_ate'
+            elif expt_id == '0009':
+                setting = 'incorrect_ate'
+            mcredence_df['setting'] = setting
+            mcredence_df = mcredence_df[[
+                'method',
+                'setting',
+                'dataset_num',
+                'black',
+                'hispanic',
+                'married',
+                'nodegree',
+                'age',
+                'education',
+                're74',
+                're75',
+                'treatment',
+                'outcome',
+                'ate',
+                'p_t',
+                'counterfactual_outcome',
+                'ite',
+                'selection_bias'
+            ]]
     elif ds_name == 'postgres':
         if ds_id == 'linear':
             if expt_id == '0004':
                 setting = 'flexible_ate'
+            elif expt_id == '0005':
+                setting = 'true_ate'
+            elif expt_id == '0006':
+                setting = 'incorrect_ate'
             mcredence_df['setting'] = setting
             mcredence_df = mcredence_df[[
                 'method',
@@ -609,6 +660,32 @@ def load_realcause_generated(ds_name, ds_id, sample_size, expt_id, dataset_num):
             elif expt_id == '0002':
                 setting = 'true_ate'
             elif expt_id == '0003':
+                setting = 'incorrect_ate'
+            realcause_df['setting'] = setting
+            realcause_df = realcause_df[[
+                'method',
+                'setting',
+                'dataset_num',
+                'black',
+                'hispanic',
+                'married',
+                'nodegree',
+                'age',
+                'education',
+                're74',
+                're75',
+                'treatment',
+                'outcome',
+                'ate',
+                'p_t',
+                'ite'
+            ]]
+        elif ds_id == 'rct':
+            if expt_id == '0007':
+                setting = 'flexible_ate'
+            elif expt_id == '0008':
+                setting = 'true_ate'
+            elif expt_id == '0009':
                 setting = 'incorrect_ate'
             realcause_df['setting'] = setting
             realcause_df = realcause_df[[
@@ -704,6 +781,30 @@ def load_frugalflows_generated(ds_name, ds_id, sample_size, expt_id, dataset_num
                 'outcome',
                 'p_t'
             ]]
+        elif ds_id == 'rct':
+            if expt_id == '0007':
+                setting = 'flexible_ate'
+            elif expt_id == '0008':
+                setting = 'true_ate'
+            elif expt_id == '0009':
+                setting = 'incorrect_ate'
+            frugalflows_df['setting'] = setting
+            frugalflows_df = frugalflows_df[[
+                'method',
+                'setting',
+                'dataset_num',
+                'black',
+                'hispanic',
+                'married',
+                'nodegree',
+                'age',
+                'education',
+                're74',
+                're75',
+                'treatment',
+                'outcome',
+                'p_t'
+            ]]
     elif ds_name == 'postgres':
         if ds_id == 'linear':
             if expt_id == '0004':
@@ -731,8 +832,11 @@ def load_frugalflows_generated(ds_name, ds_id, sample_size, expt_id, dataset_num
 
 
 def load_source_df(ds_name, ds_id, sample_size, rc_model_path):
-    if ds_name == 'lalonde' and ds_id == 'psid1':
-        d = lalonde.load_lalonde(obs_version='psid', data_format='pandas_single')
+    if ds_name == 'lalonde':
+        if ds_id == 'psid1':
+            d = lalonde.load_lalonde(obs_version='psid', data_format='pandas_single')
+        elif ds_id == 'rct':
+            d = lalonde.load_lalonde(rct=True, data_format='pandas_single')
         d.drop(columns=['data_id'], inplace=True)
         # Rename treatment to treatment
         d.rename(columns={'treat': 'treatment', 're78': 'outcome'}, inplace=True)
@@ -792,8 +896,42 @@ def plot_outcome_distribution(ds_name, ds_id, sample_size):
         ff_flexible = load_frugalflows_generated('lalonde', 'psid1', None, '0001', i)
         ff_true = load_frugalflows_generated('lalonde', 'psid1', None, '0002', i)
         ff_incorrect = load_frugalflows_generated('lalonde', 'psid1', None, '0003', i)
+    elif ds_name == 'lalonde' and ds_id == 'rct':
+        source_df = load_source_df(ds_name,
+                                   ds_id,
+                                   sample_size,
+                                   'results/realcause_models/lalonde_rct_None')
+        # Extract each of the datasets across all methods and all settings
+        cred_flexible = load_credence_generated('lalonde', 'rct', None, '0007', i)
+        cred_true = load_credence_generated('lalonde', 'rct', None, '0008', i)
+        cred_incorrect = load_credence_generated('lalonde', 'rct', None, '0009', i)
+        mcred_flexible = load_mcredence_generated('lalonde', 'rct', None, '0007', i)
+        mcred_true = load_mcredence_generated('lalonde', 'rct', None, '0008', i)
+        mcred_incorrect = load_mcredence_generated('lalonde', 'rct', None, '0009', i)
+        rc_flexible = load_realcause_generated('lalonde', 'rct', None, '0007', i)
+        rc_true = load_realcause_generated('lalonde', 'rct', None, '0008', i)
+        rc_incorrect = load_realcause_generated('lalonde', 'rct', None, '0009', i)
+        ff_flexible = load_frugalflows_generated('lalonde', 'rct', None, '0007', i)
+        ff_true = load_frugalflows_generated('lalonde', 'rct', None, '0008', i)
+        ff_incorrect = load_frugalflows_generated('lalonde', 'rct', None, '0009', i)
     elif ds_name == 'postgres':
-        pass    # TODO: Implement this
+        source_df = load_source_df(ds_name,
+                                   ds_id,
+                                   sample_size,
+                                   'results/realcause_models/postgres_linear_3000/default')
+        # Extract each of the datasets across all methods and all settings
+        cred_flexible = load_credence_generated('postgres', 'linear', None, '0004', i)
+        cred_true = load_credence_generated('postgres', 'linear', None, '0005', i)
+        cred_incorrect = load_credence_generated('postgres', 'linear', None, '0006', i)
+        mcred_flexible = load_mcredence_generated('postgres', 'linear', None, '0004', i)
+        mcred_true = load_mcredence_generated('postgres', 'linear', None, '0005', i)
+        mcred_incorrect = load_mcredence_generated('postgres', 'linear', None, '0006', i)
+        rc_flexible = load_realcause_generated('postgres', 'linear', None, '0004', i)
+        rc_true = load_realcause_generated('postgres', 'linear', None, '0005', i)
+        rc_incorrect = load_realcause_generated('postgres', 'linear', None, '0006', i)
+        ff_flexible = load_frugalflows_generated('postgres', 'linear', None, '0004', i)
+        ff_true = load_frugalflows_generated('postgres', 'linear', None, '0005', i)
+        ff_incorrect = load_frugalflows_generated('postgres', 'linear', None, '0006', i)
     # Concatenate all the dataframes together
     df = pd.concat([
         source_df,
@@ -923,7 +1061,17 @@ def plot_outcome_distribution_separate(ds_name, ds_id, sample_size, setting='fle
     print(f'Using dataset number {i}')
 
     # Map setting to experiment ID
-    setting_to_expt = {'flexible_ate': '0001', 'true_ate': '0002', 'incorrect_ate': '0003'}
+    setting_to_expt = {
+        'flexible_ate': '0001',
+        'true_ate': '0002',
+        'incorrect_ate': '0003',
+        'flexible_ate': '0004',
+        'true_ate': '0005',
+        'incorrect_ate': '0006',
+        'flexible_ate': '0007',
+        'true_ate': '0008',
+        'incorrect_ate': '0009'
+    }
 
     setting_to_label = {
         'flexible_ate': 'Flexible ATE', 'true_ate': 'True ATE', 'incorrect_ate': 'Incorrect ATE'
@@ -945,6 +1093,26 @@ def plot_outcome_distribution_separate(ds_name, ds_id, sample_size, setting='fle
         mcred_data = load_mcredence_generated('lalonde', 'psid1', None, expt_id, i)
         rc_data = load_realcause_generated('lalonde', 'psid1', None, expt_id, i)
         ff_data = load_frugalflows_generated('lalonde', 'psid1', None, expt_id, i)
+    elif ds_name == 'lalonde' and ds_id == 'rct':
+        source_df = load_source_df(ds_name,
+                                   ds_id,
+                                   sample_size,
+                                   'results/realcause_models/lalonde_rct_None')
+        # Load only the specific setting we want
+        cred_data = load_credence_generated('lalonde', 'rct', None, expt_id, i)
+        mcred_data = load_mcredence_generated('lalonde', 'rct', None, expt_id, i)
+        rc_data = load_realcause_generated('lalonde', 'rct', None, expt_id, i)
+        ff_data = load_frugalflows_generated('lalonde', 'rct', None, expt_id, i)
+    elif ds_name == 'postgres' and ds_id == 'linear':
+        source_df = load_source_df(ds_name,
+                                   ds_id,
+                                   sample_size,
+                                   'results/realcause_models/postgres_linear_3000/default')
+        # Load only the specific setting we want
+        cred_data = load_credence_generated('postgres', 'linear', None, expt_id, i)
+        mcred_data = load_mcredence_generated('postgres', 'linear', None, expt_id, i)
+        rc_data = load_realcause_generated('postgres', 'linear', None, expt_id, i)
+        ff_data = load_frugalflows_generated('postgres', 'linear', None, expt_id, i)
     else:
         raise ValueError(f'Dataset {ds_name} with id {ds_id} not implemented')
 
@@ -1023,6 +1191,7 @@ def plot_outcome_distribution_separate(ds_name, ds_id, sample_size, setting='fle
 
 def plot_ate_values(ds_name, ds_id, sample_size, setting='flexible_ate'):
     """Plot the ATE values for the different methods and settings."""
+    # TODO: Make this more general to do all types of datasets
     if ds_name == 'lalonde' and ds_id == 'psid1':
         # Load all datasets for all the generative methods
         all_gen_datasets = []

@@ -113,6 +113,8 @@ def load_source_dataset(dataset_name,
             d = lalonde.load_lalonde(obs_version='psid', data_format='pandas_single')
         elif dataset_identifier == 'cps1':
             d = lalonde.load_lalonde(obs_version='cps', data_format='pandas_single')
+        elif dataset_identifier == 'rct':
+            d = lalonde.load_lalonde(rct=True, data_format='pandas_single')
         d.drop(columns=['data_id'], inplace=True)
         outcome_col = 're78'
         treatment_col = 'treat'
@@ -125,12 +127,13 @@ def load_source_dataset(dataset_name,
         if transform:
             # Compute the true ATE as just the values from the RCT data (after applying the standardization from the Realcause model)
             rc_model, _ = load_gen(saveroot=realcause_model_path)
-            rct_data[covariates_col] = rc_model.w_transform.transform(
-                rct_data[covariates_col].values)
-            rct_data[outcome_col] = rc_model.y_transform.transform(
-                rct_data[outcome_col].values.reshape(-1, 1))
-            true_ate = rct_data['re78'][rct_data['treat'] == 1].mean() - rct_data['re78'][
-                rct_data['treat'] == 0].mean()
+            transformed_rct_data = rct_data.copy()
+            transformed_rct_data[covariates_col] = rc_model.w_transform.transform(
+                transformed_rct_data[covariates_col].values)
+            transformed_rct_data[outcome_col] = rc_model.y_transform.transform(
+                transformed_rct_data[outcome_col].values.reshape(-1, 1))
+            true_ate = transformed_rct_data['re78'][transformed_rct_data['treat'] == 1].mean(
+            ) - transformed_rct_data['re78'][transformed_rct_data['treat'] == 0].mean()
         else:
             true_ate = rct_data['re78'][rct_data['treat'] == 1].mean() - rct_data['re78'][
                 rct_data['treat'] == 0].mean()

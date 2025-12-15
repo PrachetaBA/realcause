@@ -43,19 +43,20 @@ def tune_hyperparameters(mcredence_model,
     """
     # Define the search space of hyperparameters
     search_space = {
-        'latent_dim':
-            tune.choice([1, 2, 3, 4, 5, 6]),
-        'hidden_dim':
-            tune.choice(
-                [[8, 16, 8], [4, 8, 4], [16, 32, 16], [16, 32, 64, 64, 32, 16],
-                 [4, 16, 64, 64, 16,
-                  4], [4, 8, 16, 32, 64, 32, 16, 8, 4]]
-            ),    # [16], [8, 16, 8]]), # tune.choice([[8, 16], [16, 32], [8, 16, 8], [32, 64]]),
+        'latent_dim':    # tune.choice([1, 2, 3, 4, 5, 6]),
+            tune.choice([1, 2, 3]),
+        'hidden_dim':    # tune.choice([[8, 16, 8], [4, 8, 4], [16, 32, 16], [16, 32, 64, 64, 32, 16], [64, 256, 64]]
+            tune.choice([[16], [32], [8, 16], [16, 32], [8, 16, 8], [32, 64]]
+    # [[8, 16, 8], [4, 8, 4], [16, 32, 16], [16, 32, 64, 64, 32, 16],
+    #  [4, 16, 64, 64, 16,
+    #   4], [4, 8, 16, 32, 64, 32, 16, 8, 4]]
+                       ),    # [16], [8, 16, 8]]), # tune.choice([[8, 16], [16, 32], [8, 16, 8], [32, 64]]),
         'lr':
-            tune.loguniform(1e-4, 5e-3),
+            tune.loguniform(1e-4, 1e-1),
         'kld_rigidity':
             exp_params['kld_rigidity'] if exp_params != None and exp_params['kld_rigidity'] != None
-            else tune.loguniform(0.01, 0.05),
+    # else tune.loguniform(0.01, 0.05),
+            else tune.loguniform(1e-5, 1e-1),
         'bias_rigidity':
             exp_params['bias_rigidity'] if exp_params != None
             and exp_params['bias_rigidity'] != None else tune.loguniform(500, 5000),
@@ -63,7 +64,7 @@ def tune_hyperparameters(mcredence_model,
             exp_params['effect_rigidity'] if exp_params != None
             and exp_params['effect_rigidity'] != None else tune.loguniform(500, 5000),
         'batch_size':
-            tune.choice([32, 64]),    # 64
+            tune.choice([4, 8, 16, 32, 64]),    # 64
     }
     scheduler = ASHAScheduler(max_t=num_epochs, grace_period=1, reduction_factor=2)
 
@@ -166,8 +167,7 @@ def mcredence_model(dataset_name,
             numerical_var=dataset_info['continuous_vars'],
             treatment_effect_fn=lambda x: treatment_effect,
             effect_rigidity=config['effect_rigidity'],
-            selection_bias_fn=lambda x,
-            t: confounding_bias,
+            selection_bias_fn=lambda x, t: confounding_bias,
             use_uniform_encoder=use_uniform_autoencoder,
             use_gpu=use_gpu,
             bias_rigidity=config['bias_rigidity'],

@@ -40,6 +40,8 @@ class DataGenerator:
                 rc_model_path = 'results/GenModelCkpts/lalonde/psid1/save'
             elif dataset_identifier == 'cps1':
                 rc_model_path = 'results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize'
+            elif dataset_identifier == 'rct':
+                rc_model_path = 'results/realcause_models/lalonde_rct_None'
             else:
                 raise ValueError(f'Dataset identifier {dataset_identifier} not implemented')
             source_dataset, source_dataset_info = load_data_credence(dataset_name, dataset_identifier, sample_size, rc_model_path)
@@ -72,8 +74,7 @@ class DataGenerator:
                 categorical_var=source_dataset_info['categorical_vars'],
                 numerical_var=source_dataset_info['continuous_vars'],
                 treatment_effect_fn=lambda x: treatment_effect,
-                selection_bias_fn=lambda x,
-                t: confounding_bias,
+                selection_bias_fn=lambda x, t: confounding_bias,
                 effect_rigidity=config['effect_rigidity'],
                 bias_rigidity=config['bias_rigidity'],
                 kld_rigidity=config['kld_rigidity'],
@@ -126,8 +127,7 @@ class DataGenerator:
                 categorical_var=source_dataset_info['categorical_vars'],
                 numerical_var=source_dataset_info['continuous_vars'],
                 treatment_effect_fn=lambda x: treatment_effect,
-                selection_bias_fn=lambda x,
-                t: confounding_bias,
+                selection_bias_fn=lambda x, t: confounding_bias,
                 effect_rigidity=config['effect_rigidity'],
                 bias_rigidity=config['bias_rigidity'],
                 kld_rigidity=config['kld_rigidity'],

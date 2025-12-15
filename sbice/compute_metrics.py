@@ -26,6 +26,7 @@ from data_loaders import apo, lalonde, twins
 import torch
 from ignite.engine import Engine
 from ignite.metrics import MaximumMeanDiscrepancy
+from sklearn.preprocessing import MinMaxScaler
 
 # create default evaluator for doctests
 
@@ -66,6 +67,9 @@ def source_data_loader(dataset_name,
         elif dataset_identifier == 'cps1':
             d = lalonde.load_lalonde(obs_version='cps', data_format='pandas_single')
             realcause_model_path = 'results/GenModelCkpts/lalonde/cps1/dist_argsndim=32+base_distribution=normal-n_hidden_layers2-dim_h64-lr0.001-w_transformStandardize'
+        elif dataset_identifier == 'rct':
+            d = lalonde.load_lalonde(rct=True, data_format='pandas_single')
+            realcause_model_path = 'results/realcause_models/lalonde_rct_None'
         else:
             raise ValueError(f'Dataset identifier {dataset_identifier} not implemented')
         d.drop(columns=['data_id'], inplace=True)
@@ -175,6 +179,19 @@ def credence_data_loader(config_file, experiment_identifier, gen_data_dir):
                 treatment_col,
                 outcome_col
             ]]
+        elif dataset_name == 'lalonde' and dataset_identifier == 'rct':
+            df_gen = df_gen[[
+                'age',
+                'education',
+                'black',
+                'hispanic',
+                'married',
+                'nodegree',
+                're74',
+                're75',
+                treatment_col,
+                outcome_col
+            ]]
         gen_datasets.append(df_gen)
     return gen_datasets, true_ate
 
@@ -222,6 +239,19 @@ def mcredence_data_loader(config_file, experiment_identifier, gen_data_dir):
                 treatment_col,
                 outcome_col
             ]]
+        elif dataset_name == 'lalonde' and dataset_identifier == 'rct':
+            df_gen = df_gen[[
+                'age',
+                'education',
+                'black',
+                'hispanic',
+                'married',
+                'nodegree',
+                're74',
+                're75',
+                treatment_col,
+                outcome_col
+            ]]
         gen_datasets.append(df_gen)
     return gen_datasets, true_ate
 
@@ -255,6 +285,16 @@ def frugalflows_data_loader(config_file,
         true_ate = 10.0
     elif experiment_identifier == '0004':
         true_ate = -0.494372492680495
+    elif experiment_identifier == '0005':
+        true_ate = 0.25458168982552337
+    elif experiment_identifier == '0006':
+        true_ate = 5.0
+    elif experiment_identifier == '0007':
+        true_ate = -0.013378981365253218
+    elif experiment_identifier == '0008':
+        true_ate = 0.029753006994724274
+    elif experiment_identifier == '0009':
+        true_ate = 10.0
     else:
         raise ValueError(f'Experiment identifier {experiment_identifier} not implemented')
 
@@ -339,6 +379,19 @@ def realcause_data_loader(config_file,
                 treatment_col,
                 outcome_col
             ]]
+        elif dataset_name == 'lalonde' and dataset_identifier == 'rct':
+            df_gen = df_gen[[
+                'age',
+                'education',
+                'black',
+                'hispanic',
+                'married',
+                'nodegree',
+                're74',
+                're75',
+                treatment_col,
+                outcome_col
+            ]]
         gen_datasets.append(df_gen)
     return gen_datasets, true_ate
 
@@ -384,7 +437,7 @@ def compute_mmd_distance(source_array, gen_array):
     return dist.metrics['mmd']
 
 
-def compute_metrics(experiment_identifier, gen_method, metric='auc'):
+def compute_metrics(experiment_identifier, gen_method, metric='auc', minmax_scale=False):
     """Compute the metrics for the given dataset."""
     if gen_method == 'realcause':
         config_file = f'configs/realcause_experiments.yaml'
@@ -412,11 +465,17 @@ def compute_metrics(experiment_identifier, gen_method, metric='auc'):
         sample_size = None
         realcause_model_path = 'results/GenModelCkpts/lalonde/psid1/save'
         source_df, true_ate = source_data_loader(dataset_name, dataset_identifier, sample_size, realcause_model_path)
-    elif experiment_identifier == '0004':
+    elif experiment_identifier in ['0004', '0005', '0006']:
         dataset_name = 'postgres'
         dataset_identifier = 'linear'
         sample_size = 3000
         source_df, true_ate = source_data_loader(dataset_name, dataset_identifier, sample_size)
+    elif experiment_identifier in ['0007', '0008', '0009']:
+        dataset_name = 'lalonde'
+        dataset_identifier = 'rct'
+        sample_size = None
+        realcause_model_path = 'results/realcause_models/lalonde_rct_None'
+        source_df, true_ate = source_data_loader(dataset_name, dataset_identifier, sample_size, realcause_model_path)
     else:
         raise ValueError(f'Experiment identifier {experiment_identifier} not implemented')
 
@@ -444,13 +503,28 @@ def compute_metrics(experiment_identifier, gen_method, metric='auc'):
     elif metric == 'slicedwass':
         # Compute the sliced wasserstein distances between the source and the generated datasets
         slicedwass_distances = []
+
+        if minmax_scale:
+            # Can we standardize the source and generated datasets?
+            std_source_df = MinMaxScaler().fit_transform(source_df)
+        else:
+            std_source_df = source_df
+
         for gen_dataset in gen_datasets:
-            slicedwass_distance = compute_slicedwass_distance(source_df, gen_dataset)
+            if minmax_scale:
+                std_gen_dataset = MinMaxScaler().fit_transform(gen_dataset)
+            else:
+                std_gen_dataset = gen_dataset
+            slicedwass_distance = compute_slicedwass_distance(std_source_df, std_gen_dataset)
             slicedwass_distances.append(slicedwass_distance)
 
         # Save the sliced-Wasserstein distances to a csv file
         slicedwass_distances_df = pd.DataFrame(slicedwass_distances,
                                                columns=['slicedwass_distance'])
+        logger.info('Mean Sliced-Wasserstein distance: ' +
+                    str(slicedwass_distances_df['slicedwass_distance'].mean()))
+        logger.info('Standard deviation of Sliced-Wasserstein distance: ' +
+                    str(slicedwass_distances_df['slicedwass_distance'].std()))
         slicedwass_distances_df.to_csv(
             f'{METRICS_PATH}/slicedwass_expt_{experiment_identifier}_{gen_method}.csv', index=False)
 
@@ -482,26 +556,61 @@ if __name__ == '__main__':
 
     # For each experiment identifier and generative methods, write code to compute the mean
     # of the metrics per generative method and put it together into a single dataframe
-    mean_metrics = pd.DataFrame(
-        columns=['gen_method', 'mean_mmd', 'mean_slicedwass', 'std_mmd', 'std_slicedwass'])
+    # mean_metrics = pd.DataFrame(
+    #     columns=['gen_method', 'mean_mmd', 'mean_slicedwass', 'std_mmd', 'std_slicedwass'])
+    # for gen_method in ['realcause', 'credence', 'mcredence', 'frugalflows']:
+    #     mmd_distances = pd.read_csv(
+    #         f'{METRICS_PATH}/mmd_expt_{args.experiment_identifier}_{gen_method}.csv')
+    #     slicedwass_distances = pd.read_csv(
+    #         f'{METRICS_PATH}/slicedwass_expt_{args.experiment_identifier}_{gen_method}.csv')
+    #     # Compute the mean per generative method and the standard deviation of the metrics
+    #     mean_mmd = mmd_distances['mmd_distance'].mean()
+    #     mean_slicedwass = slicedwass_distances['slicedwass_distance'].mean()
+    #     std_mmd = mmd_distances['mmd_distance'].std()
+    #     std_slicedwass = slicedwass_distances['slicedwass_distance'].std()
+    #     # Add a column for the generative method and add the corresponding mean metrics
+    #     mean_metrics = pd.concat([
+    #         mean_metrics,
+    #         pd.DataFrame([{
+    #             'gen_method': gen_method,
+    #             'mean_mmd': mean_mmd,
+    #             'mean_slicedwass': mean_slicedwass,
+    #             'std_mmd': std_mmd,
+    #             'std_slicedwass': std_slicedwass
+    #         }])
+    #     ],
+    #                              ignore_index=True)
+
+    # # Save the mean metrics to a csv file
+    # mean_metrics.to_csv(f'{METRICS_PATH}/mean_metrics_expt_{args.experiment_identifier}.csv',
+    #                     index=False)
+
     for gen_method in ['realcause', 'credence', 'mcredence', 'frugalflows']:
-        mmd_distances = pd.read_csv(
-            f'{METRICS_PATH}/mmd_expt_{args.experiment_identifier}_{gen_method}.csv')
+        compute_metrics(args.experiment_identifier,
+                        gen_method,
+                        metric='slicedwass',
+                        minmax_scale=False)
+
+    # For each experiment identifier and generative methods, write code to compute the mean
+    # of the metrics per generative method and put it together into a single dataframe
+    mean_metrics = pd.DataFrame(columns=['gen_method', 'mean_slicedwass', 'std_slicedwass'])
+    for gen_method in ['realcause', 'credence', 'mcredence', 'frugalflows']:
         slicedwass_distances = pd.read_csv(
             f'{METRICS_PATH}/slicedwass_expt_{args.experiment_identifier}_{gen_method}.csv')
         # Compute the mean per generative method and the standard deviation of the metrics
-        mean_mmd = mmd_distances['mmd_distance'].mean()
-        mean_slicedwass = slicedwass_distances['slicedwass_distance'].mean()
-        std_mmd = mmd_distances['mmd_distance'].std()
+        logger.info('Generative method: ' + gen_method)
+        mean_slicedwass = slicedwass_distances['slicedwass_distance'].mean(
+        )    # Round to 3 decimal places
+        logger.info('Mean Sliced-Wasserstein distance: ' + str(round(mean_slicedwass, 3)))
         std_slicedwass = slicedwass_distances['slicedwass_distance'].std()
+        logger.info('Standard deviation of Sliced-Wasserstein distance: ' +
+                    str(round(std_slicedwass, 3)))
         # Add a column for the generative method and add the corresponding mean metrics
         mean_metrics = pd.concat([
             mean_metrics,
             pd.DataFrame([{
                 'gen_method': gen_method,
-                'mean_mmd': mean_mmd,
                 'mean_slicedwass': mean_slicedwass,
-                'std_mmd': std_mmd,
                 'std_slicedwass': std_slicedwass
             }])
         ],

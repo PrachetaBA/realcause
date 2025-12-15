@@ -169,3 +169,64 @@ experiment_503:  # all parameters for both models; distance only t and y; no tra
   causal_model: location_translation
   realcause_model_path: results/realcause_models/lalonde_rct_None
   frugalflows_hp_file: results/frugalflows_models/lalonde_rct_None_hps.yaml
+
+experiment_504:  # only ate; sliced wass; transform - narrow prior
+  dataset_name: lalonde
+  dataset_identifier: rct
+  sample_size: None
+  random_seed: 28
+  realcause_parameters:
+    - te
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -1.0
+      scale: 2.0
+  frugalflows_parameters:
+    - ate
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -1.0
+      scale: 2.0
+  distance: sliced_wass
+  transform: true
+  min_epsilon: 0.01
+  max_iterations: 12
+  acceptance_population: 50
+  causal_model: location_translation
+  realcause_model_path: results/realcause_models/lalonde_rct_None
+  frugalflows_hp_file: results/frugalflows_models/lalonde_rct_None_hps.yaml
+
+experiment_505:  # ate and deg hetero only; sliced wass; transform - narrow prior
+  dataset_name: lalonde
+  dataset_identifier: rct
+  sample_size: None
+  random_seed: 28
+  realcause_parameters:
+    - te
+    - deg_hetero
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -1.0
+      scale: 2.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  frugalflows_parameters:
+    - ate
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -1.0
+      scale: 2.0
+  distance: sliced_wass
+  transform: true
+  min_epsilon: 0.01
+  max_iterations: 12
+  acceptance_population: 50
+  causal_model: location_translation
+  realcause_model_path: results/realcause_models/lalonde_rct_None
+  frugalflows_hp_file: results/frugalflows_models/lalonde_rct_None_hps.yaml

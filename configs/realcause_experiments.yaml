@@ -26,3 +26,40 @@ expt_0004:
   sample_size: 3000
   transform: False
   ate_setting: flexible_ate # Flexible treatment effect
+
+expt_0005:
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
+  transform: False
+  ate_setting: true_ate # True treatment effect
+
+expt_0006:
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
+  transform: False
+  ate_setting: incorrect_ate # Incorrect treatment effect
+  ate_value: 5.0
+
+expt_0007:
+  dataset_name: lalonde
+  dataset_identifier: rct
+  sample_size: None
+  transform: True
+  ate_setting: flexible_ate # Flexible treatment effect
+
+expt_0008:
+  dataset_name: lalonde
+  dataset_identifier: rct
+  sample_size: None
+  transform: True
+  ate_setting: true_ate # True treatment effect
+
+expt_0009:
+  dataset_name: lalonde
+  dataset_identifier: rct
+  sample_size: None
+  transform: True
+  ate_setting: incorrect_ate # Incorrect treatment effect
+  ate_value: 10.0

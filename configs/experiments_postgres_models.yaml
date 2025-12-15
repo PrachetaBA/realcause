@@ -169,3 +169,125 @@ experiment_303:  # all parameters for both models; distance only t and y; no tra
   causal_model: location_translation
   realcause_model_path: results/realcause_models/postgres_linear_3000/default
   frugalflows_hp_file: results/frugalflows_models/postgres_linear_3000_hps.yaml
+
+experiment_304:  # only ate; sliced wass; transform - narrow prior
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
+  random_seed: 489
+  realcause_parameters:
+    - te
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -0.5
+      scale: 1.0
+  frugalflows_parameters:
+    - ate
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -0.5
+      scale: 1.0
+  distance: sliced_wass
+  transform: true
+  min_epsilon: 0.01
+  max_iterations: 12
+  acceptance_population: 50
+  causal_model: location_translation
+  realcause_model_path: results/realcause_models/postgres_linear_3000/default
+  frugalflows_hp_file: results/frugalflows_models/postgres_linear_3000_hps.yaml
+
+experiment_305:  # only ate; sliced wass; no transform - narrow prior
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
+  random_seed: 489
+  realcause_parameters:
+    - te
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -0.5
+      scale: 1.0
+  frugalflows_parameters:
+    - ate
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -0.5
+      scale: 1.0
+  distance: sliced_wass
+  transform: false
+  min_epsilon: 0.01
+  max_iterations: 12
+  acceptance_population: 50
+  causal_model: location_translation
+  realcause_model_path: results/realcause_models/postgres_linear_3000/default
+  frugalflows_hp_file: results/frugalflows_models/postgres_linear_3000_hps.yaml
+
+experiment_306:  # te and deg hetero only; transform - narrow prior
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
+  random_seed: 489
+  realcause_parameters:
+    - te
+    - deg_hetero
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -0.5
+      scale: 1.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  frugalflows_parameters:
+    - ate
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -0.5
+      scale: 1.0
+  distance: sliced_wass
+  transform: true
+  min_epsilon: 0.01
+  max_iterations: 12
+  acceptance_population: 50
+  causal_model: location_translation
+  realcause_model_path: results/realcause_models/postgres_linear_3000/default
+  frugalflows_hp_file: results/frugalflows_models/postgres_linear_3000_hps.yaml
+
+experiment_307:  # te and deg hetero only; no transform - narrow prior
+  dataset_name: postgres
+  dataset_identifier: linear
+  sample_size: 3000
+  random_seed: 489
+  realcause_parameters:
+    - te
+    - deg_hetero
+  realcause_prior:
+    te:
+      distribution: uniform
+      loc: -0.5
+      scale: 1.0
+    deg_hetero:
+      distribution: uniform
+      loc: 0.0
+      scale: 1.0
+  frugalflows_parameters:
+    - ate
+  frugalflows_prior:
+    ate:
+      distribution: uniform
+      loc: -0.5
+      scale: 1.0
+  distance: sliced_wass
+  transform: false
+  min_epsilon: 0.01
+  max_iterations: 12
+  acceptance_population: 50
+  causal_model: location_translation
+  realcause_model_path: results/realcause_models/postgres_linear_3000/default
+  frugalflows_hp_file: results/frugalflows_models/postgres_linear_3000_hps.yaml

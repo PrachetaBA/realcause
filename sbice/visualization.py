@@ -10,6 +10,7 @@ import os
 import sys
 import logging
 import warnings
+import yaml
 
 warnings.filterwarnings('ignore')
 
@@ -329,6 +330,8 @@ def plot_bias_squared_error(estimators='class',
         dataset_name = 'Lalonde (CPS)'
     elif ds_name == 'lalonde' and ds_id == 'psid1':
         dataset_name = 'Lalonde (PSID)'
+    elif ds_name == 'lalonde' and ds_id == 'rct':
+        dataset_name = 'Lalonde (RCT)'
     elif ds_name == 'twins':
         dataset_name = 'Twins'
     elif ds_name == 'postgres':
@@ -359,7 +362,8 @@ def compute_mean_bse(ds_name,
                      sample_size,
                      expt_id,
                      estimators='class',
-                     realcause_only=False):
+                     realcause_only=False,
+                     remove_outliers=False):
     """Compute the mean squared error between the posterior and source
     and prior-source estimated ATEs."""
     post_df = extract_regret(ds_name, ds_id, sample_size, expt_id, 'posterior', realcause_only)
@@ -389,13 +393,59 @@ def compute_mean_bse(ds_name,
         source = extract_regret_base(ds_name, ds_id, sample_size, expt_id, realcause_only)
         for col in list_estimators:
             source_val = source[col].iloc[0]
-            post_bse[col] = ((post[col] - source_val)**2).dropna().mean()
-            prior_bse[col] = ((prior[col] - source_val)**2).dropna().mean()
+            if remove_outliers:
+                # Use IQR method to remove outliers (and then compute the mean)
+                post_bse[col] = ((post[col] - source_val)**2).dropna()
+                # Find the IQR
+                post_q1 = post_bse[col].quantile(0.25)
+                post_q3 = post_bse[col].quantile(0.75)
+                post_iqr = post_q3 - post_q1
+                # Remove outliers
+                post_bse[col] = post_bse[col][(post_bse[col] > post_q1 - 1.5 * post_iqr) &
+                                              (post_bse[col] < post_q3 + 1.5 * post_iqr)]
+                # Compute the mean
+                post_bse[col] = post_bse[col].mean()
+
+                # Repeat for the prior
+                prior_bse[col] = ((prior[col] - source_val)**2).dropna()
+                prior_q1 = prior_bse[col].quantile(0.25)
+                prior_q3 = prior_bse[col].quantile(0.75)
+                prior_iqr = prior_q3 - prior_q1
+                prior_bse[col] = prior_bse[col][(prior_bse[col] > prior_q1 - 1.5 * prior_iqr) &
+                                                (prior_bse[col] < prior_q3 + 1.5 * prior_iqr)]
+                # Compute the mean
+                prior_bse[col] = prior_bse[col].mean()
+            else:
+                post_bse[col] = ((post[col] - source_val)**2).dropna().mean()
+                prior_bse[col] = ((prior[col] - source_val)**2).dropna().mean()
     else:
         source = extract_regret(ds_name, ds_id, sample_size, expt_id, realcause_only)
         for col in list_estimators:
-            post_bse[col] = ((post[col] - source[col])**2).mean()
-            prior_bse[col] = ((prior[col] - source[col])**2).mean()
+            if remove_outliers:
+                # Use IQR method to remove outliers (and then compute the mean)
+                post_bse[col] = ((post[col] - source[col])**2).dropna()
+                # Find the IQR
+                post_q1 = post_bse[col].quantile(0.25)
+                post_q3 = post_bse[col].quantile(0.75)
+                post_iqr = post_q3 - post_q1
+                # Remove outliers
+                post_bse[col] = post_bse[col][(post_bse[col] > post_q1 - 1.5 * post_iqr) &
+                                              (post_bse[col] < post_q3 + 1.5 * post_iqr)]
+                # Compute the mean
+                post_bse[col] = post_bse[col].mean()
+
+                # Repeat for the prior
+                prior_bse[col] = ((prior[col] - source[col])**2).dropna()
+                prior_q1 = prior_bse[col].quantile(0.25)
+                prior_q3 = prior_bse[col].quantile(0.75)
+                prior_iqr = prior_q3 - prior_q1
+                prior_bse[col] = prior_bse[col][(prior_bse[col] > prior_q1 - 1.5 * prior_iqr) &
+                                                (prior_bse[col] < prior_q3 + 1.5 * prior_iqr)]
+                # Compute the mean
+                prior_bse[col] = prior_bse[col].mean()
+            else:
+                post_bse[col] = ((post[col] - source[col])**2).mean()
+                prior_bse[col] = ((prior[col] - source[col])**2).mean()
 
     # Convert this to a pandas dataframe
     bse_df = pd.DataFrame({'Prior-Source BSE': prior_bse, 'Posterior-Source BSE': post_bse})
@@ -406,7 +456,68 @@ def compute_mean_bse(ds_name,
         folder = 'plots/sbice_models'
     folder_path = f'{folder}/{ds_name}_{ds_id}_{sample_size}'
     os.makedirs(folder_path, exist_ok=True)
-    bse_df.to_csv(f'{folder_path}/meanbse-estimators-{estimators}-expt_{expt_id}.csv', index=True)
+    if remove_outliers:
+        bse_df.to_csv(
+            f'{folder_path}/meanbse-estimators-{estimators}-expt_{expt_id}-outliers_removed.csv',
+            index=True)
+    else:
+        bse_df.to_csv(f'{folder_path}/meanbse-estimators-{estimators}-expt_{expt_id}.csv',
+                      index=True)
+
+
+def compute_median_bse(ds_name,
+                       ds_id,
+                       sample_size,
+                       expt_id,
+                       estimators='class',
+                       realcause_only=False):
+    """Compute the median bias squared error between the posterior and source
+    and prior-source estimated ATEs."""
+    post_df = extract_regret(ds_name, ds_id, sample_size, expt_id, 'posterior', realcause_only)
+    # Drop rows with NaN values
+    # post_df = post_df.dropna()
+    if estimators == 'class':
+        post = post_df[post_df.columns.intersection(CLASS_ESTIMATORS)]
+    elif estimators == 'all':
+        post = post_df[post_df.columns.intersection(ALL_ESTIMATORS)]
+
+    prior_df = extract_regret(ds_name, ds_id, sample_size, expt_id, 'prior', realcause_only)
+    # Drop rows with NaN values
+    # prior_df = prior_df.dropna()
+    if estimators == 'class':
+        prior = prior_df[prior_df.columns.intersection(CLASS_ESTIMATORS)]
+    elif estimators == 'all':
+        prior = prior_df[prior_df.columns.intersection(ALL_ESTIMATORS)]
+
+    post_bse = {}
+    prior_bse = {}
+    if estimators == 'class':
+        list_estimators = CLASS_ESTIMATORS
+    elif estimators == 'all':
+        list_estimators = ALL_ESTIMATORS
+    # For real datasets, we do not have a distribution
+    if ds_name in ['lalonde', 'postgres', 'twins']:
+        source = extract_regret_base(ds_name, ds_id, sample_size, expt_id, realcause_only)
+        for col in list_estimators:
+            source_val = source[col].iloc[0]
+            post_bse[col] = ((post[col] - source_val)**2).dropna().median()
+            prior_bse[col] = ((prior[col] - source_val)**2).dropna().median()
+    else:
+        source = extract_regret(ds_name, ds_id, sample_size, expt_id, realcause_only)
+        for col in list_estimators:
+            post_bse[col] = ((post[col] - source[col])**2).median()
+            prior_bse[col] = ((prior[col] - source[col])**2).median()
+
+    # Convert this to a pandas dataframe
+    bse_df = pd.DataFrame({'Prior-Source BSE': prior_bse, 'Posterior-Source BSE': post_bse})
+    logger.info(f'Median BSE dataframe {bse_df}')
+    if realcause_only:
+        folder = 'plots/sbice'
+    else:
+        folder = 'plots/sbice_models'
+    folder_path = f'{folder}/{ds_name}_{ds_id}_{sample_size}'
+    os.makedirs(folder_path, exist_ok=True)
+    bse_df.to_csv(f'{folder_path}/medianbse-estimators-{estimators}-expt_{expt_id}.csv', index=True)
 
 
 def compute_sliced_wass(ds_name,
@@ -424,6 +535,18 @@ def compute_sliced_wass(ds_name,
     smc_path = f'data/smc_abc/{ds_name}_{ds_id}_{sample_size}_dist_{distance_function}_expt_{expt_id}/{smc_id}'
     source_df = pd.read_csv(f'{smc_path}/observed.csv')
     source_np = source_df.to_numpy()
+
+    if ds_name == 'lalonde':
+        outcome_col = 're78'
+        treatment_col = 'treat'
+    elif ds_name == 'postgres':
+        outcome_col = 'runtime'
+        treatment_col = 'index_level'
+    elif ds_name == 'twins':
+        outcome_col = 'yf'
+        treatment_col = 't'
+    else:
+        raise ValueError(f'Dataset {ds_name} not implemented')
 
     # Auto-detect prefix by trying different prefixes in order: 'rc_', 'ff_', then no prefix
     possible_prefixes = ['rc_', 'ff_', '']
@@ -443,6 +566,14 @@ def compute_sliced_wass(ds_name,
     for itr in range(NUM_SAMPLES):
         posterior_df = pd.read_csv(f'{smc_path}/{prefix}posterior_sample_{itr}.csv')
         prior_df = pd.read_csv(f'{smc_path}/{prefix}prior_sample_{itr}.csv')
+        if outcome_col not in posterior_df.columns:
+            posterior_df[outcome_col] = posterior_df['Y1'] * posterior_df[
+                treatment_col] + posterior_df['Y0'] * (1 - posterior_df[treatment_col])
+            posterior_df.drop(columns=['Y1', 'Y0'], inplace=True)
+        if outcome_col not in prior_df.columns:
+            prior_df[outcome_col] = prior_df['Y1'] * prior_df[treatment_col] + prior_df['Y0'] * (
+                1 - prior_df[treatment_col])
+            prior_df.drop(columns=['Y1', 'Y0'], inplace=True)
         post_np = posterior_df.to_numpy()
         prior_np = prior_df.to_numpy()
         # Compute the sliced wasserstein distance between the post_df and source_df
@@ -471,38 +602,67 @@ def compute_sliced_wass(ds_name,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--experiment_config', type=str, default=None)
+    parser.add_argument('--experiment_number', type=int, default=None)
     parser.add_argument('--estimators', type=str, default='all', choices=['class', 'all'])
-    parser.add_argument('--ds_name', type=str, default=None)
-    parser.add_argument('--ds_id', type=str, default=None)
-    parser.add_argument('--sample_size', type=str, default=None)
-    parser.add_argument('--expt_id', type=int, default=None)
-    parser.add_argument('--distance_function', type=str, default='sliced_wass')
     parser.add_argument('--ylims', type=float, nargs=2, required=False, default=[None, None])
     parser.add_argument('--smc_id', type=int, default=None)
+    parser.add_argument('--exec_function',
+                        type=str,
+                        default='all',
+                        choices=[
+                            'all',
+                            'plot_bias_squared_error',
+                            'compute_mean_bse',
+                            'compute_sliced_wass',
+                            'compute_median_bse'
+                        ])
+    parser.add_argument('--remove_outliers', action='store_true')
     args = parser.parse_args()
 
-    if args.ds_name == 'twins':
+    with open(args.experiment_config, 'r', encoding='utf-8') as file:
+        expt_configs = yaml.safe_load(file)
+    expt_config = expt_configs[f'experiment_{args.experiment_number}']
+    dataset_name = expt_config['dataset_name']
+    dataset_identifier = expt_config['dataset_identifier']
+    sample_size = str(expt_config['sample_size'])
+    expt_id = args.experiment_number
+    distance_function = expt_config['distance']
+    transformation = expt_config['transform']
+
+    if dataset_name == 'twins':
         realcause_only = True
     else:
         realcause_only = False
-    # plot_bias_squared_error(estimators=args.estimators,
-    #                         ds_name=args.ds_name,
-    #                         ds_id=args.ds_id,
-    #                         sample_size=args.sample_size,
-    #                         expt_id=args.expt_id,
-    #                         distance_function=args.distance_function,
-    #                         ylims=args.ylims,
-    #                         realcause_only=realcause_only)
-    compute_mean_bse(ds_name=args.ds_name,
-                     ds_id=args.ds_id,
-                     sample_size=args.sample_size,
-                     expt_id=args.expt_id,
-                     estimators=args.estimators,
-                     realcause_only=realcause_only)
-    # compute_sliced_wass(ds_name=args.ds_name,
-    #                     ds_id=args.ds_id,
-    #                     sample_size=args.sample_size,
-    #                     expt_id=args.expt_id,
-    #                     distance_function=args.distance_function,
-    #                     smc_id=args.smc_id,
-    #                     realcause_only=realcause_only)
+    if args.exec_function == 'all' or args.exec_function == 'plot_bias_squared_error':
+        plot_bias_squared_error(estimators=args.estimators,
+                                ds_name=dataset_name,
+                                ds_id=dataset_identifier,
+                                sample_size=sample_size,
+                                expt_id=expt_id,
+                                distance_function=distance_function,
+                                ylims=args.ylims,
+                                realcause_only=realcause_only)
+    if args.exec_function == 'all' or args.exec_function == 'compute_mean_bse':
+        compute_mean_bse(ds_name=dataset_name,
+                         ds_id=dataset_identifier,
+                         sample_size=sample_size,
+                         expt_id=expt_id,
+                         estimators=args.estimators,
+                         realcause_only=realcause_only,
+                         remove_outliers=args.remove_outliers)
+    if args.exec_function == 'all' or args.exec_function == 'compute_sliced_wass':
+        compute_sliced_wass(ds_name=dataset_name,
+                            ds_id=dataset_identifier,
+                            sample_size=sample_size,
+                            expt_id=expt_id,
+                            distance_function=distance_function,
+                            smc_id=args.smc_id,
+                            realcause_only=realcause_only)
+    if args.exec_function == 'all' or args.exec_function == 'compute_median_bse':
+        compute_median_bse(ds_name=dataset_name,
+                           ds_id=dataset_identifier,
+                           sample_size=sample_size,
+                           expt_id=expt_id,
+                           estimators=args.estimators,
+                           realcause_only=realcause_only)

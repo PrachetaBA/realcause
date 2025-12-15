@@ -424,6 +424,7 @@ if __name__ == '__main__':
     # Print the treatment and outcome columns
     print(f'Treatment column: {df_info["treatment_col"]}')
     print(f'Outcome column: {df_info["outcome_col"]}')
+    print(f'true ATE: {df_info["true_ate"]}')
     """
     # Combine all columns into a single dataframe
     df = pd.concat([d['w'], d['t'], d['y'], d['ite'], d['y0'], d['y1']], axis=1)
