@@ -63,3 +63,10 @@ expt_0009:
   transform: True
   ate_setting: incorrect_ate # Incorrect treatment effect
   ate_value: 10.0
+
+expt_0010:
+  dataset_name: frugalparam
+  dataset_identifier: dgp3
+  sample_size: None
+  transform: False
+  ate_setting: flexible_ate # Flexible treatment effect

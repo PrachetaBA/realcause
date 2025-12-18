@@ -16,7 +16,7 @@ import pandas as pd
 from loading import load_gen
 from data_loaders import lalonde as rc_lalonde
 from data_loaders import apo as rc_apo
-
+from data_loaders import frugal_param as rc_frugal_param
 # Defing logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -60,7 +60,18 @@ def generate_rc_data(config, expt_id, num_samples=50):
         covariates_df = d[covariates_col].values    # Use this to generate the data
         rc_model_path = 'results/realcause_models/postgres_linear_3000/default'
         true_ate = d_info['true_ate']
-
+    elif dataset_name == 'frugalparam':
+        if dataset_identifier == 'dgp3':
+            rc_model_path = 'results/realcause_models/frugalparam_dgp3_None'
+            d, d_info = rc_frugal_param.load_frugal_dgp(identifier=dataset_identifier, data_format='pandas')
+            outcome_col = d_info['outcome_col']
+            treatment_col = d_info['treatment_col']
+            categorical_vars = d_info['categorical_vars']
+            continuous_vars = d_info['continuous_vars']
+            covariates_col = continuous_vars + categorical_vars
+            covariates_df = d['w'].values
+            d = pd.concat([d['w'], d['t'], d['y']], axis=1)
+            true_ate = d_info['true_ate']
     # Load the Realcause model from the specified path (before applying transformations)
     # We need to use the model's transforms to ensure scales match
     rc_model, _ = load_gen(saveroot=rc_model_path)

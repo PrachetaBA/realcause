@@ -56,4 +56,19 @@ def simulate_datasets(parameters,
             'married',
             'nodegree'
         ]
+    elif dataset_identifier in ['dgp3']:
+        generated_df.columns = [
+            'Y',
+            'T',
+            'X1',
+            'X2',
+            'X3',
+            'X4',
+            'X5',
+            'X6',
+            'X7',
+            'X8',
+            'X9',
+            'X10',
+        ]
     return {'data': generated_df.values}

@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import gpytorch
 
-from data_loaders import apo, lalonde, twins
+from data_loaders import apo, lalonde, twins, frugal_param
 from models import TarNet, preprocess, TrainingParams, MLPParams, LinearModel, GPModel, TarGPModel, GPParams
 from models import distributions
 import helpers
@@ -37,6 +37,10 @@ def get_data(args):
     elif data_name == 'twins':
         d = twins.load_twins(data_format='numpy')
         w, t, y = d['w'], d['t'], d['y']
+    elif data_name == 'frugalparam':
+        d, d_info = frugal_param.load_frugal_dgp(identifier=data_id, data_format='numpy')
+        w, t, y = d['w'], d['t'], d['y']
+        ate = d_info['true_ate']
     else:
         raise ValueError(f'Dataset {data_name} not implemented')
     return w, t, y, ite, ate

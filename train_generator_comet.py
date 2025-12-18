@@ -42,8 +42,9 @@ def get_data(args):
         elif data_id == 'cps1':
             w, t, y = lalonde.load_lalonde(obs_version='cps')
     elif data_name == 'frugalparam':
-        d, _ = frugal_param.load_frugal_dgp(identifier=data_id, data_format='numpy')
+        d, d_info = frugal_param.load_frugal_dgp(identifier=data_id, data_format='numpy')
         w, t, y = d['w'], d['t'], d['y']
+        ate = d_info['true_ate']
     else:
         raise ValueError(f'Dataset {data_name} not implemented')
     return w, t, y, ite, ate

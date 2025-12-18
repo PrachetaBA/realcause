@@ -25,6 +25,7 @@ from loading import load_gen
 from data_loaders import lalonde as rc_lalonde    # Data loaders for Realcause simulator
 from data_loaders import twins as rc_twins    # Data loaders for Twins simulator
 from data_loaders import apo as rc_apo    # Data loaders for APO simulator
+from data_loaders import frugal_param as rc_frugal_param    # Data loaders for FrugalParam simulator
 from sbi import rc_simulator    # Realcause simulator
 from sbi import ff_simulator    # FrugalFlows simulator
 from frugal_flows.benchmarking import FrugalFlowModel
@@ -74,7 +75,7 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
     Args:
         abc_config (dict): Dictionary containing the configuration parameters
                 for the SMC-ABC algorithm.
-        experiment_number (int): Identifier for the experiment to be run.
+        experiment_number (int/str): Identifier for the experiment to be run.
         sampler (str): Type of sampler to be used for the ABC algorithm, either 'singlecore' or 'redis'.
         redis_server (str): Hostname of the Redis server to be used for the ABC algorithm.
         redis_port (int): Port number for the Redis server.
@@ -130,6 +131,18 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
         continuous_vars = d_info['continuous_vars']    # Excludes T and Y
         d = pd.concat([d['w'], d['t'], d['y']], axis=1)
         observed_data = d
+    elif dataset_name == 'frugalparam':
+        if dataset_identifier == 'dgp3':
+            d, d_info = rc_frugal_param.load_frugal_dgp(identifier=dataset_identifier, data_format='pandas')
+            covariates_df = d['w'].values
+            covariates_col = d['w'].columns.tolist()
+            treatment_col = d_info['treatment_col']
+            outcome_col = d_info['outcome_col']
+            categorical_vars = d_info['categorical_vars']
+            continuous_vars = d_info['continuous_vars']
+            d = pd.concat([d['w'], d['t'], d['y']], axis=1)
+            true_ate = d_info['true_ate']
+            observed_data = d
     else:
         raise ValueError(f'Dataset {dataset_name} not implemented')
 
@@ -753,7 +766,7 @@ if __name__ == '__main__':
                         type=str,
                         default='configs/experiments.yaml',
                         help='Path to configuration file')
-    parser.add_argument('--expt_num', type=int, default=1, help='Experiment identifier number')
+    parser.add_argument('--expt_num', type=str, default=1, help='Experiment identifier number')
     parser.add_argument('--sampler',
                         type=str,
                         default='redis',

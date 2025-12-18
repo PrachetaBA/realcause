@@ -52,7 +52,7 @@ def load_frugal_dgp(identifier, data_format='pandas'):
     unobserved_cov = []
 
     if identifier in ['dgp1', 'dgp1_unobs', 'dgp1_conf']:
-        df = pd.read_csv('{BASE_DATASETS_FOLDER}/frugal_param/frugal_param_dgp1.csv')
+        df = pd.read_csv(f'{BASE_DATASETS_FOLDER}/frugal_param/frugal_param_dgp1.csv')
         true_ate = 5.0
         continuous_vars = ['X1', 'X2', 'X3']
         categorical_vars = []
@@ -153,13 +153,11 @@ def load_frugal_dgp(identifier, data_format='pandas'):
         }
     else:
         raise ValueError(f'Unknown data format: {data_format}. ')
-    return df, df_info
+    return d, df_info
 
 
 if __name__ == '__main__':
-    d, _ = load_frugal_dgp(identifier='dgp1', data_format='numpy')
-    print(d['w'].shape)
-    print(d['t'].shape)
-    print(d['y'].shape)
-    df = pd.concat([d['w'], d['t'], d['y']], axis=1)
-    print(df.head())
+    d, df_info = load_frugal_dgp(identifier='dgp3', data_format='numpy')
+    w, t, y = d['w'], d['t'], d['y']
+    print(df_info['true_ate'])
+    print(df_info['sample_size'])

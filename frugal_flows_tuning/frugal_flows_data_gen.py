@@ -22,6 +22,7 @@ jax.config.update('jax_enable_x64', True)
 from loading import load_gen
 from data_loaders import lalonde as rc_lalonde    # Data loaders for Realcause simulator
 from data_loaders import apo as rc_apo    # Data loaders for APO simulator
+from data_loaders import frugal_param as rc_frugal_param    # Data loaders for FrugalParam simulator
 from frugal_flows.benchmarking import FrugalFlowModel
 
 # Defing logging
@@ -69,6 +70,17 @@ def generate_ff_data(config, expt_id, num_samples=50):
         covariates_col = continuous_vars + categorical_vars
         covariates_df = d[
             'w'].values    # This is the original covariates dataframe (not transformed)
+        d = pd.concat([d['w'], d['t'], d['y']], axis=1)
+        true_ate = d_info['true_ate']
+    elif dataset_name == 'frugalparam':
+        rc_model_path = 'results/realcause_models/frugalparam_dgp3_None'
+        d, d_info = rc_frugal_param.load_frugal_dgp(identifier=dataset_identifier, data_format='pandas')
+        outcome_col = d_info['outcome_col']
+        treatment_col = d_info['treatment_col']
+        categorical_vars = d_info['categorical_vars']
+        continuous_vars = d_info['continuous_vars']
+        covariates_col = continuous_vars + categorical_vars
+        covariates_df = d['w'].values
         d = pd.concat([d['w'], d['t'], d['y']], axis=1)
         true_ate = d_info['true_ate']
     else:
@@ -233,6 +245,8 @@ def generate_ff_data(config, expt_id, num_samples=50):
             ]
         elif dataset_name == 'postgres':
             generated_df.columns = [outcome_col, treatment_col, *covariates_col]
+        elif dataset_name == 'frugalparam':
+            generated_df.columns = [outcome_col, treatment_col, *continuous_vars, *categorical_vars]
         # Save the generated dataset
         generated_df.to_csv(f'{generated_data_dir}/dataset_{itr}.csv', index=False)
 

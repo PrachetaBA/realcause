@@ -22,7 +22,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
 
 from loading import load_gen
-from data_loaders import apo, lalonde, twins
+from data_loaders import apo, lalonde, twins, frugal_param
 import torch
 from ignite.engine import Engine
 from ignite.metrics import MaximumMeanDiscrepancy
@@ -46,6 +46,17 @@ logger = logging.getLogger(__name__)
 # Define constants
 METRICS_PATH = 'output/gen_methods_metrics'
 NUM_SAMPLES = 50
+
+
+def _clean_dataset(df, name):
+    """Drop rows with non-finite values to avoid NaNs/Infs in metrics."""
+    cleaned = df.apply(pd.to_numeric, errors='coerce')
+    finite_mask = np.isfinite(cleaned).all(axis=1)
+    dropped = len(cleaned) - finite_mask.sum()
+    if dropped:
+        logger.warning(f'{name}: dropped {dropped} rows containing non-finite values')
+    return cleaned.loc[finite_mask].reset_index(drop=True)
+
 
 ##############################################################
 # Functions to load the generated datasets #################################
@@ -75,9 +86,11 @@ def source_data_loader(dataset_name,
         d.drop(columns=['data_id'], inplace=True)
         outcome_col = 're78'
         treatment_col = 'treat'
-        covariates_col = d.columns.tolist()
-        covariates_col.remove(outcome_col)
-        covariates_col.remove(treatment_col)
+        # Reorder the columns
+        categorical_vars = ['black', 'hispanic', 'married', 'nodegree']
+        continuous_vars = ['age', 'education', 're75', 're74']
+        # Sort the covariates columns to put the continous first, then the categorical
+        covariates_col = continuous_vars + categorical_vars
 
         # Load the Realcause model
         rc_model, _ = load_gen(saveroot=realcause_model_path)
@@ -129,6 +142,16 @@ def source_data_loader(dataset_name,
             treatment_col,
             outcome_col
         ]]
+    elif dataset_name == 'frugalparam':
+        d, d_info = frugal_param.load_frugal_dgp(identifier=dataset_identifier, data_format='pandas')
+        outcome_col = d_info['outcome_col']
+        treatment_col = d_info['treatment_col']
+        categorical_vars = d_info['categorical_vars']
+        continuous_vars = d_info['continuous_vars']
+        covariates_col = continuous_vars + categorical_vars
+        covariates_df = d['w'].values
+        d = pd.concat([d['w'], d['t'], d['y']], axis=1)
+        true_ate = d_info['true_ate']
     else:
         raise ValueError(f'Dataset {dataset_name} not implemented')
 
@@ -183,12 +206,12 @@ def credence_data_loader(config_file, experiment_identifier, gen_data_dir):
             df_gen = df_gen[[
                 'age',
                 'education',
+                're74',
+                're75',
                 'black',
                 'hispanic',
                 'married',
                 'nodegree',
-                're74',
-                're75',
                 treatment_col,
                 outcome_col
             ]]
@@ -243,12 +266,12 @@ def mcredence_data_loader(config_file, experiment_identifier, gen_data_dir):
             df_gen = df_gen[[
                 'age',
                 'education',
+                're74',
+                're75',
                 'black',
                 'hispanic',
                 'married',
                 'nodegree',
-                're74',
-                're75',
                 treatment_col,
                 outcome_col
             ]]
@@ -276,6 +299,9 @@ def frugalflows_data_loader(config_file,
     elif dataset_name == 'postgres':
         outcome_col = 'runtime'
         treatment_col = 'index_level'
+    elif dataset_name == 'frugalparam':
+        outcome_col = 'Y'
+        treatment_col = 'T'
     # Manually input the learned causal margin as the true ATE depending on the experiment identifier
     if experiment_identifier == '0001':
         true_ate = 4.848423146302874
@@ -295,6 +321,8 @@ def frugalflows_data_loader(config_file,
         true_ate = 0.029753006994724274
     elif experiment_identifier == '0009':
         true_ate = 10.0
+    elif experiment_identifier == '0010':
+        true_ate = 0.0    # TODO: Update
     else:
         raise ValueError(f'Experiment identifier {experiment_identifier} not implemented')
 
@@ -309,7 +337,20 @@ def frugalflows_data_loader(config_file,
                 for col in categorical_vars:
                     # If value = 0, 0 otherwise 1
                     df_gen[col] = df_gen[col].apply(lambda x: 0.0 if x == 0 else 1.0)
-        if dataset_name == 'postgres':
+        if dataset_name == 'lalonde' and dataset_identifier == 'rct':
+            df_gen = df_gen[[
+                'age',
+                'education',
+                're74',
+                're75',
+                'black',
+                'hispanic',
+                'married',
+                'nodegree',
+                treatment_col,
+                outcome_col
+            ]]
+        elif dataset_name == 'postgres':
             # Let us reorder the columns to put all the covariates first, then treatment, then outcome
             df_gen = df_gen[[
                 'rows',
@@ -320,6 +361,21 @@ def frugalflows_data_loader(config_file,
                 'queries_by_user',
                 'length_chars',
                 'total_ref_rows',
+                treatment_col,
+                outcome_col
+            ]]
+        elif dataset_name == 'frugalparam':
+            df_gen = df_gen[[
+                'X1',
+                'X2',
+                'X3',
+                'X4',
+                'X5',
+                'X6',
+                'X7',
+                'X8',
+                'X9',
+                'X10',
                 treatment_col,
                 outcome_col
             ]]
@@ -347,6 +403,9 @@ def realcause_data_loader(config_file,
     elif dataset_name == 'postgres':
         outcome_col = 'runtime'
         treatment_col = 'index_level'
+    elif dataset_name == 'frugalparam':
+        outcome_col = 'Y'
+        treatment_col = 'T'
     else:
         raise ValueError(f'Dataset {dataset_name} not implemented')
 
@@ -383,12 +442,27 @@ def realcause_data_loader(config_file,
             df_gen = df_gen[[
                 'age',
                 'education',
+                're74',
+                're75',
                 'black',
                 'hispanic',
                 'married',
                 'nodegree',
-                're74',
-                're75',
+                treatment_col,
+                outcome_col
+            ]]
+        elif dataset_name == 'frugalparam':
+            df_gen = df_gen[[
+                'X1',
+                'X2',
+                'X3',
+                'X4',
+                'X5',
+                'X6',
+                'X7',
+                'X8',
+                'X9',
+                'X10',
                 treatment_col,
                 outcome_col
             ]]
@@ -458,6 +532,11 @@ def compute_metrics(experiment_identifier, gen_method, metric='auc', minmax_scal
     else:
         raise ValueError(f'Generation method {gen_method} not implemented')
 
+    # Drop rows with NaN/Inf so distance metrics do not explode
+    gen_datasets = [
+        _clean_dataset(df, f'{gen_method} gen {idx}') for idx, df in enumerate(gen_datasets)
+    ]
+
     # Load the source dataset
     if experiment_identifier in ['0001', '0002', '0003']:
         dataset_name = 'lalonde'
@@ -476,8 +555,16 @@ def compute_metrics(experiment_identifier, gen_method, metric='auc', minmax_scal
         sample_size = None
         realcause_model_path = 'results/realcause_models/lalonde_rct_None'
         source_df, true_ate = source_data_loader(dataset_name, dataset_identifier, sample_size, realcause_model_path)
+    elif experiment_identifier in ['0010']:
+        dataset_name = 'frugalparam'
+        dataset_identifier = 'dgp3'
+        sample_size = None
+        realcause_model_path = 'results/realcause_models/frugalparam_dgp3_None'
+        source_df, true_ate = source_data_loader(dataset_name, dataset_identifier, sample_size, realcause_model_path)
     else:
         raise ValueError(f'Experiment identifier {experiment_identifier} not implemented')
+
+    source_df = _clean_dataset(source_df, 'source')
 
     if metric == 'auc':
         # Compute the classifier AUC for the source dataset with each of the generated datasets
@@ -515,6 +602,7 @@ def compute_metrics(experiment_identifier, gen_method, metric='auc', minmax_scal
                 std_gen_dataset = MinMaxScaler().fit_transform(gen_dataset)
             else:
                 std_gen_dataset = gen_dataset
+
             slicedwass_distance = compute_slicedwass_distance(std_source_df, std_gen_dataset)
             slicedwass_distances.append(slicedwass_distance)
 
@@ -585,7 +673,7 @@ if __name__ == '__main__':
     # mean_metrics.to_csv(f'{METRICS_PATH}/mean_metrics_expt_{args.experiment_identifier}.csv',
     #                     index=False)
 
-    for gen_method in ['realcause', 'credence', 'mcredence', 'frugalflows']:
+    for gen_method in ['realcause', 'frugalflows', 'credence', 'mcredence']:
         compute_metrics(args.experiment_identifier,
                         gen_method,
                         metric='slicedwass',
@@ -594,7 +682,7 @@ if __name__ == '__main__':
     # For each experiment identifier and generative methods, write code to compute the mean
     # of the metrics per generative method and put it together into a single dataframe
     mean_metrics = pd.DataFrame(columns=['gen_method', 'mean_slicedwass', 'std_slicedwass'])
-    for gen_method in ['realcause', 'credence', 'mcredence', 'frugalflows']:
+    for gen_method in ['realcause', 'frugalflows', 'credence', 'mcredence']:
         slicedwass_distances = pd.read_csv(
             f'{METRICS_PATH}/slicedwass_expt_{args.experiment_identifier}_{gen_method}.csv')
         # Compute the mean per generative method and the standard deviation of the metrics

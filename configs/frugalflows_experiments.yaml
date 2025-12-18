@@ -108,3 +108,15 @@ expt_0009:
   rho: 0.0  # No unobserved confounding
   ate: incorrect_ate  # Incorrect treatment effect
   ate_value: 10.0
+
+expt_0010:
+  dataset_name: frugalparam
+  dataset_identifier: dgp3
+  sample_size: None
+  causal_model: location_translation
+  transform: False
+  frugalflows_hp_file: results/frugalflows_models/frugalparam_dgp3_None_hps.yaml
+  max_patience: 200
+  max_epochs: 5000
+  rho: 0.0  # No unobserved confounding
+  ate: flexible_ate  # Flexible treatment effect
