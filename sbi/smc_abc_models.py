@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyabc
+import torch
 import yaml
 from datetime import timedelta
 
@@ -66,6 +67,24 @@ class TreatmentOutcomeSumStat(pyabc.Sumstat):
     def __call__(self, data: dict) -> np.ndarray:
         return data[
             'data'][:, :2]    # First two columns of the numpy array data (outcome and treatment)
+
+
+def mmd_distance(source, generated, sigma: float = 1.0) -> float:
+    """Picklable MMD distance using an RBF kernel, CPU torch only."""
+    with torch.no_grad():
+        x = torch.as_tensor(np.asarray(source['data']), dtype=torch.float32)
+        y = torch.as_tensor(np.asarray(generated['data']), dtype=torch.float32)
+
+        def rbf(a, b):
+            diff = a.unsqueeze(1) - b.unsqueeze(0)    # [n, m, d]
+            dist2 = (diff * diff).sum(dim=-1)
+            return torch.exp(-dist2 / (2.0 * sigma * sigma))
+
+        k_xx = rbf(x, x)
+        k_yy = rbf(y, y)
+        k_xy = rbf(x, y)
+        mmd2 = k_xx.mean() + k_yy.mean() - 2.0 * k_xy.mean()
+        return float(mmd2)
 
 
 def main(abc_config, experiment_number, sampler='redis', redis_server=None, redis_port=6379):
@@ -193,8 +212,7 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
         tuned_hyperparams = yaml.safe_load(file)
 
     # Set tuning parameters for Normalizing Flows
-    max_patience = abc_config.get('max_patience',
-                                  200)    # Default is 200 TODO: Change after testing
+    max_patience = abc_config.get('max_patience', 200)    # Default is 200
     max_epochs = abc_config.get('max_epochs', 5000)    # Default is 5000 TODO: Change after testing
     tuned_hyperparams['hyperparameters']['max_patience'] = max_patience
     tuned_hyperparams['hyperparameters']['max_epochs'] = max_epochs
@@ -287,17 +305,19 @@ def main(abc_config, experiment_number, sampler='redis', redis_server=None, redi
                                               causal_model=causal_model,
                                               causal_model_args=causal_model_args)
 
-    # Define the distance metrics for the data (TODO: Add more distance functions later)
+    # Define the distance metrics for the data
     if abc_config['distance'] == 'sliced_wass':
         DISTANCE_PARAM = pyabc.SlicedWassersteinDistance(metric='sqeuclidean',
                                                          p=2,
                                                          sumstat=IdSumStat(),
-                                                         n_proj=50)    # Used to be 10
+                                                         n_proj=50)
     elif abc_config['distance'] == 'ty_sliced_wass':
         DISTANCE_PARAM = pyabc.SlicedWassersteinDistance(metric='sqeuclidean',
                                                          p=2,
                                                          sumstat=TreatmentOutcomeSumStat(),
-                                                         n_proj=50)    # Used to be 10
+                                                         n_proj=50)
+    elif abc_config['distance'] == 'mmd':
+        DISTANCE_PARAM = pyabc.distance.FunctionDistance(mmd_distance)
     else:
         raise ValueError(f"Distance function {abc_config['distance']} not implemented")
     observed_sum_stat = observed
