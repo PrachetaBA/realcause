@@ -85,6 +85,16 @@
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated lalonde psid1 None all 103 posterior results/GenModelCkpts/lalonde/psid1/save 1 ty_sliced_wass
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated lalonde psid1 None all 103 prior results/GenModelCkpts/lalonde/psid1/save 1 ty_sliced_wass
 
+# (Distance MMD)
+# sbatch run_causal_estimators.sh source configs/experiments_lalonde_psid_models.yaml 104 all 1
+# sbatch run_causal_estimators.sh generated configs/experiments_lalonde_psid_models.yaml 104 posterior all 1
+# sbatch run_causal_estimators.sh generated configs/experiments_lalonde_psid_models.yaml 104 prior all 1
+
+# Lalonde RCT Realcause and Frugalflows SBI (Distance MMD)
+# sbatch run_causal_estimators.sh source configs/experiments_lalonde_rct_models.yaml 506 all 6
+# sbatch run_causal_estimators.sh generated configs/experiments_lalonde_rct_models.yaml 506 posterior all 6
+# sbatch run_causal_estimators.sh generated configs/experiments_lalonde_rct_models.yaml 506 prior all 6
+
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh source postgres linear 3000 all 300 results/realcause_models/postgres_linear_3000/default 2 sliced_wass
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated postgres linear 3000 all 300 posterior results/realcause_models/postgres_linear_3000/default 2 sliced_wass
 # sbatch --account=pi_phaas_umass_edu run_causal_estimators.sh generated postgres linear 3000 all 300 prior results/realcause_models/postgres_linear_3000/default 2 sliced_wass
@@ -116,6 +126,10 @@
 # sbatch run_causal_estimators.sh generated configs/experiments_postgres_models.yaml 306 posterior all 1
 # sbatch run_causal_estimators.sh generated configs/experiments_postgres_models.yaml 306 prior all 1
 
+# Distance = MMD
+# sbatch run_causal_estimators.sh source configs/experiments_postgres_models.yaml 308 all 1
+# sbatch run_causal_estimators.sh generated configs/experiments_postgres_models.yaml 308 posterior all 1
+# sbatch run_causal_estimators.sh generated configs/experiments_postgres_models.yaml 308 prior all 1
 
 # sbatch run_causal_estimators.sh source configs/experiments_lalonde_rct_models.yaml 500 all 3
 # sbatch run_causal_estimators.sh generated configs/experiments_lalonde_rct_models.yaml 500 posterior all 3
@@ -136,3 +150,9 @@
 # sbatch run_causal_estimators.sh source configs/experiments_lalonde_rct_models.yaml 505 all 1
 # sbatch run_causal_estimators.sh generated configs/experiments_lalonde_rct_models.yaml 505 posterior all 1
 # sbatch run_causal_estimators.sh generated configs/experiments_lalonde_rct_models.yaml 505 prior all 1
+
+# FrugalParam MMD distance
+# ERROR - FIX IT
+# sbatch run_causal_estimators.sh source configs/experiments_frugalparam_models.yaml fp2 all 1
+# sbatch run_causal_estimators.sh generated configs/experiments_frugalparam_models.yaml fp2 posterior all 1
+# sbatch run_causal_estimators.sh generated configs/experiments_frugalparam_models.yaml fp2 prior all 1

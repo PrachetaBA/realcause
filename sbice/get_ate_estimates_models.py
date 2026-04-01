@@ -267,7 +267,7 @@ def load_smcabc(dataset_name,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run causal estimators on the Realcause datasets.')
     parser.add_argument('--experiment_config', type=str, default=None)
-    parser.add_argument('--experiment_number', type=int, default=None)
+    parser.add_argument('--experiment_number', type=str, default=None)
     parser.add_argument('--observed_data', action='store_true', default=False)
     parser.add_argument('--posterior_or_prior',
                         type=str,

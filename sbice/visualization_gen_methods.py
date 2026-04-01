@@ -760,11 +760,15 @@ def load_frugalflows_generated(ds_name, ds_id, sample_size, expt_id, dataset_num
         if ds_id == 'psid1':
             if expt_id == '0001':
                 setting = 'flexible_ate'
+                ate = 4.848423146302874
             elif expt_id == '0002':
                 setting = 'true_ate'
+                ate = 0.016190112
             elif expt_id == '0003':
                 setting = 'incorrect_ate'
+                ate = 10.0
             frugalflows_df['setting'] = setting
+            frugalflows_df['ate'] = ate
             frugalflows_df = frugalflows_df[[
                 'method',
                 'setting',
@@ -779,16 +783,21 @@ def load_frugalflows_generated(ds_name, ds_id, sample_size, expt_id, dataset_num
                 're75',
                 'treatment',
                 'outcome',
-                'p_t'
+                'p_t',
+                'ate'
             ]]
         elif ds_id == 'rct':
             if expt_id == '0007':
                 setting = 'flexible_ate'
+                ate = -0.013378981365253218
             elif expt_id == '0008':
                 setting = 'true_ate'
+                ate = 0.029753006994724274
             elif expt_id == '0009':
                 setting = 'incorrect_ate'
+                ate = 10.0
             frugalflows_df['setting'] = setting
+            frugalflows_df['ate'] = ate
             frugalflows_df = frugalflows_df[[
                 'method',
                 'setting',
@@ -803,13 +812,22 @@ def load_frugalflows_generated(ds_name, ds_id, sample_size, expt_id, dataset_num
                 're75',
                 'treatment',
                 'outcome',
-                'p_t'
+                'p_t',
+                'ate'
             ]]
     elif ds_name == 'postgres':
         if ds_id == 'linear':
             if expt_id == '0004':
                 setting = 'flexible_ate'
+                ate = -0.494372492680495
+            elif expt_id == '0005':
+                setting = 'true_ate'
+                ate = 0.25458168982552337
+            elif expt_id == '0006':
+                setting = 'incorrect_ate'
+                ate = 5.0
             frugalflows_df['setting'] = setting
+            frugalflows_df['ate'] = ate
             frugalflows_df = frugalflows_df[[
                 'method',
                 'setting',
@@ -824,7 +842,8 @@ def load_frugalflows_generated(ds_name, ds_id, sample_size, expt_id, dataset_num
                 'total_ref_rows',
                 'treatment',
                 'outcome',
-                'p_t'
+                'p_t',
+                'ate'
             ]]
     else:
         raise ValueError(f'Dataset {ds_name} not implemented')
@@ -941,12 +960,12 @@ def plot_outcome_distribution(ds_name, ds_id, sample_size):
         mcred_flexible,
         mcred_true,
         mcred_incorrect,
-        ff_flexible,
-        ff_true,
-        ff_incorrect,
         rc_flexible,
         rc_true,
-        rc_incorrect
+        rc_incorrect,
+        ff_flexible,
+        ff_true,
+        ff_incorrect
     ],
                    axis=0)
     df.reset_index(drop=True, inplace=True)
@@ -1229,13 +1248,19 @@ def plot_ate_values(ds_name, ds_id, sample_size, setting='flexible_ate'):
         summary_df.reset_index(drop=True, inplace=True)
 
         # Add in a row to summary_df for the source dataset
-        row = ['Source', '0', 0.016, 0.0691588785046729]    # 0.41573 or 0.0691588785046729
+        if ds_name == 'lalonde':
+            row = ['Source', '0', 0.016,
+                   0.0691588785046729]    # 0.41573 or 0.0691588785046729 # Transformed = True
+        elif ds_name == 'postgres':
+            row = ['Source', '0', 0.25458168982552337, 0.5]
+
         summary_df.loc[len(summary_df)] = row
 
         # Change the order of the methods
         summary_df['method'] = pd.Categorical(
-            summary_df['method'], ['Source', 'Credence', 'modCredence', 'Realcause', 'FrugalFlows'])
+            summary_df['method'], ['Source', 'Credence', 'modCredence', 'Realcause', 'Frugalflows'])
         summary_df = summary_df.sort_values('method')
+        print(summary_df['method'].unique())
 
         # Create a violin plot of the 'ate' column, for each method across all dataset_nums
         plt.figure(figsize=(3, 3))
@@ -1267,11 +1292,12 @@ if __name__ == '__main__':
     parser.add_argument('--expt_id', type=str, default=None)
     parser.add_argument('--gen_method', type=str, default=None)
     parser.add_argument('--ylims', type=float, nargs=2, required=False, default=[None, None])
-    parser.add_argument('--plot_type',
-                        type=str,
-                        default='outcome_overlaid',
-                        choices=['bias', 'outcome_overlaid', 'outcome_separate', 'ate_values'],
-                        help='Type of plot to generate')
+    parser.add_argument(
+        '--plot_type',
+        type=str,
+        default='outcome_overlaid',
+        choices=['bias', 'outcome_overlaid', 'outcome_separate', 'ate_values', 'ate'],
+        help='Type of plot to generate')
     parser.add_argument('--setting',
                         type=str,
                         default='flexible_ate',
@@ -1289,6 +1315,15 @@ if __name__ == '__main__':
                              estimators=args.estimators,
                              ylims=args.ylims,
                              regret=True)
+    elif args.plot_type == 'ate':
+        plot_bias_estimators(ds_name=args.ds_name,
+                             ds_id=args.ds_id,
+                             sample_size=args.sample_size,
+                             expt_id=args.expt_id,
+                             gen_method=args.gen_method,
+                             estimators=args.estimators,
+                             ylims=args.ylims,
+                             regret=False)
     elif args.plot_type == 'outcome_overlaid':
         # Plot the original outcome distribution (all settings, overlaid methods)
         plot_outcome_distribution(ds_name=args.ds_name,

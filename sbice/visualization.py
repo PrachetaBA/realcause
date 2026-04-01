@@ -9,6 +9,7 @@ import argparse
 import os
 import sys
 import logging
+import torch
 import warnings
 import yaml
 
@@ -345,7 +346,8 @@ def plot_bias_squared_error(estimators='class',
         folder = 'plots/sbice_models'
     folder_path = f'{folder}/{ds_name}_{ds_id}_{sample_size}'
     os.makedirs(folder_path, exist_ok=True)
-    figure_path = f'{folder_path}/bse-estimators-{estimators}-expt_{expt_id}.png'
+    # figure_path = f'{folder_path}/bse-estimators-{estimators}-expt_{expt_id}.png'
+    figure_path = f'{folder_path}/bse-estimators-{estimators}-expt_{expt_id}.pdf'
     print(f'Saving figure to {figure_path}')
 
     # Add a horizontal line at 0
@@ -520,6 +522,104 @@ def compute_median_bse(ds_name,
     bse_df.to_csv(f'{folder_path}/medianbse-estimators-{estimators}-expt_{expt_id}.csv', index=True)
 
 
+def mmd_distance(source, generated, sigma: float = 1.0) -> float:
+    """Picklable MMD distance using an RBF kernel, CPU torch only."""
+    with torch.no_grad():
+        x = torch.as_tensor(np.asarray(source), dtype=torch.float32)
+        y = torch.as_tensor(np.asarray(generated), dtype=torch.float32)
+
+        def rbf(a, b):
+            diff = a.unsqueeze(1) - b.unsqueeze(0)    # [n, m, d]
+            dist2 = (diff * diff).sum(dim=-1)
+            return torch.exp(-dist2 / (2.0 * sigma * sigma))
+
+        k_xx = rbf(x, x)
+        k_yy = rbf(y, y)
+        k_xy = rbf(x, y)
+        mmd2 = k_xx.mean() + k_yy.mean() - 2.0 * k_xy.mean()
+        return float(mmd2)
+
+
+def compute_mmd(ds_name,
+                ds_id,
+                sample_size,
+                expt_id,
+                distance_function='sliced_wass',
+                smc_id=None,
+                realcause_only=False):
+    """Compute the MMD distance between the source and generated datasets.
+
+    Automatically detects the prefix for sample files (rc_, ff_, or no prefix) by checking
+    which files exist in the directory.
+    """
+    smc_path = f'data/smc_abc/{ds_name}_{ds_id}_{sample_size}_dist_{distance_function}_expt_{expt_id}/{smc_id}'
+    source_df = pd.read_csv(f'{smc_path}/observed.csv')
+    source_np = source_df.to_numpy()
+
+    if ds_name == 'lalonde':
+        outcome_col = 're78'
+        treatment_col = 'treat'
+    elif ds_name == 'postgres':
+        outcome_col = 'runtime'
+        treatment_col = 'index_level'
+    elif ds_name == 'twins':
+        outcome_col = 'yf'
+        treatment_col = 't'
+    else:
+        raise ValueError(f'Dataset {ds_name} not implemented')
+
+    # Auto-detect prefix by trying different prefixes in order: 'rc_', 'ff_', then no prefix
+    possible_prefixes = ['rc_', 'ff_', '']
+    prefix = None
+    for test_prefix in possible_prefixes:
+        test_file = f'{smc_path}/{test_prefix}posterior_sample_0.csv'
+        if os.path.exists(test_file):
+            prefix = test_prefix
+            break
+    if prefix is None:
+        raise FileNotFoundError(
+            f'Could not find sample files in {smc_path}. '
+            f'Tried: rc_posterior_sample_0.csv, ff_posterior_sample_0.csv, posterior_sample_0.csv')
+
+    posterior_mmds = []
+    prior_mmds = []
+    for itr in range(NUM_SAMPLES):
+        posterior_df = pd.read_csv(f'{smc_path}/{prefix}posterior_sample_{itr}.csv')
+        prior_df = pd.read_csv(f'{smc_path}/{prefix}prior_sample_{itr}.csv')
+        if outcome_col not in posterior_df.columns:
+            posterior_df[outcome_col] = posterior_df['Y1'] * posterior_df[
+                treatment_col] + posterior_df['Y0'] * (1 - posterior_df[treatment_col])
+            posterior_df.drop(columns=['Y1', 'Y0'], inplace=True)
+        if outcome_col not in prior_df.columns:
+            prior_df[outcome_col] = prior_df['Y1'] * prior_df[treatment_col] + prior_df['Y0'] * (
+                1 - prior_df[treatment_col])
+            prior_df.drop(columns=['Y1', 'Y0'], inplace=True)
+        post_np = posterior_df.to_numpy()
+        prior_np = prior_df.to_numpy()
+        # Compute the MMD distance between the post_df and source_df
+        post_mmd = mmd_distance(source_np, post_np, sigma=1.0)
+        prior_mmd = mmd_distance(source_np, prior_np, sigma=1.0)
+        posterior_mmds.append(post_mmd)
+        prior_mmds.append(prior_mmd)
+
+    posterior_mean_mmd = np.nanmean(posterior_mmds)
+    prior_mean_mmd = np.nanmean(prior_mmds)
+    posterior_std_mmd = np.nanstd(posterior_mmds)
+    prior_std_mmd = np.nanstd(prior_mmds)
+    mmd_df = pd.DataFrame({'Posterior-Source MMD': posterior_mmds, 'Prior-Source MMD': prior_mmds})
+    logger.info(f'Posterior-Source MMD: {posterior_mean_mmd:.4f} +/- {posterior_std_mmd:.4f}')
+    logger.info(f'Prior-Source MMD: {prior_mean_mmd:.4f} +/- {prior_std_mmd:.4f}')
+    # Save the MMD distances to a csv file
+    mmd_df = pd.DataFrame({'Posterior-Source MMD': posterior_mmds, 'Prior-Source MMD': prior_mmds})
+    if realcause_only:
+        folder = 'plots/sbice'
+    else:
+        folder = 'plots/sbice_models'
+    folder_path = f'{folder}/{ds_name}_{ds_id}_{sample_size}'
+    os.makedirs(folder_path, exist_ok=True)
+    mmd_df.to_csv(f'{folder_path}/mmd-expt_{expt_id}.csv', index=True)
+
+
 def compute_sliced_wass(ds_name,
                         ds_id,
                         sample_size,
@@ -615,7 +715,8 @@ if __name__ == '__main__':
                             'plot_bias_squared_error',
                             'compute_mean_bse',
                             'compute_sliced_wass',
-                            'compute_median_bse'
+                            'compute_median_bse',
+                            'compute_mmd'
                         ])
     parser.add_argument('--remove_outliers', action='store_true')
     args = parser.parse_args()
@@ -666,3 +767,11 @@ if __name__ == '__main__':
                            expt_id=expt_id,
                            estimators=args.estimators,
                            realcause_only=realcause_only)
+    if args.exec_function == 'all' or args.exec_function == 'compute_mmd':
+        compute_mmd(ds_name=dataset_name,
+                    ds_id=dataset_identifier,
+                    sample_size=sample_size,
+                    expt_id=expt_id,
+                    distance_function=distance_function,
+                    smc_id=args.smc_id,
+                    realcause_only=realcause_only)
