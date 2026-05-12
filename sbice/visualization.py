@@ -346,8 +346,8 @@ def plot_bias_squared_error(estimators='class',
         folder = 'plots/sbice_models'
     folder_path = f'{folder}/{ds_name}_{ds_id}_{sample_size}'
     os.makedirs(folder_path, exist_ok=True)
-    # figure_path = f'{folder_path}/bse-estimators-{estimators}-expt_{expt_id}.png'
-    figure_path = f'{folder_path}/bse-estimators-{estimators}-expt_{expt_id}.pdf'
+    figure_path = f'{folder_path}/bse-estimators-{estimators}-expt_{expt_id}.png'
+    # figure_path = f'{folder_path}/bse-estimators-{estimators}-expt_{expt_id}.pdf'
     print(f'Saving figure to {figure_path}')
 
     # Add a horizontal line at 0
